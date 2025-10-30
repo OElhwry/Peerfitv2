@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Upload, MapPin, Calendar, Clock } from "lucide-react"
 import Link from "next/link"
+import { supabase } from "@/lib/supabaseClient"
+import { useRouter } from "next/navigation"
 
 const sports = [
   { id: "football", name: "Football", icon: "⚽" },
@@ -29,9 +31,24 @@ const sports = [
 const skillLevels = ["Beginner", "Intermediate", "Advanced"]
 const availabilityOptions = ["Weekday Mornings", "Weekday Evenings", "Weekend Mornings", "Weekend Evenings"]
 
+type SignupForm = {
+  fullName: string
+  email: string
+  password: string
+  confirmPassword: string
+  location: string
+  dateOfBirth: string
+  profilePicture: File | null
+  selectedSports: string[]
+  skillLevels: Record<string, string>
+  availability: string[]
+  agreeToTerms: boolean
+}
+
 export default function SignupPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
+  const router = useRouter()
   const [validationErrors, setValidationErrors] = useState({
     fullName: "",
     email: "",
@@ -39,26 +56,79 @@ export default function SignupPage() {
     confirmPassword: "",
   })
 
-  const [formData, setFormData] = useState({
-    // Step 1: Basic Info
+  // ✅ Tell TypeScript what formData looks like
+  const [formData, setFormData] = useState<SignupForm>({
     fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-
-    // Step 2: Profile Details
     location: "",
     dateOfBirth: "",
-    profilePicture: null as File | null,
-
-    // Step 3: Sports Preferences
-    selectedSports: [] as string[],
-    skillLevels: {} as Record<string, string>,
-    availability: [] as string[],
-
-    // Step 4: Legal
+    profilePicture: null,
+    selectedSports: [],
+    skillLevels: {},
+    availability: [],
     agreeToTerms: false,
   })
+
+
+
+
+const handleSignup = async () => {
+  try {
+    const cleanEmail = formData.email.trim().toLowerCase();
+
+    // 1. Create the user (active immediately since confirm email is off)
+    const { data, error } = await supabase.auth.signUp({
+      email: cleanEmail,
+      password: formData.password,
+    });
+
+    if (error) {
+      if (error.message.includes("invalid")) {
+        alert("❌ Please enter a valid email address.");
+      } else if (error.message.includes("already registered")) {
+        alert("⚠️ This email is already registered. Please log in instead.");
+      } else {
+        alert("⚠️ Signup failed: " + error.message);
+      }
+      return;
+    }
+
+    const user = data.user;
+    if (!user) {
+      alert("⚠️ Something went wrong — no user returned.");
+      return;
+    }
+
+    // 2. Insert into profiles table
+    const { error: profileError } = await supabase.from("profiles").insert([
+      {
+        id: user.id, // links to auth.users.id
+        full_name: formData.fullName,
+        location: formData.location,
+        date_of_birth: formData.dateOfBirth,
+        profile_picture_url: null,
+        selected_sports: formData.selectedSports,
+        skill_levels: formData.skillLevels,
+        availability: formData.availability,
+      },
+    ]);
+
+    if (profileError) {
+      alert("⚠️ Failed to save profile info: " + profileError.message);
+      return;
+    }
+
+    router.push("/login")
+  } catch (err: any) {
+    console.error("Signup failed:", err);
+    alert("❌ Unexpected error: " + err.message);
+  }
+};
+
+
+
 
   const totalSteps = 4
   const progress = (currentStep / totalSteps) * 100
@@ -645,7 +715,7 @@ export default function SignupPage() {
                 </Button>
               ) : (
                 <Button
-                  onClick={handleSubmit}
+                  onClick={handleSignup}
                   disabled={!canProceedFromStep(currentStep)}
                   className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >

@@ -1,60 +1,75 @@
 "use client"
-
-import { useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card" 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" 
+import { Progress } from "@/components/ui/progress" 
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabaseClient"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import {
-  Users,
   MapPin,
   Calendar,
   Bell,
   User,
   Settings,
-  Trophy,
-  Activity,
-  Star,
   Edit,
   Home,
-  TrendingUp,
-  Clock,
   Shield,
   LogOut,
   ChevronDown,
+  Activity,
+  Clock,
+  Star,
+  TrendingUp,
+  Trophy,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
+interface Profile {
+  id: string
+  full_name: string
+  location: string
+  created_at: string
+  bio: string | null
+  selected_sports: string[]
+  profile_picture_url: string | null
+}
+
 export default function ProfilePage() {
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
+
+  // Fetch user + profile info
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single()
+
+      if (!error && data) {
+        setProfile(data as Profile)
+      }
+    }
+
+    fetchProfile()
+  }, [])
 
   const mockNotifications = [
-    {
-      id: 1,
-      type: "activity_joined",
-      message: "Sarah joined your Tennis match",
-      time: "2 minutes ago",
-      read: false,
-    },
-    {
-      id: 2,
-      type: "activity_reminder",
-      message: "Football match starts in 1 hour",
-      time: "45 minutes ago",
-      read: false,
-    },
-    {
-      id: 3,
-      type: "new_activity",
-      message: "New Basketball game near you",
-      time: "2 hours ago",
-      read: true,
-    },
+    { id: 1, message: "Sarah joined your Tennis match", time: "2 minutes ago", read: false },
+    { id: 2, message: "Football match starts in 1 hour", time: "45 minutes ago", read: false },
+    { id: 3, message: "New Basketball game near you", time: "2 hours ago", read: true },
   ]
 
   return (
@@ -64,6 +79,7 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
+              {/* Logo */}
               <Link href="/feed" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="relative">
                   <Image
@@ -86,95 +102,84 @@ export default function ProfilePage() {
                 </div>
               </Link>
 
+              {/* Nav */}
               <nav className="hidden lg:flex items-center gap-2">
                 <Link href="/feed">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl px-4 py-2 transition-all"
-                  >
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <Home className="w-4 h-4" />
-                    <span className="text-sm font-medium">Feed</span>
+                    Feed
                   </Button>
                 </Link>
                 <Link href="/activities">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl px-4 py-2 transition-all"
-                  >
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
-                    <span className="text-sm font-medium">Activities</span>
+                    Activities
                   </Button>
                 </Link>
                 <div className="relative">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl px-4 py-2 transition-all relative"
                     onClick={() => setNotificationOpen(!notificationOpen)}
+                    className="flex items-center gap-2 relative"
                   >
                     <Bell className="w-4 h-4" />
                     <span className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full animate-pulse"></span>
                   </Button>
-
                   {notificationOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-80 bg-background border border-border rounded-xl shadow-xl z-50">
-                      <div className="p-4 border-b border-border">
+                    <div className="absolute top-full right-0 mt-2 w-80 bg-background border rounded-xl shadow-xl z-50">
+                      <div className="p-4 border-b">
                         <h3 className="font-semibold">Notifications</h3>
                       </div>
                       <div className="max-h-96 overflow-y-auto">
-                        {mockNotifications.map((notification) => (
+                        {mockNotifications.map((n) => (
                           <div
-                            key={notification.id}
-                            className={`p-4 border-b border-border/50 hover:bg-muted/30 transition-colors ${
-                              !notification.read ? "bg-primary/5" : ""
+                            key={n.id}
+                            className={`p-4 border-b hover:bg-muted/30 transition-colors ${
+                              !n.read ? "bg-primary/5" : ""
                             }`}
                           >
-                            <p className="text-sm font-medium">{notification.message}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+                            <p className="text-sm font-medium">{n.message}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{n.time}</p>
                           </div>
                         ))}
-                      </div>
-                      <div className="p-4 border-t border-border">
-                        <Button variant="ghost" size="sm" className="w-full">
-                          View All Notifications
-                        </Button>
                       </div>
                     </div>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 text-primary bg-primary/10 rounded-xl px-4 py-2"
-                >
+                <Button variant="ghost" size="sm" className="flex items-center gap-2 text-primary bg-primary/10">
                   <User className="w-4 h-4" />
-                  <span className="text-sm font-medium">Profile</span>
+                  Profile
                 </Button>
               </nav>
             </div>
 
+            {/* Profile Dropdown */}
             <div className="relative">
               <div
-                className="flex items-center gap-2 cursor-pointer hover:bg-muted/30 rounded-xl p-2 transition-colors"
+                className="flex items-center gap-2 cursor-pointer hover:bg-muted/30 rounded-xl p-2"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
               >
-                <Avatar className="w-9 h-9 ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-                  <AvatarImage src="/abstract-geometric-shapes.png" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-semibold">
-                    JD
+                <Avatar className="w-9 h-9 ring-2 ring-primary/20">
+                  <AvatarImage src={profile?.profile_picture_url || "/abstract-geometric-shapes.png"} />
+                  <AvatarFallback>
+                    {profile?.full_name
+                      ? profile.full_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                      : "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium">John Doe</p>
+                  <p className="text-sm font-medium">{profile?.full_name || "Loading..."}</p>
                   <p className="text-xs text-muted-foreground">Active member</p>
                 </div>
                 <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
 
               {profileDropdownOpen && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-background border border-border rounded-xl shadow-xl z-50">
+                <div className="absolute top-full right-0 mt-2 w-48 bg-background border rounded-xl shadow-xl z-50">
                   <div className="p-2">
                     <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-primary bg-primary/10">
                       <User className="w-4 h-4" />
@@ -187,11 +192,7 @@ export default function ProfilePage() {
                       </Button>
                     </Link>
                     <Separator className="my-2" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
+                    <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-red-600">
                       <LogOut className="w-4 h-4" />
                       Sign Out
                     </Button>
@@ -203,8 +204,9 @@ export default function ProfilePage() {
         </div>
       </header>
 
+      {/* Profile Header */}
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <Card className="mb-8 bg-background/60 backdrop-blur-xl border-border/50 shadow-xl overflow-hidden">
+        <Card className="mb-8 bg-background/60 backdrop-blur-xl border shadow-xl overflow-hidden">
           <div className="bg-gradient-to-r from-primary to-accent h-32 relative">
             <div className="absolute inset-0 bg-black/10"></div>
           </div>
@@ -212,15 +214,17 @@ export default function ProfilePage() {
             <div className="flex flex-col lg:flex-row items-start gap-8">
               <div className="relative flex-shrink-0">
                 <Avatar className="w-32 h-32 ring-4 ring-background shadow-xl">
-                  <AvatarImage src="/abstract-geometric-shapes.png" />
-                  <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-bold text-4xl">
-                    JD
+                  <AvatarImage src={profile?.profile_picture_url || "/abstract-geometric-shapes.png"} />
+                  <AvatarFallback className="text-4xl font-bold">
+                    {profile?.full_name
+                      ? profile.full_name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                      : "?"}
                   </AvatarFallback>
                 </Avatar>
-                <Button
-                  size="icon"
-                  className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-primary hover:bg-primary/90 shadow-lg"
-                >
+                <Button size="icon" className="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-primary">
                   <Edit className="w-4 h-4" />
                 </Button>
               </div>
@@ -228,17 +232,22 @@ export default function ProfilePage() {
               <div className="flex-1 min-w-0">
                 <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
                   <div>
-                    <h1 className="text-4xl font-bold mb-3" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                      John Doe
-                    </h1>
+                    <h1 className="text-4xl font-bold mb-3">{profile?.full_name || "Loading..."}</h1>
                     <div className="flex flex-wrap items-center gap-6 text-muted-foreground mb-4">
                       <div className="flex items-center gap-2">
                         <MapPin className="w-4 h-4 text-primary" />
-                        <span className="font-medium">London, UK</span>
+                        <span className="font-medium">{profile?.location || "Unknown"}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-primary" />
-                        <span className="font-medium">Joined March 2024</span>
+                        <span className="font-medium">
+                          {profile
+                            ? `Joined ${new Date(profile.created_at).toLocaleDateString("en-US", {
+                                month: "long",
+                                year: "numeric",
+                              })}`
+                            : "Joined ..."}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Shield className="w-4 h-4 text-primary" />
@@ -246,54 +255,32 @@ export default function ProfilePage() {
                       </div>
                     </div>
                   </div>
-                  <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg px-6">
+                  <Button className="bg-gradient-to-r from-primary to-accent shadow-lg px-6">
                     <Edit className="w-4 h-4 mr-2" />
                     Edit Profile
                   </Button>
                 </div>
 
+                {/* Bio */}
                 <p className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-2xl">
-                  Passionate about staying active and meeting new people through sports. Love playing tennis and
-                  football! Always looking for new challenges and great teammates.
+                  {profile?.bio || "No bio yet. Add something about yourself!"}
                 </p>
 
+                {/* Sports */}
                 <div className="flex flex-wrap gap-3 mb-8">
-                  <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-1 text-sm font-medium">
-                    ⚽ Football
-                  </Badge>
-                  <Badge className="bg-accent/10 text-accent border-accent/20 px-3 py-1 text-sm font-medium">
-                    🎾 Tennis
-                  </Badge>
-                  <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 px-3 py-1 text-sm font-medium">
-                    🏃 Running
-                  </Badge>
-                  <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 px-3 py-1 text-sm font-medium">
-                    🏀 Basketball
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="text-center p-4 bg-primary/5 rounded-xl border border-primary/10">
-                    <div className="text-3xl font-bold text-primary mb-1">12</div>
-                    <div className="text-sm font-medium text-muted-foreground">Activities Joined</div>
-                  </div>
-                  <div className="text-center p-4 bg-accent/5 rounded-xl border border-accent/10">
-                    <div className="text-3xl font-bold text-accent mb-1">8</div>
-                    <div className="text-sm font-medium text-muted-foreground">Activities Hosted</div>
-                  </div>
-                  <div className="text-center p-4 bg-yellow-500/5 rounded-xl border border-yellow-500/10">
-                    <div className="text-3xl font-bold text-yellow-600 mb-1">4.9</div>
-                    <div className="text-sm font-medium text-muted-foreground">Rating</div>
-                  </div>
-                  <div className="text-center p-4 bg-blue-500/5 rounded-xl border border-blue-500/10">
-                    <div className="text-3xl font-bold text-blue-600 mb-1">24</div>
-                    <div className="text-sm font-medium text-muted-foreground">Hours Played</div>
-                  </div>
+                  {profile?.selected_sports?.map((sport, idx) => (
+                    <Badge key={idx} className="bg-primary/10 text-primary border-primary/20 px-3 py-1 text-sm font-medium">
+                      {sport}
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
+
+
+
 
         <Tabs defaultValue="activities" className="space-y-8">
           <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-xl border border-border/50 shadow-lg h-14">

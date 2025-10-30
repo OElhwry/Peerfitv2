@@ -1,9 +1,11 @@
 "use client"
 
 import type React from "react"
+import { supabase } from "@/lib/supabaseClient"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -20,6 +22,7 @@ export default function LoginPage() {
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -30,20 +33,47 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulate login process
-    console.log("Login attempt:", formData)
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      })
 
-    // TODO: Implement actual authentication logic
-    setTimeout(() => {
+      if (error) {
+        if (error.message.includes("Invalid login credentials")) {
+          alert("❌ Incorrect email or password.")
+        } else {
+          alert("⚠️ Login failed: " + error.message)
+        }
+        return
+      }
+
+      if (!data.session) {
+        alert("⚠️ No active session returned.")
+        return
+      }
+
+      // ✅ Successful login
+      router.push("/feed")
+    } catch (err: any) {
+      console.error("Login failed:", err)
+      alert("❌ Unexpected error: " + err.message)
+    } finally {
       setIsLoading(false)
-      // Redirect to main feed or dashboard
-      console.log("Login successful - redirect to main feed")
-    }, 2000)
+    }
   }
 
-  const handleGoogleLogin = () => {
-    console.log("Google login initiated")
-    // TODO: Implement Google OAuth
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+      })
+      if (error) throw error
+      // Supabase will handle the redirect automatically
+    } catch (err: any) {
+      console.error("Google login failed:", err)
+      alert("❌ Google login failed: " + err.message)
+    }
   }
 
   return (
@@ -220,3 +250,4 @@ export default function LoginPage() {
     </div>
   )
 }
+

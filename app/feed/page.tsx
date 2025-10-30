@@ -242,43 +242,6 @@ export default function ActivityFeedPage() {
                     <span className="text-sm font-medium">Activities</span>
                   </Button>
                 </Link>
-                <div className="relative">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl px-4 py-2 transition-all relative"
-                    onClick={() => setNotificationOpen(!notificationOpen)}
-                  >
-                    <Bell className="w-4 h-4" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full animate-pulse"></span>
-                  </Button>
-
-                  {notificationOpen && (
-                    <div className="absolute top-full right-0 mt-2 w-80 bg-background border border-border rounded-xl shadow-xl z-50">
-                      <div className="p-4 border-b border-border">
-                        <h3 className="font-semibold">Notifications</h3>
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        {mockNotifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`p-4 border-b border-border/50 hover:bg-muted/30 transition-colors ${
-                              !notification.read ? "bg-primary/5" : ""
-                            }`}
-                          >
-                            <p className="text-sm font-medium">{notification.message}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="p-4 border-t border-border">
-                        <Button variant="ghost" size="sm" className="w-full">
-                          View All Notifications
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
                 <Link href="/profile">
                   <Button
                     variant="ghost"
@@ -301,11 +264,6 @@ export default function ActivityFeedPage() {
                   placeholder="Search activities, sports, locations..."
                   className="w-full pl-12 pr-4 py-3 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 focus:bg-background/50 transition-all duration-200 placeholder:text-muted-foreground/70"
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <kbd className="px-2 py-1 text-xs bg-muted/50 border border-border/30 rounded text-muted-foreground">
-                    ⌘K
-                  </kbd>
-                </div>
               </div>
             </div>
 
