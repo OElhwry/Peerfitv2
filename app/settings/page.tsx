@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -23,13 +23,69 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 export default function SettingsPage() {
+  const router = useRouter()
+  const supabase = createClient()
+
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
   const [pushNotifications, setPushNotifications] = useState(true)
   const [locationSharing, setLocationSharing] = useState(false)
   const [profileVisibility, setProfileVisibility] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  // Account form state
+  const [accountForm, setAccountForm] = useState({
+    full_name: "",
+    email: "",
+    location: "",
+  })
+  const [userId, setUserId] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function loadProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push("/login"); return }
+      setUserId(user.id)
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, location")
+        .eq("id", user.id)
+        .single()
+
+      setAccountForm({
+        full_name: profile?.full_name ?? "",
+        email: user.email ?? "",
+        location: profile?.location ?? "",
+      })
+    }
+    loadProfile()
+  }, [router, supabase])
+
+  const handleSaveSettings = async () => {
+    if (!userId) return
+    setSaving(true)
+    await supabase
+      .from("profiles")
+      .update({
+        full_name: accountForm.full_name || null,
+        location: accountForm.location || null,
+      })
+      .eq("id", userId)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    router.push("/")
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -125,6 +181,7 @@ export default function SettingsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      onClick={handleSignOut}
                       className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <LogOut className="w-4 h-4" />
@@ -181,7 +238,8 @@ export default function SettingsPage() {
                   <label className="text-sm font-medium">Full Name</label>
                   <input
                     type="text"
-                    defaultValue="John Doe"
+                    value={accountForm.full_name}
+                    onChange={(e) => setAccountForm((f) => ({ ...f, full_name: e.target.value }))}
                     className="w-full mt-1 p-3 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
@@ -189,23 +247,19 @@ export default function SettingsPage() {
                   <label className="text-sm font-medium">Email</label>
                   <input
                     type="email"
-                    defaultValue="john.doe@example.com"
-                    className="w-full mt-1 p-3 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    value={accountForm.email}
+                    disabled
+                    className="w-full mt-1 p-3 bg-muted/30 border border-border/50 rounded-xl opacity-60 cursor-not-allowed"
                   />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Phone</label>
-                  <input
-                    type="tel"
-                    defaultValue="+1 (555) 123-4567"
-                    className="w-full mt-1 p-3 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
+                  <p className="text-xs text-muted-foreground mt-1">Email cannot be changed here</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Location</label>
                   <input
                     type="text"
-                    defaultValue="London, UK"
+                    value={accountForm.location}
+                    onChange={(e) => setAccountForm((f) => ({ ...f, location: e.target.value }))}
+                    placeholder="City, Country"
                     className="w-full mt-1 p-3 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                 </div>
@@ -328,11 +382,16 @@ export default function SettingsPage() {
           </Card>
 
           {/* Save Button */}
-          <div className="flex justify-end gap-4">
-            <Button variant="outline">Cancel</Button>
-            <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
+          <div className="flex justify-end gap-4 items-center">
+            {saved && <span className="text-sm text-green-600 font-medium">Settings saved!</span>}
+            <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+            >
               <Save className="w-4 h-4 mr-2" />
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </div>

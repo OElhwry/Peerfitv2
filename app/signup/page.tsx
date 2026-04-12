@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -8,9 +8,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Upload, MapPin, Calendar, Clock } from "lucide-react"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { ArrowLeft, ArrowRight, Eye, EyeOff, MapPin, Calendar, Clock, Phone, Camera } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabaseClient"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
 const sports = [
@@ -34,6 +35,7 @@ const availabilityOptions = ["Weekday Mornings", "Weekday Evenings", "Weekend Mo
 type SignupForm = {
   fullName: string
   email: string
+  phone: string
   password: string
   confirmPassword: string
   location: string
@@ -48,6 +50,8 @@ type SignupForm = {
 export default function SignupPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const [validationErrors, setValidationErrors] = useState({
     fullName: "",
@@ -60,6 +64,7 @@ export default function SignupPage() {
   const [formData, setFormData] = useState<SignupForm>({
     fullName: "",
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     location: "",
@@ -74,58 +79,92 @@ export default function SignupPage() {
 
 
 
-const handleSignup = async () => {
-  try {
-    const cleanEmail = formData.email.trim().toLowerCase();
+const handleGoogleSignup = async () => {
+  const supabase = createClient()
+  await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${window.location.origin}/auth/callback` },
+  })
+}
 
-    // 1. Create the user (active immediately since confirm email is off)
+const handleAvatarChange = (file: File | null) => {
+  handleInputChange("profilePicture", file)
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = (e) => setAvatarPreview(e.target?.result as string)
+    reader.readAsDataURL(file)
+  } else {
+    setAvatarPreview(null)
+  }
+}
+
+const handleSignup = async () => {
+  const supabase = createClient()
+  try {
+    const cleanEmail = formData.email.trim().toLowerCase()
+
+    // 1. Create auth user — trigger auto-creates the profile row
     const { data, error } = await supabase.auth.signUp({
       email: cleanEmail,
       password: formData.password,
-    });
+      options: { data: { full_name: formData.fullName } },
+    })
 
     if (error) {
-      if (error.message.includes("invalid")) {
-        alert("❌ Please enter a valid email address.");
-      } else if (error.message.includes("already registered")) {
-        alert("⚠️ This email is already registered. Please log in instead.");
+      if (error.message.includes("already registered")) {
+        alert("⚠️ This email is already registered. Please log in instead.")
       } else {
-        alert("⚠️ Signup failed: " + error.message);
+        alert("⚠️ Signup failed: " + error.message)
       }
-      return;
+      return
     }
 
-    const user = data.user;
+    const user = data.user
     if (!user) {
-      alert("⚠️ Something went wrong — no user returned.");
-      return;
+      alert("⚠️ Something went wrong — no user returned.")
+      return
     }
 
-    // 2. Insert into profiles table
-    const { error: profileError } = await supabase.from("profiles").insert([
-      {
-        id: user.id, // links to auth.users.id
+    // 2. Update the auto-created profile with name, location, and mark onboarding done
+    await supabase
+      .from("profiles")
+      .update({
         full_name: formData.fullName,
-        location: formData.location,
-        date_of_birth: formData.dateOfBirth,
-        profile_picture_url: null,
-        selected_sports: formData.selectedSports,
-        skill_levels: formData.skillLevels,
-        availability: formData.availability,
-      },
-    ]);
+        location: formData.location || null,
+        onboarding_complete: true,
+      })
+      .eq("id", user.id)
 
-    if (profileError) {
-      alert("⚠️ Failed to save profile info: " + profileError.message);
-      return;
+    // 3. Save sports preferences — look up DB integer IDs by sport name
+    if (formData.selectedSports.length > 0) {
+      const sportNames = formData.selectedSports
+        .map((id) => sports.find((s) => s.id === id)?.name)
+        .filter(Boolean) as string[]
+
+      const { data: dbSports } = await supabase
+        .from("sports")
+        .select("id, name")
+        .in("name", sportNames)
+
+      if (dbSports && dbSports.length > 0) {
+        const userSportsData = dbSports.map((dbSport) => {
+          const frontendId = sports.find((s) => s.name === dbSport.name)?.id
+          return {
+            user_id: user.id,
+            sport_id: dbSport.id,
+            skill_level: (frontendId && formData.skillLevels[frontendId]) || "Beginner",
+          }
+        })
+        await supabase.from("user_sports").insert(userSportsData)
+      }
     }
 
-    router.push("/login")
+    router.push("/feed")
   } catch (err: any) {
-    console.error("Signup failed:", err);
-    alert("❌ Unexpected error: " + err.message);
+    console.error("Signup failed:", err)
+    alert("❌ Unexpected error: " + err.message)
   }
-};
+}
 
 
 
@@ -254,11 +293,6 @@ const handleSignup = async () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1))
   }
 
-  const handleSubmit = () => {
-    console.log("Creating account with:", formData)
-    // Handle account creation
-  }
-
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -277,6 +311,7 @@ const handleSignup = async () => {
               variant="outline"
               className="w-full h-12 text-base bg-white hover:bg-emerald-50 border-2 border-gray-200 hover:border-emerald-400 hover:text-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md group"
               type="button"
+              onClick={handleGoogleSignup}
             >
               <svg className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
                 <path
@@ -349,6 +384,23 @@ const handleSignup = async () => {
                 {validationErrors.email && (
                   <p className="text-red-500 text-sm mt-1 font-medium">{validationErrors.email}</p>
                 )}
+              </div>
+
+              <div>
+                <Label htmlFor="phone" className="text-sm font-semibold text-gray-700">
+                  Phone Number <span className="text-gray-400 font-normal">(optional)</span>
+                </Label>
+                <div className="relative mt-2">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 234 567 8900"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                    className="h-12 pl-10 border-2 border-gray-200 focus:border-emerald-400 focus:ring-emerald-400 transition-colors"
+                  />
+                </div>
               </div>
 
               <div>
@@ -466,25 +518,47 @@ const handleSignup = async () => {
               </div>
 
               <div>
-                <Label htmlFor="profilePicture" className="text-sm font-semibold text-gray-700">
-                  Profile Picture
-                </Label>
-                <div className="border-2 border-dashed border-emerald-300 bg-emerald-50 rounded-lg p-6 text-center hover:border-emerald-400 hover:bg-emerald-100 transition-all duration-200 cursor-pointer mt-2">
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-emerald-600" />
-                  <p className="text-sm text-gray-700 mb-2">
-                    <span className="font-semibold text-emerald-700">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-emerald-600 font-medium">
-                    People with photos get 3x more activity invites!
-                  </p>
-                  <Input
-                    id="profilePicture"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleInputChange("profilePicture", e.target.files?.[0] || null)}
-                  />
+                <Label className="text-sm font-semibold text-gray-700">Profile Picture</Label>
+                <div className="flex items-center gap-4 mt-2">
+                  <Avatar className="w-20 h-20 border-2 border-emerald-200 shrink-0">
+                    {avatarPreview ? (
+                      <AvatarImage src={avatarPreview} alt="Preview" />
+                    ) : (
+                      <AvatarFallback className="bg-emerald-50 text-emerald-400 text-2xl">
+                        {formData.fullName.charAt(0).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className="flex-1">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 border-2 border-dashed border-emerald-300 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-400 rounded-lg px-4 py-3 text-sm text-emerald-700 font-medium transition-all w-full justify-center"
+                    >
+                      <Camera className="h-4 w-4" />
+                      {avatarPreview ? "Change Photo" : "Upload Photo"}
+                    </button>
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={() => handleAvatarChange(null)}
+                        className="text-xs text-red-500 hover:text-red-700 mt-1 w-full text-center"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <p className="text-xs text-gray-500 mt-1 text-center">
+                      People with photos get 3x more invites!
+                    </p>
+                  </div>
                 </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleAvatarChange(e.target.files?.[0] || null)}
+                />
               </div>
             </div>
           </div>
