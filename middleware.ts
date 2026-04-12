@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const protectedRoutes = ['/feed', '/activities', '/profile', '/settings']
+  const protectedRoutes = ['/feed', '/activities', '/profile', '/settings', '/requests']
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
 
   // Unauthenticated user hitting a protected route → send to login
@@ -53,6 +53,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|images|auth/callback|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

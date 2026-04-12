@@ -7,7 +7,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Home, Calendar, User, Settings, LogOut, Bell, ChevronDown, Menu, X, Plus } from "lucide-react"
+import { Home, Calendar, User, Settings, LogOut, Bell, ChevronDown, Menu, X, Plus, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface AppNavProps {
@@ -44,6 +44,7 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
   const navLinks = [
     { href: "/feed", icon: Home, label: "Feed" },
     { href: "/activities", icon: Calendar, label: "Activities" },
+    { href: "/requests", icon: Users, label: "Friends" },
     { href: "/profile", icon: User, label: "Profile" },
   ]
 

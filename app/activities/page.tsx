@@ -2,27 +2,23 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import {
-  Calendar,
   ChevronLeft,
   ChevronRight,
   MapPin,
   Clock,
   Users,
   Plus,
-  User,
-  Settings,
-  LogOut,
-  ChevronDown,
-  Home,
   Loader2,
+  Calendar,
+  Trophy,
+  Activity,
+  Star,
 } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
-import { Separator } from "@/components/ui/separator"
+import AppNav from "@/components/app-nav"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -38,14 +34,13 @@ type DbActivity = {
   host_id: string
   sports: { name: string; emoji: string } | null
   host: { full_name: string | null; avatar_url: string | null } | null
-  activity_participants: { user_id: string }[]
+  activity_participants: { user_id: string; profiles: { full_name: string | null; avatar_url: string | null } | null }[]
 }
 
 function formatTime(timeStr: string): string {
   const [h, m] = timeStr.split(":")
   const hour = parseInt(h)
-  const ampm = hour >= 12 ? "PM" : "AM"
-  return `${hour % 12 || 12}:${m} ${ampm}`
+  return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`
 }
 
 function getInitials(name: string | null): string {
@@ -53,17 +48,52 @@ function getInitials(name: string | null): string {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 }
 
+function getActivityEnd(date: string, time: string, mins: number): Date {
+  return new Date(new Date(`${date}T${time}`).getTime() + mins * 60000)
+}
+
+function isInProgress(a: DbActivity): boolean {
+  const start = new Date(`${a.date}T${a.time}`)
+  const end = getActivityEnd(a.date, a.time, a.duration_minutes)
+  const now = new Date()
+  return now >= start && now < end
+}
+
+function isCompleted(a: DbActivity): boolean {
+  return new Date() >= getActivityEnd(a.date, a.time, a.duration_minutes)
+}
+
+const SPORT_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
+  football: { bg: "bg-emerald-500/10", text: "text-emerald-600", border: "border-emerald-400/30", dot: "bg-emerald-500" },
+  soccer: { bg: "bg-emerald-500/10", text: "text-emerald-600", border: "border-emerald-400/30", dot: "bg-emerald-500" },
+  basketball: { bg: "bg-orange-500/10", text: "text-orange-600", border: "border-orange-400/30", dot: "bg-orange-500" },
+  tennis: { bg: "bg-yellow-500/10", text: "text-yellow-600", border: "border-yellow-400/30", dot: "bg-yellow-500" },
+  swimming: { bg: "bg-blue-500/10", text: "text-blue-600", border: "border-blue-400/30", dot: "bg-blue-500" },
+  running: { bg: "bg-violet-500/10", text: "text-violet-600", border: "border-violet-400/30", dot: "bg-violet-500" },
+  cycling: { bg: "bg-teal-500/10", text: "text-teal-600", border: "border-teal-400/30", dot: "bg-teal-500" },
+  gym: { bg: "bg-red-500/10", text: "text-red-600", border: "border-red-400/30", dot: "bg-red-500" },
+  default: { bg: "bg-primary/10", text: "text-primary", border: "border-primary/30", dot: "bg-primary" },
+}
+
+function getSportColor(sportName: string | null | undefined) {
+  const n = sportName?.toLowerCase() ?? ""
+  for (const [key, val] of Object.entries(SPORT_COLORS)) {
+    if (key !== "default" && n.includes(key)) return val
+  }
+  return SPORT_COLORS.default
+}
+
 export default function ActivitiesPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [currentWeek, setCurrentWeek] = useState(new Date())
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
   const [activities, setActivities] = useState<DbActivity[]>([])
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [userId, setUserId] = useState<string | null>(null)
-  const [userProfile, setUserProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [myTab, setMyTab] = useState<"mine" | "upcoming">("mine")
 
   useEffect(() => {
     async function init() {
@@ -72,21 +102,19 @@ export default function ActivitiesPage() {
       setUserId(user.id)
 
       const today = new Date().toISOString().split("T")[0]
+      setSelectedDay(today)
 
-      const [{ data: profile }, { data: allActivities }, { data: joined }] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single(),
+      const [{ data: allActivities }, { data: joined }] = await Promise.all([
         supabase
           .from("activities")
-          .select(`*, sports (name, emoji), host:profiles!host_id (full_name, avatar_url), activity_participants (user_id)`)
+          .select(`*, sports(name,emoji), host:profiles!host_id(full_name,avatar_url), activity_participants(user_id, profiles:user_id(full_name,avatar_url))`)
           .eq("status", "open")
           .gte("date", today)
-          .order("date", { ascending: true })
-          .order("time", { ascending: true })
-          .limit(50),
+          .order("date").order("time")
+          .limit(60),
         supabase.from("activity_participants").select("activity_id").eq("user_id", user.id),
       ])
 
-      if (profile) setUserProfile(profile)
       if (allActivities) setActivities(allActivities as unknown as DbActivity[])
       if (joined) setJoinedIds(new Set(joined.map((j: { activity_id: string }) => j.activity_id)))
       setLoading(false)
@@ -94,362 +122,356 @@ export default function ActivitiesPage() {
     init()
   }, [router, supabase])
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
-  }
+  // Calendar
+  const year = currentMonth.getFullYear()
+  const month = currentMonth.getMonth()
+  const firstDay = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const today = new Date().toISOString().split("T")[0]
 
-  // Calendar helpers
-  const getWeekStart = (date: Date) => {
-    const d = new Date(date)
-    const diff = d.getDate() - d.getDay()
-    return new Date(d.setDate(diff))
-  }
+  const toDateStr = (d: number) => `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
 
-  const getWeekDays = (startDate: Date) => {
-    const days = []
-    for (let i = 0; i < 7; i++) {
-      const day = new Date(startDate)
-      day.setDate(startDate.getDate() + i)
-      days.push(day)
-    }
-    return days
-  }
+  const activityDots = (dateStr: string) => activities.filter((a) => a.date === dateStr).slice(0, 4)
 
-  const weekStart = getWeekStart(currentWeek)
-  const weekDays = getWeekDays(weekStart)
+  const dayActivities = selectedDay ? activities.filter((a) => a.date === selectedDay) : []
 
-  const navigateWeek = (direction: "prev" | "next") => {
-    const newDate = new Date(currentWeek)
-    newDate.setDate(currentWeek.getDate() + (direction === "next" ? 7 : -7))
-    setCurrentWeek(newDate)
-  }
-
-  const getActivitiesForDate = (date: Date) => {
-    const dateStr = date.toLocaleDateString("en-CA") // YYYY-MM-DD
-    return activities.filter((a) => a.date === dateStr)
-  }
-
-  const isToday = (date: Date) => date.toDateString() === new Date().toDateString()
-
-  const formatMonthYear = (date: Date) =>
-    date.toLocaleDateString("en-US", { month: "long", year: "numeric" })
-
-  // Activities the user joined (for "My Activities" list)
   const myActivities = activities.filter((a) => joinedIds.has(a.id) || a.host_id === userId)
-  const allUpcoming = activities.slice(0, 10)
+  const upcoming = activities.filter((a) => !joinedIds.has(a.id) && a.host_id !== userId).slice(0, 12)
+
+  const prevMonth = () => setCurrentMonth(new Date(year, month - 1, 1))
+  const nextMonth = () => setCurrentMonth(new Date(year, month + 1, 1))
+
+  const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+  const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Header */}
-      <header className="bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <Link href="/feed" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <div className="relative">
-                  <Image src="/images/peerfit-logo.png" alt="PeerFit Logo" width={100} height={100} className="w-12 h-12 object-contain" />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-primary to-accent rounded-full animate-pulse"></div>
-                </div>
-                <div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                    PeerFit
-                  </span>
-                  <p className="text-xs text-muted-foreground">Find your sports community</p>
-                </div>
-              </Link>
+      <AppNav />
 
-              <nav className="hidden lg:flex items-center gap-2">
-                <Link href="/feed">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl px-4 py-2 transition-all">
-                    <Home className="w-4 h-4" />
-                    <span className="text-sm font-medium">Feed</span>
-                  </Button>
-                </Link>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2 text-primary bg-primary/10 rounded-xl px-4 py-2">
-                  <Calendar className="w-4 h-4" />
-                  <span className="text-sm font-medium">Activities</span>
-                </Button>
-                <Link href="/profile">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2 text-muted-foreground hover:text-primary hover:bg-primary/5 rounded-xl px-4 py-2 transition-all">
-                    <User className="w-4 h-4" />
-                    <span className="text-sm font-medium">Profile</span>
-                  </Button>
-                </Link>
-              </nav>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Link href="/feed">
-                <Button size="lg" className="bg-gradient-to-r from-primary via-primary to-accent hover:from-primary/90 hover:via-primary/90 hover:to-accent/90 shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-200 px-6 py-3 hidden md:flex">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Create Activity
-                </Button>
-              </Link>
-
-              <div className="relative">
-                <div
-                  className="flex items-center gap-2 cursor-pointer hover:bg-muted/30 rounded-xl p-2 transition-colors"
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                >
-                  <Avatar className="w-9 h-9 ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
-                    <AvatarImage src={userProfile?.avatar_url ?? undefined} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-semibold">
-                      {getInitials(userProfile?.full_name ?? null)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
-
-                {profileDropdownOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-background border border-border rounded-xl shadow-xl z-50">
-                    <div className="p-2">
-                      <Link href="/profile">
-                        <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                          <User className="w-4 h-4" />Profile
-                        </Button>
-                      </Link>
-                      <Link href="/settings">
-                        <Button variant="ghost" size="sm" className="w-full justify-start gap-2">
-                          <Settings className="w-4 h-4" />Settings
-                        </Button>
-                      </Link>
-                      <Separator className="my-2" />
-                      <Button variant="ghost" size="sm" onClick={handleSignOut} className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <LogOut className="w-4 h-4" />Sign Out
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Page header */}
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-space-grotesk)" }}>Activities</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Your schedule and upcoming sessions</p>
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            My Activities
-          </h1>
-          <p className="text-muted-foreground">View and manage your sports activities</p>
+          <Link href="/feed">
+            <Button className="bg-gradient-to-r from-primary to-accent gap-2 text-sm">
+              <Plus className="w-4 h-4" />Create Activity
+            </Button>
+          </Link>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
         ) : (
-          <>
-            {/* Calendar */}
-            <Card className="bg-background/60 backdrop-blur-xl border-border/50 shadow-lg">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl font-bold">{formatMonthYear(currentWeek)}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => navigateWeek("prev")} className="hover:bg-primary/10">
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => setCurrentWeek(new Date())} className="hover:bg-primary/10">
-                      Today
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => navigateWeek("next")} className="hover:bg-primary/10">
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left: Calendar */}
+            <div className="lg:col-span-1 space-y-4">
+              {/* Stats pills */}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: Activity, label: "Joined", value: joinedIds.size, color: "text-primary bg-primary/8 border-primary/15" },
+                  { icon: Calendar, label: "Upcoming", value: myActivities.length, color: "text-accent bg-accent/8 border-accent/15" },
+                  { icon: Trophy, label: "My events", value: activities.filter(a => a.host_id === userId).length, color: "text-yellow-600 bg-yellow-500/8 border-yellow-500/15" },
+                ].map(({ icon: Icon, label, value, color }) => (
+                  <div key={label} className={`rounded-xl p-3 border text-center ${color}`}>
+                    <p className="text-lg font-bold">{value}</p>
+                    <p className="text-[10px] font-medium mt-0.5">{label}</p>
                   </div>
+                ))}
+              </div>
+
+              {/* Calendar */}
+              <div className="bg-background/70 border border-border/50 rounded-2xl overflow-hidden shadow-sm">
+                {/* Month header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+                  <button onClick={prevMonth} className="w-7 h-7 rounded-lg hover:bg-muted/40 flex items-center justify-center transition-colors">
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <div className="text-center">
+                    <p className="text-sm font-bold">{MONTH_NAMES[month]}</p>
+                    <p className="text-xs text-muted-foreground">{year}</p>
+                  </div>
+                  <button onClick={nextMonth} className="w-7 h-7 rounded-lg hover:bg-muted/40 flex items-center justify-center transition-colors">
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-7 gap-2 md:gap-4">
-                  {weekDays.map((day, index) => {
-                    const dayActivities = getActivitiesForDate(day)
-                    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+                {/* Day names */}
+                <div className="grid grid-cols-7 px-2 pt-2">
+                  {DAY_NAMES.map((d) => (
+                    <div key={d} className="text-center text-[10px] font-semibold text-muted-foreground py-1">{d}</div>
+                  ))}
+                </div>
+
+                {/* Days grid */}
+                <div className="grid grid-cols-7 gap-px px-2 pb-3">
+                  {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+                  {Array.from({ length: daysInMonth }).map((_, i) => {
+                    const d = i + 1
+                    const dateStr = toDateStr(d)
+                    const dots = activityDots(dateStr)
+                    const isT = dateStr === today
+                    const isSel = dateStr === selectedDay
+                    const hasActs = dots.length > 0
 
                     return (
-                      <div
-                        key={index}
-                        className={`min-h-32 p-2 md:p-4 rounded-xl border transition-all ${
-                          isToday(day) ? "bg-primary/10 border-primary/30" : "bg-muted/20 border-border/30 hover:bg-muted/30"
+                      <button
+                        key={d}
+                        onClick={() => setSelectedDay(dateStr)}
+                        className={`relative flex flex-col items-center py-1.5 rounded-lg transition-all ${
+                          isSel
+                            ? "bg-primary text-primary-foreground"
+                            : isT
+                            ? "bg-primary/10 text-primary font-semibold"
+                            : "hover:bg-muted/40"
                         }`}
                       >
-                        <div className="text-center mb-3">
-                          <p className="text-xs font-medium text-muted-foreground">{dayNames[index]}</p>
-                          <p className={`text-lg font-bold ${isToday(day) ? "text-primary" : ""}`}>{day.getDate()}</p>
-                        </div>
-
-                        <div className="space-y-2">
-                          {dayActivities.map((activity) => {
-                            const isJoined = joinedIds.has(activity.id)
-                            const isHost = activity.host_id === userId
-                            return (
-                              <div
-                                key={activity.id}
-                                className={`p-2 rounded-lg border hover:shadow-md transition-all cursor-pointer ${
-                                  isJoined || isHost ? "bg-primary/10 border-primary/20" : "bg-background/80 border-border/50"
-                                }`}
-                              >
-                                <div className="flex items-center gap-1 mb-1">
-                                  <span className="text-sm">{activity.sports?.emoji ?? "🏃"}</span>
-                                  <p className="text-xs font-semibold truncate">{activity.title}</p>
-                                </div>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{formatTime(activity.time)}</span>
-                                </div>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <MapPin className="w-3 h-3" />
-                                  <span className="truncate">{activity.location}</span>
-                                </div>
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                  <Users className="w-3 h-3" />
-                                  <span>{activity.activity_participants?.length ?? 0}/{activity.max_participants}</span>
-                                </div>
-                              </div>
-                            )
-                          })}
-                          {dayActivities.length === 0 && (
-                            <div className="text-center py-4">
-                              <p className="text-xs text-muted-foreground">No activities</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* My Activities */}
-            {myActivities.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold mb-6">My Activities</h2>
-                <div className="grid gap-4">
-                  {myActivities.map((activity) => {
-                    const participantCount = activity.activity_participants?.length ?? 0
-                    const isHost = activity.host_id === userId
-                    return (
-                      <Card key={activity.id} className="bg-background/60 backdrop-blur-xl border-border/50 hover:shadow-lg transition-all">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl flex items-center justify-center text-2xl">
-                                {activity.sports?.emoji ?? "🏃"}
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-bold">{activity.title}</h3>
-                                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>{new Date(activity.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{formatTime(activity.time)}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="w-4 h-4" />
-                                    <span>{activity.location}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right flex flex-col items-end gap-2">
-                              <Badge variant="secondary">
-                                {participantCount}/{activity.max_participants} players
-                              </Badge>
-                              {isHost && (
-                                <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">Host</Badge>
-                              )}
-                            </div>
+                        <span className={`text-xs ${isSel ? "text-white" : ""}`}>{d}</span>
+                        {hasActs && (
+                          <div className="flex gap-0.5 mt-0.5">
+                            {dots.slice(0, 3).map((a, idx) => {
+                              const col = getSportColor(a.sports?.name)
+                              return <span key={idx} className={`w-1 h-1 rounded-full ${isSel ? "bg-white/70" : col.dot}`} />
+                            })}
                           </div>
-                        </CardContent>
-                      </Card>
+                        )}
+                      </button>
                     )
                   })}
                 </div>
               </div>
-            )}
 
-            {/* All Upcoming */}
-            <div className="mt-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Upcoming Near You</h2>
-                <Link href="/feed">
-                  <Button variant="outline" size="sm">View All</Button>
-                </Link>
-              </div>
-              {allUpcoming.length === 0 ? (
-                <Card className="bg-background/60 backdrop-blur-xl border-border/50">
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground mb-4">No upcoming activities yet.</p>
-                    <Link href="/feed">
-                      <Button className="bg-gradient-to-r from-primary to-accent">
-                        <Plus className="w-4 h-4 mr-2" />Browse Activities
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-4">
-                  {allUpcoming.map((activity) => {
-                    const participantCount = activity.activity_participants?.length ?? 0
-                    const spotsLeft = activity.max_participants - participantCount
-                    const isJoined = joinedIds.has(activity.id)
-                    const isHost = activity.host_id === userId
-                    return (
-                      <Card key={activity.id} className="bg-background/60 backdrop-blur-xl border-border/50 hover:shadow-lg transition-all">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl flex items-center justify-center text-2xl">
-                                {activity.sports?.emoji ?? "🏃"}
-                              </div>
-                              <div>
-                                <h3 className="text-lg font-bold">{activity.title}</h3>
-                                <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>{new Date(activity.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{formatTime(activity.time)}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="w-4 h-4" />
-                                    <span>{activity.location}</span>
-                                  </div>
-                                </div>
-                              </div>
+              {/* Selected day panel */}
+              {selectedDay && (
+                <div className="bg-background/70 border border-border/50 rounded-2xl p-4 shadow-sm">
+                  <p className="text-sm font-semibold mb-3 text-muted-foreground">
+                    {new Date(selectedDay + "T00:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+                  </p>
+                  {dayActivities.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-4">No activities this day</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {dayActivities.map((a) => {
+                        const col = getSportColor(a.sports?.name)
+                        const isJoined = joinedIds.has(a.id)
+                        const isHost = a.host_id === userId
+                        const live = isInProgress(a)
+                        return (
+                          <div key={a.id} className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${col.bg} ${col.border}`}>
+                            <span className="text-lg shrink-0">{a.sports?.emoji ?? "🏃"}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-xs font-semibold truncate ${col.text}`}>{a.title}</p>
+                              <p className="text-[10px] text-muted-foreground">{formatTime(a.time)} · {a.location}</p>
                             </div>
-                            <div className="text-right flex flex-col items-end gap-2">
-                              <Badge variant="secondary">
-                                {participantCount}/{activity.max_participants} players
-                              </Badge>
-                              <div className="text-xs text-muted-foreground">
-                                <span className={`font-semibold ${spotsLeft === 0 ? "text-red-500" : "text-accent"}`}>{spotsLeft}</span> spots left
-                              </div>
-                              {isHost ? (
-                                <Badge className="bg-primary/10 text-primary border-primary/20 text-xs">Your Activity</Badge>
-                              ) : isJoined ? (
-                                <Badge className="bg-green-100 text-green-700 border-green-200 text-xs">Joined</Badge>
-                              ) : (
-                                <Link href="/feed">
-                                  <Button size="sm" className="bg-gradient-to-r from-primary to-accent">Join</Button>
-                                </Link>
-                              )}
+                            <div className="shrink-0 flex flex-col items-end gap-0.5">
+                              {live && <span className="text-[9px] text-red-500 font-bold">LIVE</span>}
+                              {isHost && <span className={`text-[9px] font-bold ${col.text}`}>Host</span>}
+                              {!isHost && isJoined && <span className="text-[9px] font-bold text-green-600">Joined</span>}
                             </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          </>
+
+            {/* Right: My sessions + upcoming */}
+            <div className="lg:col-span-2">
+              {/* Tab bar */}
+              <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl border border-border/40 mb-5 w-fit">
+                {([
+                  { key: "mine" as const, label: `My Sessions${myActivities.length > 0 ? ` (${myActivities.length})` : ""}` },
+                  { key: "upcoming" as const, label: `Upcoming${upcoming.length > 0 ? ` (${upcoming.length})` : ""}` },
+                ]).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setMyTab(key)}
+                    className={`px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${
+                      myTab === key
+                        ? "bg-background shadow-sm text-foreground border border-border/60"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* My sessions grid */}
+              {myTab === "mine" && (
+                myActivities.length === 0 ? (
+                  <div className="text-center py-16 border border-dashed border-border/50 rounded-2xl">
+                    <Activity className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm font-medium mb-1">No sessions yet</p>
+                    <p className="text-xs text-muted-foreground mb-4">Join or create activities to see them here</p>
+                    <Link href="/feed">
+                      <Button size="sm" className="bg-gradient-to-r from-primary to-accent gap-1.5">
+                        <Plus className="w-3.5 h-3.5" />Browse Activities
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {myActivities.map((a) => {
+                      const col = getSportColor(a.sports?.name)
+                      const isHost = a.host_id === userId
+                      const participantCount = a.activity_participants?.length ?? 0
+                      const spotsLeft = a.max_participants - participantCount
+                      const live = isInProgress(a)
+                      const done = isCompleted(a)
+                      const participants = (a.activity_participants ?? []).slice(0, 3)
+
+                      return (
+                        <div key={a.id} className={`rounded-2xl border overflow-hidden transition-all hover:shadow-md ${live ? "border-red-400/50 shadow-red-500/5" : "border-border/50"} bg-background/70`}>
+                          {/* Top color strip */}
+                          <div className={`h-1 w-full ${live ? "bg-gradient-to-r from-red-400 to-rose-500 animate-pulse" : `bg-gradient-to-r ${col.dot} opacity-60`}`}
+                            style={live ? {} : { background: "linear-gradient(to right, var(--tw-gradient-from), var(--tw-gradient-to))" }}
+                          />
+                          <div className="p-4">
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${col.bg} border ${col.border}`}>
+                                {a.sports?.emoji ?? "🏃"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm truncate leading-tight">{a.title}</p>
+                                <p className={`text-[10px] font-semibold mt-0.5 ${col.text}`}>{a.sports?.name}</p>
+                              </div>
+                              {live ? (
+                                <Badge className="text-[10px] bg-red-500 text-white border-red-400 gap-0.5 animate-pulse shrink-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />Live
+                                </Badge>
+                              ) : isHost ? (
+                                <Badge className={`text-[10px] ${col.bg} ${col.text} border ${col.border} shrink-0`}>Host</Badge>
+                              ) : done ? (
+                                <Badge className="text-[10px] bg-yellow-500/10 text-yellow-600 border-yellow-400/20 shrink-0">Done</Badge>
+                              ) : (
+                                <Badge className="text-[10px] bg-green-500/10 text-green-600 border-green-400/20 shrink-0">Joined</Badge>
+                              )}
+                            </div>
+
+                            <div className="space-y-1.5 mb-3">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Calendar className="w-3 h-3 shrink-0" />
+                                {new Date(a.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+                                {" · "}
+                                <Clock className="w-3 h-3 shrink-0" />
+                                {formatTime(a.time)}
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <MapPin className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{a.location}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex -space-x-1.5">
+                                  {participants.map((p, i) => (
+                                    <Avatar key={i} className="w-5 h-5 ring-1 ring-background">
+                                      <AvatarImage src={p.profiles?.avatar_url ?? undefined} />
+                                      <AvatarFallback className={`text-[8px] font-bold ${col.bg} ${col.text}`}>
+                                        {getInitials(p.profiles?.full_name ?? null)}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  ))}
+                                </div>
+                                <span className="text-[10px] text-muted-foreground">{participantCount}/{a.max_participants}</span>
+                              </div>
+                              <span className={`text-[10px] font-semibold ${spotsLeft === 0 ? "text-red-500" : spotsLeft <= 2 ? "text-orange-500" : "text-muted-foreground"}`}>
+                                {spotsLeft === 0 ? "Full" : `${spotsLeft} left`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              )}
+
+              {/* All upcoming grid */}
+              {myTab === "upcoming" && (
+                upcoming.length === 0 ? (
+                  <div className="text-center py-16 border border-dashed border-border/50 rounded-2xl">
+                    <Calendar className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm font-medium mb-1">No upcoming activities</p>
+                    <p className="text-xs text-muted-foreground mb-4">Check back soon or create your own</p>
+                    <Link href="/feed">
+                      <Button size="sm" className="bg-gradient-to-r from-primary to-accent gap-1.5">
+                        <Plus className="w-3.5 h-3.5" />Browse Feed
+                      </Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {upcoming.map((a) => {
+                      const col = getSportColor(a.sports?.name)
+                      const participantCount = a.activity_participants?.length ?? 0
+                      const spotsLeft = a.max_participants - participantCount
+                      const live = isInProgress(a)
+
+                      return (
+                        <div key={a.id} className={`rounded-2xl border overflow-hidden transition-all hover:shadow-md ${live ? "border-red-400/50" : "border-border/50"} bg-background/70 group`}>
+                          <div className={`h-1 bg-gradient-to-r ${live ? "from-red-400 to-rose-500 animate-pulse" : ""}`}
+                            style={live ? {} : { background: `linear-gradient(to right, ${col.dot.replace("bg-", "")} 0%, transparent 100%)` }}
+                          />
+                          <div className="p-3.5">
+                            <div className="flex items-start gap-2.5 mb-2.5">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${col.bg} border ${col.border}`}>
+                                {a.sports?.emoji ?? "🏃"}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-xs truncate leading-tight group-hover:text-primary transition-colors">{a.title}</p>
+                                <p className={`text-[10px] font-medium ${col.text}`}>{a.sports?.name}</p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1 mb-3">
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <Calendar className="w-2.5 h-2.5" />
+                                {new Date(a.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
+                                {" · "}{formatTime(a.time)}
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <MapPin className="w-2.5 h-2.5" />
+                                <span className="truncate">{a.location}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                                <Star className="w-2.5 h-2.5" />{a.skill_level}
+                                <span className="ml-auto font-semibold">{participantCount}/{a.max_participants}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-2">
+                              {live && (
+                                <Badge className="text-[9px] bg-red-500 text-white border-red-400 gap-0.5 animate-pulse">
+                                  <span className="w-1 h-1 rounded-full bg-white inline-block" />Live
+                                </Badge>
+                              )}
+                              <span className={`text-[10px] font-semibold ${spotsLeft === 0 ? "text-red-500" : "text-muted-foreground"} ml-auto`}>
+                                {spotsLeft === 0 ? "Full" : `${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} left`}
+                              </span>
+                              <Link href="/feed">
+                                <Button size="sm" className={`h-7 px-2.5 text-[10px] font-semibold ${col.bg} ${col.text} border ${col.border} hover:opacity-80`} variant="outline">
+                                  Join
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
         )}
       </div>
     </div>
