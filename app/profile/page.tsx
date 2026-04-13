@@ -314,17 +314,13 @@ export default function ProfilePage() {
 
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Incomplete profile nudge */}
-        {(!profile?.full_name || profile.full_name === "Your Name" || !profile?.location) && !editing && (
+        {(!profile?.full_name || profile.full_name === "Your Name" || !profile?.location || !profile?.avatar_url) && !editing && (
           <div className="mb-5 flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl px-4 py-3.5">
             <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Finish setting up your profile</p>
+              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Complete your profile so people know who they&apos;re playing with</p>
               <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">
-                {!profile?.full_name || profile.full_name === "Your Name"
-                  ? "Add your real name"
-                  : "Add your city"}
-                {(!profile?.full_name || profile.full_name === "Your Name") && !profile?.location && " and city"}
-                {" "}so other players know who you are.
+                Add your full name, location, and a profile photo to make your account feel real and help other players trust your requests faster.
               </p>
             </div>
             <button
