@@ -49,6 +49,17 @@ const PREV_STEP: Record<SignupStep, SignupStep> = {
   "verify-phone": "phone",
 }
 
+function splitPhoneNumber(fullPhone: string) {
+  const knownCodes = [...new Set(COUNTRY_CODES.map((country) => country.code))].sort((a, b) => b.length - a.length)
+  const matchedCode = knownCodes.find((code) => fullPhone.startsWith(code))
+
+  if (!matchedCode) {
+    return { code: "+44", local: fullPhone.replace(/^\+/, "") }
+  }
+
+  return { code: matchedCode, local: fullPhone.slice(matchedCode.length) }
+}
+
 const SPORT_TILES = [
   { img: "/images/sports/football.jpg",   label: "Football" },
   { img: "/images/sports/basketball.jpg", label: "Basketball" },
@@ -116,12 +127,6 @@ function pwStrength(pw: string): { bars: number; label: string; color: string } 
   return { bars: 3, label: "Strong", color: "bg-emerald-400" }
 }
 
-function maskEmail(email: string) {
-  const [local, domain] = email.split("@")
-  if (!local || !domain) return email
-  return `${local[0]}${"*".repeat(Math.max(local.length - 2, 2))}${local.slice(-1)}@${domain}`
-}
-
 function AuthPageContent() {
   const router       = useRouter()
   const searchParams = useSearchParams()
@@ -185,6 +190,18 @@ function AuthPageContent() {
       if (cancelled || !user) return
 
       if (user.email) setSuEmail(user.email.toLowerCase())
+
+      const metadata =
+        user.user_metadata && typeof user.user_metadata === "object"
+          ? (user.user_metadata as Record<string, unknown>)
+          : {}
+      const pendingPhone = typeof metadata.pending_phone === "string" ? metadata.pending_phone : ""
+
+      if (pendingPhone) {
+        const { code, local } = splitPhoneNumber(pendingPhone)
+        setCc(code)
+        setPhone(local)
+      }
     }
 
     loadUser()
@@ -243,9 +260,35 @@ function AuthPageContent() {
     setStep("terms"); setSuLoading(false)
   }
 
-  const acceptTerms = () => {
+  const acceptTerms = async () => {
     if (!ageTerms || !ageCons) { setSuError("You must agree to both Terms of Service and Consumer Terms."); return }
-    setSuError(""); setStep("dob")
+    setSuError("")
+    setSuLoading(true)
+
+    const sb = createClient()
+    const { data: { user } } = await sb.auth.getUser()
+    const metadata =
+      user?.user_metadata && typeof user.user_metadata === "object"
+        ? (user.user_metadata as Record<string, unknown>)
+        : {}
+
+    const { error } = await sb.auth.updateUser({
+      data: {
+        ...metadata,
+        accepted_terms_at: new Date().toISOString(),
+        accepted_consumer_terms_at: new Date().toISOString(),
+        marketing_opt_in: ageMkt,
+      },
+    })
+
+    if (error) {
+      setSuError(error.message)
+      setSuLoading(false)
+      return
+    }
+
+    setSuLoading(false)
+    setStep("dob")
   }
 
   const saveDob = async () => {
@@ -269,7 +312,21 @@ function AuthPageContent() {
     setSuError("")
     if (phone.replace(/\D/g, "").length < 7) { setSuError("Please enter a valid phone number."); return }
     setSuLoading(true)
-    const { error } = await createClient().auth.updateUser({ phone: `${cc}${phone.replace(/\D/g, "")}` })
+    const sb = createClient()
+    const fullPhone = `${cc}${phone.replace(/\D/g, "")}`
+    const { data: { user } } = await sb.auth.getUser()
+    const metadata =
+      user?.user_metadata && typeof user.user_metadata === "object"
+        ? (user.user_metadata as Record<string, unknown>)
+        : {}
+
+    const { error } = await sb.auth.updateUser({
+      phone: fullPhone,
+      data: {
+        ...metadata,
+        pending_phone: fullPhone,
+      },
+    })
     if (error) { setSuError(error.message); setSuLoading(false); return }
     setStep("verify-phone"); setCountdown(60); setSuLoading(false)
   }
@@ -280,10 +337,23 @@ function AuthPageContent() {
     if (code.length !== 6) { setSuError("Please enter the 6-digit code."); return }
     setSuLoading(true)
     const fullPhone = `${cc}${phone.replace(/\D/g, "")}`
-    const { error } = await createClient().auth.verifyOtp({ phone: fullPhone, token: code, type: "phone_change" })
+    const sb = createClient()
+    const { error } = await sb.auth.verifyOtp({ phone: fullPhone, token: code, type: "phone_change" })
     if (error) { setSuError(error.message || "We couldn't verify that code. Please try again."); setSuLoading(false); return }
-    const { data: { user } } = await createClient().auth.getUser()
-    if (user) await createClient().from("profiles").update({ phone: fullPhone, onboarding_complete: true }).eq("id", user.id)
+    const { data: { user } } = await sb.auth.getUser()
+    const metadata =
+      user?.user_metadata && typeof user.user_metadata === "object"
+        ? (user.user_metadata as Record<string, unknown>)
+        : {}
+
+    await sb.auth.updateUser({
+      data: {
+        ...metadata,
+        pending_phone: null,
+      },
+    })
+
+    if (user) await sb.from("profiles").update({ phone: fullPhone, onboarding_complete: true }).eq("id", user.id)
     setSuLoading(false); router.push("/feed")
   }
 
@@ -647,7 +717,7 @@ function AuthPageContent() {
                   <div className="border-t border-white/8 pt-3 space-y-1.5">
                     <p className="text-xs text-white/35 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      Email verified as <span className="text-white/55 font-medium">{maskEmail(suEmail)}</span>
+                      Email verified as <span className="text-white/55 font-medium">{suEmail}</span>
                     </p>
                     <button onClick={() => { setStep("email"); setSuEmail(""); setSuPw(""); setEmailCode("") }}
                       className="text-xs text-emerald-400/60 hover:text-emerald-400">
@@ -685,7 +755,7 @@ function AuthPageContent() {
                   <div className="border-t border-white/8 pt-3 space-y-1.5">
                     <p className="text-xs text-white/35 flex items-center gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      Email verified as <span className="text-white/55 font-medium">{maskEmail(suEmail)}</span>
+                      Email verified as <span className="text-white/55 font-medium">{suEmail}</span>
                     </p>
                     <button onClick={() => { setStep("email"); setSuEmail(""); setSuPw(""); setEmailCode("") }}
                       className="text-xs text-emerald-400/60 hover:text-emerald-400">
