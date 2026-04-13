@@ -17,6 +17,10 @@ const REMEMBER_KEY = "peerfit_remember_email"
 
 type SignupStep = "email" | "verify-email" | "terms" | "dob" | "phone" | "verify-phone"
 
+function isSignupStep(value: string | null): value is SignupStep {
+  return value !== null && ["email", "verify-email", "terms", "dob", "phone", "verify-phone"].includes(value)
+}
+
 const COUNTRY_CODES = [
   { code: "+1",   label: "🇺🇸 US  +1" },
   { code: "+1",   label: "🇨🇦 CA  +1" },
@@ -121,8 +125,11 @@ function maskEmail(email: string) {
 function AuthPageContent() {
   const router       = useRouter()
   const searchParams = useSearchParams()
+  const stepParam = searchParams.get("step")
+  const requestedMode = searchParams.get("mode")
+  const requestedStep: SignupStep | null = isSignupStep(stepParam) ? stepParam : null
   const [active, setActive] = useState<"signin" | "signup">(
-    searchParams.get("mode") === "signup" ? "signup" : "signin"
+    requestedMode === "signup" ? "signup" : "signin"
   )
 
   /* sign-in */
@@ -134,7 +141,7 @@ function AuthPageContent() {
   const [siError,  setSiError]  = useState("")
 
   /* sign-up stepped */
-  const [step,       setStep]       = useState<SignupStep>("email")
+  const [step,       setStep]       = useState<SignupStep>(requestedStep ?? "email")
   const [suEmail,    setSuEmail]    = useState("")
   const [suPw,       setSuPw]       = useState("")
   const [showSuPw,   setShowSuPw]   = useState(false)
@@ -156,6 +163,36 @@ function AuthPageContent() {
     const s = localStorage.getItem(REMEMBER_KEY)
     if (s) { setSiEmail(s); setRememberMe(true) }
   }, [])
+
+  useEffect(() => {
+    setActive(requestedMode === "signup" ? "signup" : "signin")
+    if (requestedMode === "signup" && requestedStep) {
+      setStep(requestedStep)
+      setSuError("")
+      setSiError("")
+    }
+  }, [requestedMode, requestedStep])
+
+  useEffect(() => {
+    if (requestedMode !== "signup" || !requestedStep || requestedStep === "email" || requestedStep === "verify-email") {
+      return
+    }
+
+    let cancelled = false
+
+    const loadUser = async () => {
+      const { data: { user } } = await createClient().auth.getUser()
+      if (cancelled || !user) return
+
+      if (user.email) setSuEmail(user.email.toLowerCase())
+    }
+
+    loadUser()
+
+    return () => {
+      cancelled = true
+    }
+  }, [requestedMode, requestedStep])
 
   useEffect(() => {
     if (countdown <= 0) return
@@ -253,13 +290,16 @@ function AuthPageContent() {
   const handleGoogle = async () => {
     await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboarding` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/login?mode=signup&step=terms")}`,
+      },
     })
   }
 
   const otpReady = (v: string) => v.replace(/\s/g, "").length === 6
   const stepIdx  = SIGNUP_STEPS.indexOf(step)
   const suStrength = pwStrength(suPw)
+  const hideSignupBackButton = step === "terms" && requestedStep === "terms"
 
   /* shared input class for dark panel */
   const darkInput = "w-full h-11 bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/25 text-sm px-4 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
@@ -319,7 +359,7 @@ function AuthPageContent() {
             {/* Progress dots — only visible on signup, sits inline with tabs */}
             {active === "signup" && (
               <div className="ml-auto pb-3 flex items-center gap-1.5">
-                {step !== "email" && (
+                {step !== "email" && !hideSignupBackButton && (
                   <button onClick={() => { setStep(PREV_STEP[step]); setSuError("") }}
                     className="flex items-center gap-0.5 text-white/35 hover:text-white/65 text-xs transition-colors mr-2">
                     <ChevronLeft className="w-3.5 h-3.5" />Back
@@ -496,6 +536,11 @@ function AuthPageContent() {
               {step === "terms" && (
                 <div className="space-y-4">
                   <p className="text-white/45 text-sm">Before you continue, review and agree to our terms.</p>
+                  {requestedStep === "terms" && (
+                    <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                      Your Google account is connected. Finish these last details to complete your PeerFit profile.
+                    </div>
+                  )}
 
                   <div className="space-y-4 bg-white/5 border border-white/8 rounded-xl p-4">
                     <label className="flex items-start gap-3 cursor-pointer">
