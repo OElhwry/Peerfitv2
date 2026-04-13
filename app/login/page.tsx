@@ -12,7 +12,6 @@ import {
   Eye, EyeOff, Mail, Lock, ArrowRight, Loader2,
   ChevronLeft, Phone, CheckCircle2, Info, Users, MapPin, Zap,
 } from "lucide-react"
-import PeerfitLogo from "@/components/peerfit-logo"
 
 const REMEMBER_KEY = "peerfit_remember_email"
 
@@ -280,11 +279,8 @@ function AuthPageContent() {
 
         {/* Logo + back nav */}
         <div className="relative mb-12 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <PeerfitLogo size={36} className="text-emerald-400" />
-            <span className="text-[17px] font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-              PeerFit
-            </span>
+          <Link href="/" className="flex items-center group hover:opacity-80 transition-opacity">
+            <Image src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120} className="h-16 w-auto object-contain -my-3 [filter:brightness(0)_invert(1)]" />
           </Link>
           <Link href="/" className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors">
             <ChevronLeft className="w-3.5 h-3.5" />Back to home

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import PeerfitLogo from "@/components/peerfit-logo"
+import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
@@ -137,14 +137,8 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
       <header className="bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link href="/feed" className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
-            <PeerfitLogo size={34} className="text-primary" />
-            <span
-              className="text-[15px] font-black text-foreground hidden sm:block tracking-tight"
-              style={{ fontFamily: "var(--font-space-grotesk)" }}
-            >
-              PeerFit
-            </span>
+          <Link href="/feed" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
+            <Image src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120} className="h-16 w-auto object-contain -my-3" />
           </Link>
 
           {/* Desktop Nav */}

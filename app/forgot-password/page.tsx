@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Mail, ArrowLeft, CheckCircle2, Loader2, ArrowRight } from "lucide-react"
-import PeerfitLogo from "@/components/peerfit-logo"
+import Image from "next/image"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail]     = useState("")
@@ -37,12 +37,8 @@ export default function ForgotPasswordPage() {
       <div className="relative w-full max-w-sm">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2 mb-10 group">
-          <PeerfitLogo size={34} className="text-emerald-400" />
-          <span className="text-[15px] font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors"
-            style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            PeerFit
-          </span>
+        <Link href="/" className="flex items-center justify-center mb-10 group hover:opacity-80 transition-opacity">
+          <Image src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120} className="h-16 w-auto object-contain -my-3 [filter:brightness(0)_invert(1)]" />
         </Link>
 
         {/* Back link */}
