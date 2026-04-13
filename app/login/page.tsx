@@ -152,7 +152,6 @@ function AuthPageContent() {
   const [showSuPw,   setShowSuPw]   = useState(false)
   const [emailCode,  setEmailCode]  = useState("")
   const [ageTerms,   setAgeTerms]   = useState(false)
-  const [ageCons,    setAgeCons]    = useState(false)
   const [ageMkt,     setAgeMkt]     = useState(false)
   const [dobD, setDobD] = useState("")
   const [dobM, setDobM] = useState("")
@@ -261,7 +260,7 @@ function AuthPageContent() {
   }
 
   const acceptTerms = async () => {
-    if (!ageTerms || !ageCons) { setSuError("You must agree to both Terms of Service and Consumer Terms."); return }
+    if (!ageTerms) { setSuError("You must agree to the Terms and Consumer Terms to continue."); return }
     setSuError("")
     setSuLoading(true)
 
@@ -618,16 +617,9 @@ function AuthPageContent() {
                         className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
                       <span className="text-sm text-white/65 leading-snug">
                         I agree to PeerFit's{" "}
-                        <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-medium">Terms of Service</Link>
-                      </span>
-                    </label>
-
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <Checkbox checked={ageCons} onCheckedChange={(c) => setAgeCons(!!c)}
-                        className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
-                      <span className="text-sm text-white/65 leading-snug">
-                        I agree to the{" "}
-                        <Link href="/consumer-terms" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-medium">Consumer Terms</Link>
+                        <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-medium">Terms &amp; Conditions</Link>
+                        {" "}and{" "}
+                        <Link href="/consumer-terms" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-medium">Consumer Rights</Link>
                       </span>
                     </label>
 
@@ -643,7 +635,7 @@ function AuthPageContent() {
 
                   {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
 
-                  <button onClick={acceptTerms} disabled={!ageTerms || !ageCons} className={greenBtn}>
+                  <button onClick={acceptTerms} disabled={!ageTerms} className={greenBtn}>
                     Create Account <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -664,6 +656,12 @@ function AuthPageContent() {
                         <label className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5 block text-center">{label}</label>
                         <input type="number" placeholder={ph} value={val}
                           onChange={(e) => set(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && dobD && dobM && dobY && !suLoading) {
+                              e.preventDefault()
+                              saveDob()
+                            }
+                          }}
                           className="w-full h-12 text-center text-lg font-bold bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/18 focus:outline-none focus:border-emerald-500/50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </div>
@@ -698,6 +696,12 @@ function AuthPageContent() {
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
                         <input type="tel" placeholder="7911 123456" value={phone}
                           onChange={(e) => setPhone(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !suLoading) {
+                              e.preventDefault()
+                              sendPhoneCode()
+                            }
+                          }}
                           className={`${darkInput} pl-10`} />
                       </div>
                     </div>
