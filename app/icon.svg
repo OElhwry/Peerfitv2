@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="peerfitIconBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617" />
+      <stop offset="55%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#065f46" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#peerfitIconBg)" />
+  <rect x="13" y="13" width="38" height="38" rx="12" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3" />
+  <path d="M25 44V20h10.5c6.3 0 10.5 3.7 10.5 9.2S41.8 38 35.5 38H31v6H25zm6-11h4.1c3.2 0 5-1.4 5-3.9 0-2.6-1.8-4-5-4H31v7.9z" fill="#ffffff" />
+</svg>

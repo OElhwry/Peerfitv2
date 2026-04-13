@@ -14,6 +14,10 @@ import {
 } from "lucide-react"
 
 const REMEMBER_KEY = "peerfit_remember_email"
+const EMAIL_OTP_COOLDOWN_KEY = "peerfit_email_otp_last_sent_at"
+const EMAIL_OTP_COOLDOWN_SECONDS = 90
+const PHONE_OTP_COOLDOWN_KEY = "peerfit_phone_otp_last_sent_at"
+const PHONE_OTP_COOLDOWN_SECONDS = 90
 
 type SignupStep = "email" | "verify-email" | "terms" | "dob" | "phone" | "verify-phone"
 
@@ -58,6 +62,83 @@ function splitPhoneNumber(fullPhone: string) {
   }
 
   return { code: matchedCode, local: fullPhone.slice(matchedCode.length) }
+}
+
+function readEmailOtpCooldowns(): Record<string, number> {
+  if (typeof window === "undefined") return {}
+
+  try {
+    const stored = window.localStorage.getItem(EMAIL_OTP_COOLDOWN_KEY)
+    if (!stored) return {}
+
+    const parsed = JSON.parse(stored)
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {}
+  } catch {
+    return {}
+  }
+}
+
+function getEmailOtpSecondsRemaining(email: string) {
+  const normalizedEmail = email.trim().toLowerCase()
+  if (!normalizedEmail) return 0
+
+  const sentAt = readEmailOtpCooldowns()[normalizedEmail]
+  if (!sentAt || Number.isNaN(sentAt)) return 0
+
+  const elapsedSeconds = Math.floor((Date.now() - sentAt) / 1000)
+  return Math.max(0, EMAIL_OTP_COOLDOWN_SECONDS - elapsedSeconds)
+}
+
+function markEmailOtpSent(email: string) {
+  if (typeof window === "undefined") return
+
+  const normalizedEmail = email.trim().toLowerCase()
+  if (!normalizedEmail) return
+
+  const cooldowns = readEmailOtpCooldowns()
+  cooldowns[normalizedEmail] = Date.now()
+  window.localStorage.setItem(EMAIL_OTP_COOLDOWN_KEY, JSON.stringify(cooldowns))
+}
+
+function normalizePhoneOtpTarget(countryCode: string, localPhone: string) {
+  const digits = localPhone.replace(/\D/g, "")
+  return digits ? `${countryCode}${digits}` : ""
+}
+
+function readPhoneOtpCooldowns(): Record<string, number> {
+  if (typeof window === "undefined") return {}
+
+  try {
+    const stored = window.localStorage.getItem(PHONE_OTP_COOLDOWN_KEY)
+    if (!stored) return {}
+
+    const parsed = JSON.parse(stored)
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {}
+  } catch {
+    return {}
+  }
+}
+
+function getPhoneOtpSecondsRemaining(countryCode: string, localPhone: string) {
+  const normalizedPhone = normalizePhoneOtpTarget(countryCode, localPhone)
+  if (!normalizedPhone) return 0
+
+  const sentAt = readPhoneOtpCooldowns()[normalizedPhone]
+  if (!sentAt || Number.isNaN(sentAt)) return 0
+
+  const elapsedSeconds = Math.floor((Date.now() - sentAt) / 1000)
+  return Math.max(0, PHONE_OTP_COOLDOWN_SECONDS - elapsedSeconds)
+}
+
+function markPhoneOtpSent(countryCode: string, localPhone: string) {
+  if (typeof window === "undefined") return
+
+  const normalizedPhone = normalizePhoneOtpTarget(countryCode, localPhone)
+  if (!normalizedPhone) return
+
+  const cooldowns = readPhoneOtpCooldowns()
+  cooldowns[normalizedPhone] = Date.now()
+  window.localStorage.setItem(PHONE_OTP_COOLDOWN_KEY, JSON.stringify(cooldowns))
 }
 
 const SPORT_TILES = [
@@ -217,6 +298,20 @@ function AuthPageContent() {
   }, [countdown])
 
   useEffect(() => {
+    if (step === "verify-email") {
+      setCountdown(getEmailOtpSecondsRemaining(suEmail))
+      return
+    }
+
+    if (step === "verify-phone") {
+      setCountdown(getPhoneOtpSecondsRemaining(cc, phone))
+      return
+    }
+
+    setCountdown(0)
+  }, [cc, phone, step, suEmail])
+
+  useEffect(() => {
     if (requestedStep !== "terms" || step !== "terms") return
 
     const currentUrl = `${window.location.pathname}${window.location.search}`
@@ -255,10 +350,30 @@ function AuthPageContent() {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setSuError("Please enter a valid email address."); return }
     if (suPw.length < 8) { setSuError("Password must be at least 8 characters."); return }
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(suPw)) { setSuError("Password needs uppercase, lowercase & a number."); return }
+    const remaining = getEmailOtpSecondsRemaining(email)
+    if (remaining > 0) {
+      setCountdown(remaining)
+      setStep("verify-email")
+      setSuError(`A code was already sent recently. Please wait ${remaining}s before requesting another one.`)
+      return
+    }
     setSuLoading(true)
     const { error } = await createClient().auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
-    if (error) { setSuError(error.message); setSuLoading(false); return }
-    setStep("verify-email"); setCountdown(60); setSuLoading(false)
+    if (error) {
+      if (/rate limit/i.test(error.message)) {
+        const fallbackSeconds = EMAIL_OTP_COOLDOWN_SECONDS
+        markEmailOtpSent(email)
+        setCountdown(fallbackSeconds)
+        setStep("verify-email")
+        setSuError(`A code was already sent recently. Please wait ${fallbackSeconds}s before requesting another one.`)
+      } else {
+        setSuError(error.message)
+      }
+      setSuLoading(false)
+      return
+    }
+    markEmailOtpSent(email)
+    setStep("verify-email"); setCountdown(EMAIL_OTP_COOLDOWN_SECONDS); setSuLoading(false)
   }
 
   const verifyEmail = async () => {
@@ -324,9 +439,16 @@ function AuthPageContent() {
   const sendPhoneCode = async () => {
     setSuError("")
     if (phone.replace(/\D/g, "").length < 7) { setSuError("Please enter a valid phone number."); return }
+    const remaining = getPhoneOtpSecondsRemaining(cc, phone)
+    if (remaining > 0) {
+      setCountdown(remaining)
+      setStep("verify-phone")
+      setSuError(`A code was already sent recently. Please wait ${remaining}s before requesting another one.`)
+      return
+    }
     setSuLoading(true)
     const sb = createClient()
-    const fullPhone = `${cc}${phone.replace(/\D/g, "")}`
+    const fullPhone = normalizePhoneOtpTarget(cc, phone)
     const { data: { user } } = await sb.auth.getUser()
     const metadata =
       user?.user_metadata && typeof user.user_metadata === "object"
@@ -340,8 +462,21 @@ function AuthPageContent() {
         pending_phone: fullPhone,
       },
     })
-    if (error) { setSuError(error.message); setSuLoading(false); return }
-    setStep("verify-phone"); setCountdown(60); setSuLoading(false)
+    if (error) {
+      if (/rate limit/i.test(error.message)) {
+        const fallbackSeconds = PHONE_OTP_COOLDOWN_SECONDS
+        markPhoneOtpSent(cc, phone)
+        setCountdown(fallbackSeconds)
+        setStep("verify-phone")
+        setSuError(`A code was already sent recently. Please wait ${fallbackSeconds}s before requesting another one.`)
+      } else {
+        setSuError(error.message)
+      }
+      setSuLoading(false)
+      return
+    }
+    markPhoneOtpSent(cc, phone)
+    setStep("verify-phone"); setCountdown(PHONE_OTP_COOLDOWN_SECONDS); setSuLoading(false)
   }
 
   const verifyPhone = async () => {
@@ -349,7 +484,7 @@ function AuthPageContent() {
     const code = phoneCode.replace(/\s/g, "")
     if (code.length !== 6) { setSuError("Please enter the 6-digit code."); return }
     setSuLoading(true)
-    const fullPhone = `${cc}${phone.replace(/\D/g, "")}`
+    const fullPhone = normalizePhoneOtpTarget(cc, phone)
     const sb = createClient()
     const { error } = await sb.auth.verifyOtp({ phone: fullPhone, token: code, type: "phone_change" })
     if (error) { setSuError(error.message || "We couldn't verify that code. Please try again."); setSuLoading(false); return }
