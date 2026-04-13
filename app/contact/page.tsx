@@ -28,8 +28,8 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.25em] text-emerald-200/80">Email</p>
-                <a href="mailto:peerfit@gmail.com" className="mt-2 block text-2xl font-bold text-white hover:text-emerald-300">
-                  peerfit@gmail.com
+                <a href="mailto:peerfitUK@gmail.com" className="mt-2 block text-2xl font-bold text-white hover:text-emerald-300">
+                  peerfitUK@gmail.com
                 </a>
                 <p className="mt-3 text-sm leading-7 text-slate-300">
                   Use this address for customer support, privacy requests, and general communication about PeerFit.
