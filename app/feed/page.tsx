@@ -360,6 +360,11 @@ export default function ActivityFeedPage() {
 
   const handleJoinLeave = async (activityId: string, isPrivate: boolean, hostId: string, hostName: string) => {
     if (!userId) return
+    const isApplying = !joinedIds.has(activityId) && !joinRequestIds.has(activityId)
+    if (isApplying && !profileReadyForApplications) {
+      router.push("/profile")
+      return
+    }
     setJoiningId(activityId)
 
     if (joinedIds.has(activityId)) {
@@ -631,6 +636,7 @@ export default function ActivityFeedPage() {
 
   const activeDates = [...new Set(activities.map((a) => a.date))]
   const profileNeedsCompletion = !userProfile?.full_name || userProfile.full_name === "Your Name" || !userProfile?.location || !userProfile?.avatar_url
+  const profileReadyForApplications = !!userProfile?.full_name && userProfile.full_name !== "Your Name" && !!userProfile?.location
 
   const handleToggleLike = async (activityId: string) => {
     if (!userId) return

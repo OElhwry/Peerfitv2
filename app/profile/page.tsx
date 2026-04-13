@@ -14,8 +14,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   MapPin, Calendar, Edit, Shield, Activity, Clock, Star,
-  TrendingUp, Trophy, Users, Save, X, Loader2, Camera,
-  CheckCircle2, Flame, Zap, Info, Palette,
+  TrendingUp, Trophy, Users, Save, X, Loader2, Camera, ArrowRight,
+  CheckCircle2, Flame, Zap, Palette,
 } from "lucide-react"
 import AppNav from "@/components/app-nav"
 import { useRouter } from "next/navigation"
@@ -370,15 +370,34 @@ export default function ProfilePage() {
 
         {/* Incomplete profile nudge */}
         {(!profile?.full_name || profile.full_name === "Your Name" || !profile?.location || !profile?.avatar_url) && !editing && (
-          <div className="mb-5 flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl px-4 py-3.5">
-            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Complete your profile so people know who they&apos;re playing with</p>
-              <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">Add your name, location, and a photo to help players trust your requests.</p>
+          <div className="mb-5 overflow-hidden rounded-[28px] border border-emerald-500/20 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_32%),linear-gradient(135deg,rgba(2,6,23,0.98),rgba(15,23,42,0.97),rgba(6,78,59,0.94))] px-4 py-4 shadow-[0_24px_70px_rgba(6,78,59,0.2)]">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+              <Camera className="h-3.5 w-3.5" />
+              Profile boost
             </div>
-            <button onClick={() => setEditing(true)} className="shrink-0 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline">
-              Edit profile
-            </button>
+            <div className="flex items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-[15px] font-semibold tracking-tight text-white">Finish setting up your profile</p>
+                <p className="mt-1.5 max-w-xl text-[13px] leading-5 text-white/72">
+                  {!profile?.full_name || profile.full_name === "Your Name"
+                    ? "Add your real name"
+                    : "Add your city"}
+                  {(!profile?.full_name || profile.full_name === "Your Name") && !profile?.location && " and city"}
+                  {((!profile?.full_name || profile.full_name === "Your Name") || !profile?.location) && !profile?.avatar_url && ", plus a profile photo,"}
+                  {((!profile?.full_name || profile.full_name === "Your Name") || !profile?.location) || !profile?.avatar_url ? " " : "Add a profile photo "}
+                  so other players know who you are.
+                </p>
+              </div>
+              <button
+                onClick={() => setEditing(true)}
+                className="shrink-0 rounded-2xl border border-white/10 bg-white/6 px-4 py-2 text-xs font-semibold text-emerald-100 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
+              >
+                <span className="inline-flex items-center gap-2">
+                  Edit profile
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </span>
+              </button>
+            </div>
           </div>
         )}
 

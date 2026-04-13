@@ -4,37 +4,37 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color tokens to match PeerFit design brief with green theme */
+  /* Updated color tokens to match PeerFit's deeper emerald brand direction */
   --background: oklch(1 0 0); /* #ffffff */
   --foreground: oklch(0.25 0 0); /* #374151 */
-  --card: oklch(0.98 0.02 142); /* #f0fdf4 */
+  --card: oklch(0.98 0.01 165); /* soft mint-white */
   --card-foreground: oklch(0.25 0 0); /* #374151 */
   --popover: oklch(1 0 0); /* #ffffff */
   --popover-foreground: oklch(0.25 0 0); /* #374151 */
-  --primary: oklch(0.45 0.15 142); /* #15803d */
+  --primary: oklch(0.43 0.12 165); /* deeper emerald */
   --primary-foreground: oklch(1 0 0); /* #ffffff */
-  --secondary: oklch(0.75 0.2 120); /* #84cc16 */
+  --secondary: oklch(0.68 0.12 168); /* jade */
   --secondary-foreground: oklch(0.25 0 0); /* #374151 */
-  --muted: oklch(0.98 0.02 142); /* #f0fdf4 */
+  --muted: oklch(0.98 0.01 165); /* soft mint-white */
   --muted-foreground: oklch(0.25 0 0); /* #374151 */
-  --accent: oklch(0.75 0.2 120); /* #84cc16 */
+  --accent: oklch(0.58 0.11 172); /* darker sea green */
   --accent-foreground: oklch(1 0 0); /* #ffffff */
   --destructive: oklch(0.6 0.2 25); /* #ea580c */
   --destructive-foreground: oklch(1 0 0); /* #ffffff */
   --border: oklch(0.92 0 0); /* #e5e7eb */
   --input: oklch(1 0 0); /* #ffffff */
-  --ring: oklch(0.65 0.15 180 / 0.5); /* rgba(20, 184, 166, 0.5) */
-  --chart-1: oklch(0.45 0.15 142); /* #15803d */
-  --chart-2: oklch(0.75 0.2 120); /* #84cc16 */
+  --ring: oklch(0.54 0.11 170 / 0.45);
+  --chart-1: oklch(0.43 0.12 165);
+  --chart-2: oklch(0.58 0.11 172);
   --chart-3: oklch(0.6 0.2 25); /* #ea580c */
   --chart-4: oklch(0.65 0.2 35); /* #f97316 */
   --chart-5: oklch(0.55 0.15 60); /* #a16207 */
   --radius: 0.5rem;
-  --sidebar: oklch(0.98 0.02 142); /* #f0fdf4 */
+  --sidebar: oklch(0.98 0.01 165);
   --sidebar-foreground: oklch(0.25 0 0); /* #374151 */
-  --sidebar-primary: oklch(0.45 0.15 142); /* #15803d */
+  --sidebar-primary: oklch(0.43 0.12 165);
   --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff */
-  --sidebar-accent: oklch(0.75 0.2 120); /* #84cc16 */
+  --sidebar-accent: oklch(0.58 0.11 172);
   --sidebar-accent-foreground: oklch(0.25 0 0); /* #374151 */
   --sidebar-border: oklch(0.92 0 0); /* #e5e7eb */
   --sidebar-ring: oklch(0.65 0.15 180 / 0.5); /* rgba(20, 184, 166, 0.5) */
@@ -52,9 +52,9 @@
   --popover-foreground: oklch(0.93 0.004 258);
 
   /* ── Brand: green reserved for interactive elements only ── */
-  --primary: oklch(0.60 0.16 145);           /* mid-bright green — readable on dark */
+  --primary: oklch(0.56 0.12 162);           /* deeper emerald */
   --primary-foreground: oklch(0.08 0 0);
-  --accent: oklch(0.63 0.13 152);            /* slightly teal — less saturated */
+  --accent: oklch(0.52 0.10 170);            /* jade-teal */
   --accent-foreground: oklch(0.08 0 0);
 
   /* ── Neutrals: no green ── */
@@ -70,11 +70,11 @@
   /* ── UI chrome ── */
   --border: oklch(0.33 0.005 258);           /* subtle, not harsh */
   --input: oklch(0.29 0.005 258);
-  --ring: oklch(0.60 0.16 145 / 0.45);
+  --ring: oklch(0.56 0.12 162 / 0.45);
 
   /* ── Charts ── */
-  --chart-1: oklch(0.60 0.16 145);
-  --chart-2: oklch(0.63 0.13 152);
+  --chart-1: oklch(0.56 0.12 162);
+  --chart-2: oklch(0.52 0.10 170);
   --chart-3: oklch(0.58 0.20 25);
   --chart-4: oklch(0.63 0.20 35);
   --chart-5: oklch(0.55 0.14 60);
@@ -82,12 +82,12 @@
   /* ── Sidebar ── */
   --sidebar: oklch(0.18 0.006 258);          /* slightly darker than background */
   --sidebar-foreground: oklch(0.93 0.004 258);
-  --sidebar-primary: oklch(0.60 0.16 145);
+  --sidebar-primary: oklch(0.56 0.12 162);
   --sidebar-primary-foreground: oklch(0.08 0 0);
   --sidebar-accent: oklch(0.30 0.005 258);
   --sidebar-accent-foreground: oklch(0.93 0 0);
   --sidebar-border: oklch(0.33 0.005 258);
-  --sidebar-ring: oklch(0.60 0.16 145 / 0.45);
+  --sidebar-ring: oklch(0.56 0.12 162 / 0.45);
 }
 
 @theme inline {
