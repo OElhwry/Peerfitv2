@@ -15,11 +15,12 @@ import { Label } from "@/components/ui/label"
 import {
   MapPin, Calendar, Edit, Shield, Activity, Clock, Star,
   TrendingUp, Trophy, Users, Save, X, Loader2, Camera,
-  CheckCircle2, Flame, Zap, Info,
+  CheckCircle2, Flame, Zap, Info, Palette,
 } from "lucide-react"
 import AppNav from "@/components/app-nav"
 import { useRouter } from "next/navigation"
 
+// ── types ──────────────────────────────────────────────────────────────────────
 interface Profile {
   id: string
   full_name: string | null
@@ -59,6 +60,7 @@ interface Review {
   profiles: { full_name: string | null; avatar_url: string | null } | null
 }
 
+// ── helpers ────────────────────────────────────────────────────────────────────
 function getInitials(name: string | null): string {
   if (!name) return "?"
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -101,10 +103,15 @@ function getSportBadgeStyle(sport: string | null | undefined): string {
   return "bg-primary/15 text-primary border-primary/30"
 }
 
-const SKILL_DOTS: Record<string, number> = { Beginner: 1, Intermediate: 2, Advanced: 3, Any: 2 }
+const SKILL_LEVELS: Record<string, { dots: number; label: string; barW: string }> = {
+  Beginner:     { dots: 1, label: "Beginner",     barW: "w-1/3" },
+  Intermediate: { dots: 2, label: "Intermediate", barW: "w-2/3" },
+  Advanced:     { dots: 3, label: "Advanced",     barW: "w-full" },
+  Any:          { dots: 2, label: "Any level",    barW: "w-2/3" },
+}
 
 function SkillDots({ level }: { level: string }) {
-  const filled = SKILL_DOTS[level] ?? 1
+  const filled = SKILL_LEVELS[level]?.dots ?? 1
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3].map((i) => (
@@ -118,7 +125,8 @@ function StarRating({ value, onChange, size = "md" }: { value: number; onChange?
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
-        <button key={star} type="button" onClick={() => onChange?.(star)} className={`transition-all ${onChange ? "cursor-pointer hover:scale-110" : "cursor-default"}`}>
+        <button key={star} type="button" onClick={() => onChange?.(star)}
+          className={`transition-all ${onChange ? "cursor-pointer hover:scale-110" : "cursor-default"}`}>
           <Star className={`${size === "sm" ? "w-3.5 h-3.5" : "w-6 h-6"} ${star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}`} />
         </button>
       ))}
@@ -126,6 +134,42 @@ function StarRating({ value, onChange, size = "md" }: { value: number; onChange?
   )
 }
 
+// ── banner presets ─────────────────────────────────────────────────────────────
+const BANNER_PRESETS = [
+  { id: "auto",    label: "My Sport", swatch: "bg-gradient-to-r from-primary via-accent/80 to-primary/60" },
+  { id: "sunset",  label: "Sunset",   swatch: "bg-gradient-to-r from-orange-400 via-pink-500 to-rose-600",    gradient: "from-orange-400 via-pink-500 to-rose-600" },
+  { id: "ocean",   label: "Ocean",    swatch: "bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-500",       gradient: "from-sky-500 via-cyan-400 to-teal-500" },
+  { id: "forest",  label: "Forest",   swatch: "bg-gradient-to-r from-green-600 via-emerald-500 to-teal-600",  gradient: "from-green-600 via-emerald-500 to-teal-600" },
+  { id: "night",   label: "Night",    swatch: "bg-gradient-to-r from-indigo-800 via-purple-700 to-violet-800", gradient: "from-indigo-800 via-purple-700 to-violet-800" },
+  { id: "fire",    label: "Fire",     swatch: "bg-gradient-to-r from-red-500 via-orange-400 to-yellow-500",   gradient: "from-red-500 via-orange-400 to-yellow-500" },
+  { id: "aurora",  label: "Aurora",   swatch: "bg-gradient-to-r from-teal-500 via-purple-500 to-pink-500",    gradient: "from-teal-500 via-purple-500 to-pink-500" },
+  { id: "gold",    label: "Gold",     swatch: "bg-gradient-to-r from-yellow-500 via-amber-400 to-orange-400", gradient: "from-yellow-500 via-amber-400 to-orange-400" },
+  { id: "rose",    label: "Rose",     swatch: "bg-gradient-to-r from-rose-400 via-pink-500 to-fuchsia-600",   gradient: "from-rose-400 via-pink-500 to-fuchsia-600" },
+  { id: "slate",   label: "Slate",    swatch: "bg-gradient-to-r from-slate-600 via-gray-600 to-slate-700",    gradient: "from-slate-600 via-gray-600 to-slate-700" },
+]
+
+// ── vibe system ────────────────────────────────────────────────────────────────
+function getVibeInfo(completed: number, sports: number, avgRating: string | null, total: number) {
+  if (avgRating && Number(avgRating) >= 4.8 && completed >= 10)
+    return { label: "The Legend",       emoji: "👑", color: "text-amber-600 bg-amber-500/10 border-amber-400/30" }
+  if (completed >= 20)
+    return { label: "The Grinder",      emoji: "💪", color: "text-red-600 bg-red-500/10 border-red-400/30" }
+  if (sports >= 5)
+    return { label: "The Explorer",     emoji: "🌍", color: "text-teal-600 bg-teal-500/10 border-teal-400/30" }
+  if (avgRating && Number(avgRating) >= 4.5)
+    return { label: "Top Rated",        emoji: "⭐", color: "text-yellow-600 bg-yellow-500/10 border-yellow-400/30" }
+  if (completed >= 10)
+    return { label: "The Veteran",      emoji: "🏆", color: "text-blue-600 bg-blue-500/10 border-blue-400/30" }
+  if (completed >= 5)
+    return { label: "Active Player",    emoji: "🎯", color: "text-primary bg-primary/10 border-primary/30" }
+  if (sports >= 3)
+    return { label: "Multi-Sport",      emoji: "🏅", color: "text-violet-600 bg-violet-500/10 border-violet-400/30" }
+  if (total >= 1)
+    return { label: "Rising Star",      emoji: "🌟", color: "text-orange-600 bg-orange-500/10 border-orange-400/30" }
+  return { label: "New Arrival",        emoji: "👋", color: "text-muted-foreground bg-muted/50 border-border/50" }
+}
+
+// ── component ──────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -154,6 +198,19 @@ export default function ProfilePage() {
   const [ratingComment, setRatingComment] = useState("")
   const [submittingReview, setSubmittingReview] = useState(false)
 
+  // banner preset (localStorage)
+  const [bannerPresetId, setBannerPresetId] = useState("auto")
+
+  useEffect(() => {
+    const stored = localStorage.getItem("peerfit_banner_preset")
+    if (stored) setBannerPresetId(stored)
+  }, [])
+
+  const handleBannerPreset = (id: string) => {
+    setBannerPresetId(id)
+    localStorage.setItem("peerfit_banner_preset", id)
+  }
+
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
@@ -170,38 +227,52 @@ export default function ProfilePage() {
 
       if (profileData) {
         setProfile(profileData as Profile)
-        setEditForm({
-          full_name: profileData.full_name ?? "",
-          location: profileData.location ?? "",
-          bio: profileData.bio ?? "",
-        })
+        setEditForm({ full_name: profileData.full_name ?? "", location: profileData.location ?? "", bio: profileData.bio ?? "" })
       }
       if (sportsData) setUserSports(sportsData as unknown as UserSport[])
       if (joinedData) setTotalJoined(joinedData.length)
 
-      // Reviews (with error handling in case table doesn't exist yet)
       const [{ data: receivedData }, { data: givenData }] = await Promise.all([
         supabase.from("activity_reviews")
-          .select("id, activity_id, reviewer_id, rating, comment, created_at, profiles:reviewer_id(full_name, avatar_url)")
-          .eq("reviewee_id", user.id)
-          .order("created_at", { ascending: false })
+          .select("id, activity_id, reviewer_id, rating, comment, created_at")
+          .eq("reviewee_id", user.id).order("created_at", { ascending: false })
           .then((r) => (r.error ? { data: null } : r)),
-        supabase.from("activity_reviews")
-          .select("activity_id, reviewee_id")
-          .eq("reviewer_id", user.id)
-          .then((r) => (r.error ? { data: null } : r)),
+        supabase.from("activity_reviews").select("activity_id, reviewee_id")
+          .eq("reviewer_id", user.id).then((r) => (r.error ? { data: null } : r)),
       ])
-      if (receivedData) setReceivedReviews(receivedData as unknown as Review[])
+      if (receivedData) {
+        const reviewerIds = [...new Set((receivedData as { reviewer_id: string }[]).map((r) => r.reviewer_id))]
+        let profileMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {}
+
+        if (reviewerIds.length > 0) {
+          const { data: reviewerProfiles } = await supabase
+            .from("profiles")
+            .select("id, full_name, avatar_url")
+            .in("id", reviewerIds)
+
+          for (const reviewer of (reviewerProfiles ?? []) as { id: string; full_name: string | null; avatar_url: string | null }[]) {
+            profileMap[reviewer.id] = {
+              full_name: reviewer.full_name,
+              avatar_url: reviewer.avatar_url,
+            }
+          }
+        }
+
+        setReceivedReviews(
+          (receivedData as { id: string; activity_id: string; reviewer_id: string; rating: number; comment: string | null; created_at: string }[]).map((review) => ({
+            ...review,
+            profiles: profileMap[review.reviewer_id] ?? null,
+          }))
+        )
+      }
       if (givenData) setGivenReviews(givenData as { activity_id: string; reviewee_id: string }[])
 
-      // Activities
       const joinedIds = joinedData?.map((j: { activity_id: string }) => j.activity_id) ?? []
       if (joinedIds.length > 0) {
         const { data: allActivities } = await supabase
           .from("activities")
           .select("id, title, location, date, time, duration_minutes, host_id, max_participants, sports(name,emoji), activity_participants(user_id, profiles:user_id(full_name,avatar_url))")
-          .in("id", joinedIds)
-          .order("date", { ascending: false })
+          .in("id", joinedIds).order("date", { ascending: false })
 
         if (allActivities) {
           const all = allActivities as unknown as DbActivity[]
@@ -217,72 +288,49 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!userId) return
-    setSaving(true)
-    setSaveError("")
+    setSaving(true); setSaveError("")
     const { error } = await supabase.from("profiles").update({
       full_name: editForm.full_name.trim() || null,
       location: editForm.location.trim() || null,
       bio: editForm.bio.trim() || null,
     }).eq("id", userId)
     setSaving(false)
-    if (error) {
-      setSaveError(error.message)
-      return
-    }
-    setProfile((prev) => prev ? {
-      ...prev,
-      full_name: editForm.full_name.trim() || null,
-      location: editForm.location.trim() || null,
-      bio: editForm.bio.trim() || null,
-    } : prev)
+    if (error) { setSaveError(error.message); return }
+    setProfile((prev) => prev ? { ...prev, full_name: editForm.full_name.trim() || null, location: editForm.location.trim() || null, bio: editForm.bio.trim() || null } : prev)
     setEditing(false)
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !userId) return
-    setAvatarError("")
-    setUploadingAvatar(true)
+    setAvatarError(""); setUploadingAvatar(true)
     const ext = file.name.split(".").pop()
-    // Include a timestamp in the filename so the new image bypasses browser/CDN cache
     const path = `${userId}_${Date.now()}.${ext}`
     const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true })
     if (!uploadError) {
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path)
       const { error: dbError } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId)
-      if (dbError) {
-        setAvatarError(dbError.message)
-      } else {
-        setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev)
-      }
+      if (dbError) setAvatarError(dbError.message)
+      else setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev)
     } else {
       setAvatarError(
-        uploadError.message.includes("Bucket not found")
-          ? "The 'avatars' storage bucket doesn't exist yet in Supabase."
-          : uploadError.message.includes("row-level security")
-            ? "Your storage policy is blocking uploads to the 'avatars' bucket."
-            : uploadError.message
+        uploadError.message.includes("Bucket not found") ? "The 'avatars' bucket doesn't exist yet."
+        : uploadError.message.includes("row-level security") ? "Storage policy is blocking uploads."
+        : uploadError.message
       )
     }
-    setUploadingAvatar(false)
-    e.target.value = ""
+    setUploadingAvatar(false); e.target.value = ""
   }
 
   const handleSubmitReview = async () => {
     if (!profile || !ratingModal) return
     setSubmittingReview(true)
     await supabase.from("activity_reviews").insert({
-      activity_id: ratingModal.activityId,
-      reviewer_id: profile.id,
-      reviewee_id: ratingModal.revieweeId,
-      rating: ratingValue,
-      comment: ratingComment || null,
+      activity_id: ratingModal.activityId, reviewer_id: profile.id,
+      reviewee_id: ratingModal.revieweeId, rating: ratingValue, comment: ratingComment || null,
     })
     setGivenReviews((prev) => [...prev, { activity_id: ratingModal.activityId, reviewee_id: ratingModal.revieweeId }])
-    setRatingModal(null)
-    setRatingValue(5)
-    setRatingComment("")
-    setSubmittingReview(false)
+    setRatingModal(null); setRatingValue(5); setRatingComment(""); setSubmittingReview(false)
   }
 
   const alreadyRated = (activityId: string, revieweeId: string) =>
@@ -293,8 +341,14 @@ export default function ProfilePage() {
     : null
 
   const favSport = profile?.favourite_sport
-  const bannerGradient = getBannerStyle(favSport ?? userSports[0]?.sports?.name)
   const favSportInfo = userSports.find((s) => s.sports.name === favSport) ?? userSports[0]
+
+  const resolvedBanner = bannerPresetId === "auto"
+    ? getBannerStyle(favSport ?? userSports[0]?.sports?.name)
+    : (BANNER_PRESETS.find((p) => p.id === bannerPresetId) as { gradient?: string })?.gradient
+      ?? getBannerStyle(favSport)
+
+  const vibe = getVibeInfo(completedActivities.length, userSports.length, avgRating, totalJoined)
 
   if (loading) {
     return (
@@ -313,72 +367,78 @@ export default function ProfilePage() {
       <AppNav />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+
         {/* Incomplete profile nudge */}
         {(!profile?.full_name || profile.full_name === "Your Name" || !profile?.location || !profile?.avatar_url) && !editing && (
           <div className="mb-5 flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl px-4 py-3.5">
             <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Complete your profile so people know who they&apos;re playing with</p>
-              <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">
-                Add your full name, location, and a profile photo to make your account feel real and help other players trust your requests faster.
-              </p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">Add your name, location, and a photo to help players trust your requests.</p>
             </div>
-            <button
-              onClick={() => setEditing(true)}
-              className="shrink-0 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
-            >
+            <button onClick={() => setEditing(true)} className="shrink-0 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline">
               Edit profile
             </button>
           </div>
         )}
 
-        {/* Hero card */}
-        <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl border border-border/40">
-          {/* Dynamic banner */}
-          <div className={`h-48 bg-gradient-to-br ${bannerGradient} relative`}>
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.15),transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.2),transparent_60%)]" />
+        {/* ── Hero card ──────────────────────────────────────────────────────── */}
+        <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl border border-border/30">
 
-            {/* Favourite sport display in banner */}
+          {/* Banner */}
+          <div className={`h-52 bg-gradient-to-br ${resolvedBanner} relative overflow-hidden`}>
+            {/* light overlay */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.25),transparent_55%)]" />
+
+            {/* large centred sport emoji */}
             {favSportInfo && (
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center select-none pointer-events-none">
-                <span className="text-6xl opacity-25 drop-shadow-lg">{favSportInfo.sports.emoji}</span>
+              <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
+                <span className="text-[7rem] opacity-[0.12] drop-shadow-2xl">{favSportInfo.sports.emoji}</span>
               </div>
             )}
 
-            {/* Small sport decorations */}
-            <div className="absolute bottom-3 right-4 flex gap-2 text-2xl select-none pointer-events-none">
-              {userSports.slice(0, 4).map((us) => (
-                <span key={us.sport_id} className="opacity-25">{us.sports.emoji}</span>
+            {/* scattered sport decorations */}
+            <div className="absolute bottom-4 right-5 flex gap-3 select-none pointer-events-none">
+              {userSports.slice(0, 5).map((us, i) => (
+                <span key={us.sport_id} style={{ opacity: 0.18 + i * 0.04, fontSize: `${1.6 - i * 0.12}rem` }}>
+                  {us.sports.emoji}
+                </span>
               ))}
             </div>
 
-            {/* Edit button */}
-            {!editing && (
-              <button
-                onClick={() => setEditing(true)}
-                className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/20 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-xl hover:bg-black/30 transition-colors border border-white/15"
-              >
-                <Edit className="w-3.5 h-3.5" />Edit Profile
-              </button>
-            )}
-
-            {/* Streak badge */}
+            {/* streak badge */}
             {completedActivities.length >= 3 && (
-              <div className="absolute top-4 left-4 flex items-center gap-1 bg-black/20 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1.5 rounded-xl border border-white/15">
-                <Flame className="w-3.5 h-3.5 text-orange-300" />{completedActivities.length} sessions
+              <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
+                <Flame className="w-3.5 h-3.5 text-orange-300" />
+                {completedActivities.length} sessions
               </div>
             )}
+
+            {/* edit / share buttons */}
+            <div className="absolute top-4 right-4 flex gap-2">
+              {!editing && (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 shadow-lg hover:bg-black/35 transition-colors"
+                >
+                  <Edit className="w-3.5 h-3.5" />Edit
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Profile content */}
-          <div className="bg-background/95 backdrop-blur-sm px-6 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 mb-5">
+          {/* Profile body */}
+          <div className="bg-background/97 backdrop-blur-sm px-6 pb-6">
+
+            {/* Avatar + name row */}
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-14 mb-5">
+
               {/* Avatar */}
-              <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
-                {/* group only wraps the 24×24 circle so inset-0 never overflows */}
-                <div className="relative w-24 h-24 group">
-                  <Avatar className="w-24 h-24 ring-4 ring-background shadow-xl">
+              <div className="flex-shrink-0">
+                <div className="relative w-28 h-28 group">
+                  <div className={`absolute -inset-1 rounded-full bg-gradient-to-br ${resolvedBanner} opacity-60 blur-sm`} />
+                  <Avatar className="relative w-28 h-28 ring-4 ring-background shadow-2xl">
                     <AvatarImage src={profile?.avatar_url ?? undefined} />
                     <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
                       {getInitials(profile?.full_name ?? null)}
@@ -393,32 +453,39 @@ export default function ProfilePage() {
                   </button>
                   <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 </div>
-                {avatarError && (
-                  <p className="text-xs text-red-600 max-w-[120px] text-center leading-tight">{avatarError}</p>
-                )}
+                {avatarError && <p className="text-xs text-red-600 mt-1 max-w-[120px]">{avatarError}</p>}
               </div>
 
               {!editing && (
-                <div className="flex-1 pb-1">
+                <div className="flex-1 pb-1 pt-2 sm:pt-0">
+                  {/* Name + badges */}
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
                     <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-space-grotesk)" }}>
                       {profile?.full_name ?? "Your Name"}
                     </h1>
-                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs gap-1">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0.5">
                       <Shield className="w-3 h-3" />Verified
                     </Badge>
                     {avgRating && (
-                      <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs gap-1">
+                      <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs gap-1 py-0.5">
                         <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{avgRating}
                       </Badge>
                     )}
                   </div>
+
+                  {/* Vibe badge */}
+                  <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold mb-2 ${vibe.color}`}>
+                    <span>{vibe.emoji}</span>{vibe.label}
+                  </div>
+
+                  {/* Location + joined */}
                   <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
                     {profile?.location && (
                       <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-primary" />{profile.location}</span>
                     )}
                     <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-primary" />Joined {memberSince}</span>
                   </div>
+
                   {/* Favourite sport badge */}
                   {favSportInfo && (
                     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-semibold ${getSportBadgeStyle(favSportInfo.sports.name)}`}>
@@ -431,8 +498,9 @@ export default function ProfilePage() {
               )}
             </div>
 
+            {/* Edit form */}
             {editing ? (
-              <div className="space-y-4 pt-2">
+              <div className="space-y-5 pt-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-medium">Full Name</Label>
@@ -453,10 +521,30 @@ export default function ProfilePage() {
                     className="w-full mt-1 p-2 bg-muted/30 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none text-sm"
                   />
                 </div>
-                {saveError && (
-                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-600">
-                    {saveError}
+
+                {/* Banner picker */}
+                <div>
+                  <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
+                    <Palette className="w-3.5 h-3.5 text-primary" />Banner theme
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {BANNER_PRESETS.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => handleBannerPreset(p.id)}
+                        title={p.label}
+                        className={`w-8 h-8 rounded-full border-2 transition-all ${p.swatch} ${bannerPresetId === p.id ? "border-foreground scale-110 shadow-md" : "border-transparent hover:scale-105"}`}
+                      />
+                    ))}
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    {BANNER_PRESETS.find((p) => p.id === bannerPresetId)?.label ?? "Auto"} — saved to this device
+                  </p>
+                </div>
+
+                {saveError && (
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-600">{saveError}</div>
                 )}
                 <div className="flex gap-3">
                   <Button onClick={handleSave} disabled={saving}>
@@ -470,35 +558,42 @@ export default function ProfilePage() {
             ) : (
               <>
                 {profile?.bio && (
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-4 max-w-2xl">{profile.bio}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-5 max-w-2xl">{profile.bio}</p>
                 )}
+
                 {/* Stats row */}
-                <div className="grid grid-cols-4 gap-2 mb-4">
+                <div className="grid grid-cols-4 gap-2 mb-5">
                   {[
-                    { label: "Sessions", value: totalJoined, color: "text-primary bg-primary/8 border-primary/12" },
-                    { label: "Completed", value: completedActivities.length, color: "text-yellow-600 bg-yellow-500/8 border-yellow-500/12" },
-                    { label: "Sports", value: userSports.length, color: "text-accent bg-accent/8 border-accent/12" },
-                    { label: "Reviews", value: receivedReviews.length, color: "text-blue-600 bg-blue-500/8 border-blue-500/12" },
-                  ].map(({ label, value, color }) => (
-                    <div key={label} className={`rounded-2xl p-3 text-center border ${color}`}>
-                      <p className="text-xl font-bold">{value}</p>
-                      <p className="text-[10px] font-medium mt-0.5 opacity-80">{label}</p>
+                    { label: "Sessions",  value: totalJoined,                  color: "text-primary",     bg: "bg-primary/8 border-primary/12" },
+                    { label: "Completed", value: completedActivities.length,    color: "text-yellow-600",  bg: "bg-yellow-500/8 border-yellow-500/12" },
+                    { label: "Sports",    value: userSports.length,             color: "text-accent",      bg: "bg-accent/8 border-accent/12" },
+                    { label: "Reviews",   value: receivedReviews.length,        color: "text-blue-600",    bg: "bg-blue-500/8 border-blue-500/12" },
+                  ].map(({ label, value, color, bg }) => (
+                    <div key={label} className={`rounded-2xl p-3 text-center border ${bg}`}>
+                      <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                      <p className="text-[10px] font-medium mt-0.5 opacity-70">{label}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* Sports showcase */}
+                {/* Sports mastery cards */}
                 {userSports.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {userSports.map((us) => {
                       const style = getSportBadgeStyle(us.sports.name)
                       const isFav = us.sports.name === favSport
+                      const skill = SKILL_LEVELS[us.skill_level] ?? SKILL_LEVELS.Beginner
                       return (
-                        <div key={us.sport_id} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-medium ${style} ${isFav ? "ring-2 ring-current ring-offset-1" : ""}`}>
-                          <span className="text-base">{us.sports.emoji}</span>
-                          <span>{us.sports.name}</span>
-                          <SkillDots level={us.skill_level} />
-                          {isFav && <Zap className="w-3 h-3 opacity-70" />}
+                        <div key={us.sport_id}
+                          className={`relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-center transition-all ${style} ${isFav ? "ring-2 ring-current ring-offset-1 shadow-sm" : ""}`}
+                        >
+                          {isFav && <Zap className="absolute top-1.5 right-1.5 w-3 h-3 opacity-60" />}
+                          <span className="text-2xl">{us.sports.emoji}</span>
+                          <p className="text-xs font-semibold leading-tight">{us.sports.name}</p>
+                          <div className="w-full h-1 bg-current/15 rounded-full overflow-hidden">
+                            <div className={`h-full bg-current/60 rounded-full ${skill.barW}`} />
+                          </div>
+                          <p className="text-[9px] opacity-60">{skill.label}</p>
                         </div>
                       )
                     })}
@@ -509,20 +604,20 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* ── Tabs ──────────────────────────────────────────────────────────── */}
         <Tabs defaultValue="activities" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-xl border border-border/50 shadow-sm h-11 rounded-2xl p-1">
-            <TabsTrigger value="activities" className="text-xs font-medium rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Upcoming
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="text-xs font-medium rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Trophies {completedActivities.length > 0 && `(${completedActivities.length})`}
-            </TabsTrigger>
-            <TabsTrigger value="achievements" className="text-xs font-medium rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Badges
-            </TabsTrigger>
-            <TabsTrigger value="reviews" className="text-xs font-medium rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Reviews {receivedReviews.length > 0 && `(${receivedReviews.length})`}
-            </TabsTrigger>
+            {[
+              { value: "activities",   label: "Upcoming" },
+              { value: "completed",    label: `Trophies${completedActivities.length > 0 ? ` (${completedActivities.length})` : ""}` },
+              { value: "achievements", label: "Badges" },
+              { value: "reviews",      label: `Reviews${receivedReviews.length > 0 ? ` (${receivedReviews.length})` : ""}` },
+            ].map((t) => (
+              <TabsTrigger key={t.value} value={t.value}
+                className="text-xs font-medium rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                {t.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {/* Upcoming */}
@@ -580,10 +675,10 @@ export default function ProfilePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-center">
                     {[
-                      { label: "All time", value: totalJoined, color: "text-primary" },
-                      { label: "Upcoming", value: upcomingActivities.length, color: "text-accent" },
+                      { label: "All time",  value: totalJoined,                color: "text-primary" },
+                      { label: "Upcoming",  value: upcomingActivities.length,  color: "text-accent" },
                       { label: "Completed", value: completedActivities.length, color: "text-yellow-600" },
-                      { label: "Sports", value: userSports.length, color: "text-blue-600" },
+                      { label: "Sports",    value: userSports.length,          color: "text-blue-600" },
                     ].map(({ label, value, color }) => (
                       <div key={label} className="p-2.5 bg-muted/30 rounded-xl">
                         <p className={`text-lg font-bold ${color}`}>{value}</p>
@@ -605,7 +700,7 @@ export default function ProfilePage() {
                     <Trophy className="w-8 h-8 text-yellow-500/50" />
                   </div>
                   <p className="font-semibold mb-1">No trophies yet</p>
-                  <p className="text-sm text-muted-foreground">Sessions you complete will appear here as trophies.</p>
+                  <p className="text-sm text-muted-foreground">Sessions you complete will appear here.</p>
                   <Link href="/feed" className="inline-block mt-4">
                     <Button size="sm" className="bg-gradient-to-r from-primary to-accent">Find Activities</Button>
                   </Link>
@@ -681,24 +776,39 @@ export default function ProfilePage() {
           <TabsContent value="achievements">
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                { title: "First Step", desc: "Join your first activity", icon: Activity, color: "primary", threshold: 1, current: totalJoined, bg: "from-primary/10 to-accent/10", iconBg: "bg-primary" },
-                { title: "Active Player", desc: "Complete 5 sessions", icon: Star, color: "yellow", threshold: 5, current: completedActivities.length, bg: "from-yellow-500/10 to-orange-500/10", iconBg: "bg-yellow-500" },
-                { title: "Dedicated Athlete", desc: "Complete 10 sessions", icon: Trophy, color: "blue", threshold: 10, current: completedActivities.length, bg: "from-blue-500/10 to-purple-500/10", iconBg: "bg-blue-600" },
-                { title: "Social Butterfly", desc: "Make 3+ friends", icon: Users, color: "green", threshold: 3, current: 0, bg: "from-green-500/10 to-emerald-500/10", iconBg: "bg-green-600" },
-                { title: "Multi-Sport", desc: "Play 3+ sports", icon: Zap, color: "purple", threshold: 3, current: userSports.length, bg: "from-violet-500/10 to-purple-500/10", iconBg: "bg-violet-600" },
-                { title: "Top Rated", desc: "Get a 4.5+ average rating", icon: Star, color: "amber", threshold: 1, current: avgRating && Number(avgRating) >= 4.5 ? 1 : 0, bg: "from-amber-500/10 to-yellow-500/10", iconBg: "bg-amber-500" },
-              ].map(({ title, desc, icon: Icon, threshold, current, bg, iconBg }) => {
+                { title: "First Step",       desc: "Join your first activity",       icon: Activity,  iconBg: "bg-primary",    bg: "from-primary/10 to-accent/10",         threshold: 1,  current: totalJoined },
+                { title: "Active Player",    desc: "Complete 5 sessions",            icon: Star,      iconBg: "bg-yellow-500", bg: "from-yellow-500/10 to-orange-500/10",  threshold: 5,  current: completedActivities.length },
+                { title: "Dedicated Athlete",desc: "Complete 10 sessions",           icon: Trophy,    iconBg: "bg-blue-600",   bg: "from-blue-500/10 to-purple-500/10",    threshold: 10, current: completedActivities.length },
+                { title: "Social Butterfly", desc: "Receive 3+ reviews",             icon: Users,     iconBg: "bg-green-600",  bg: "from-green-500/10 to-emerald-500/10",  threshold: 3,  current: receivedReviews.length },
+                { title: "Multi-Sport",      desc: "Play 3+ sports",                 icon: Zap,       iconBg: "bg-violet-600", bg: "from-violet-500/10 to-purple-500/10",  threshold: 3,  current: userSports.length },
+                { title: "Top Rated",        desc: "Achieve a 4.5+ average rating",  icon: Star,      iconBg: "bg-amber-500",  bg: "from-amber-500/10 to-yellow-500/10",   threshold: 1,  current: avgRating && Number(avgRating) >= 4.5 ? 1 : 0 },
+              ].map(({ title, desc, icon: Icon, iconBg, bg, threshold, current }) => {
                 const earned = current >= threshold
+                const pct = Math.min(Math.round((current / threshold) * 100), 100)
                 return (
-                  <div key={title} className={`rounded-2xl border p-5 text-center transition-all ${earned ? `bg-gradient-to-br ${bg} border-transparent shadow-sm` : "bg-muted/10 border-border/30 opacity-50"}`}>
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${earned ? iconBg : "bg-muted"}`}>
+                  <div key={title}
+                    className={`rounded-2xl border p-5 text-center transition-all ${earned
+                      ? `bg-gradient-to-br ${bg} border-transparent shadow-md`
+                      : "bg-muted/10 border-border/30 opacity-60 hover:opacity-80"
+                    }`}
+                  >
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm ${earned ? iconBg : "bg-muted"} ${earned ? "ring-4 ring-current/10" : ""}`}>
                       <Icon className="w-7 h-7 text-white" />
                     </div>
                     <h3 className="font-bold text-sm mb-1">{title}</h3>
                     <p className="text-xs text-muted-foreground mb-3">{desc}</p>
-                    <Badge className={earned ? `${iconBg} text-white border-transparent text-xs` : "bg-muted text-muted-foreground text-xs"}>
-                      {earned ? "Earned ✓" : `${Math.min(current, threshold)}/${threshold}`}
-                    </Badge>
+                    {earned ? (
+                      <Badge className={`${iconBg} text-white border-transparent text-xs px-3`}>
+                        Earned ✓
+                      </Badge>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-muted-foreground/40 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">{Math.min(current, threshold)}/{threshold}</p>
+                      </div>
+                    )}
                   </div>
                 )
               })}
@@ -732,20 +842,25 @@ export default function ProfilePage() {
                 ) : (
                   <div className="space-y-3">
                     {receivedReviews.map((r) => (
-                      <div key={r.id} className="flex gap-3 p-3.5 bg-muted/20 rounded-xl border border-border/40">
-                        <Avatar className="w-8 h-8 shrink-0">
-                          <AvatarImage src={r.profiles?.avatar_url ?? undefined} />
-                          <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">{getInitials(r.profiles?.full_name ?? null)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <p className="font-semibold text-sm">{r.profiles?.full_name ?? "Player"}</p>
-                            <StarRating value={r.rating} size="sm" />
+                      <div key={r.id} className="relative p-4 bg-muted/20 rounded-2xl border border-border/40 overflow-hidden">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-yellow-400 to-amber-500 rounded-l-2xl" />
+                        <div className="flex gap-3 pl-2">
+                          <Avatar className="w-9 h-9 shrink-0">
+                            <AvatarImage src={r.profiles?.avatar_url ?? undefined} />
+                            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">{getInitials(r.profiles?.full_name ?? null)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                              <p className="font-semibold text-sm">{r.profiles?.full_name ?? "Player"}</p>
+                              <StarRating value={r.rating} size="sm" />
+                            </div>
+                            {r.comment && (
+                              <p className="text-sm text-foreground/80 leading-relaxed italic">&ldquo;{r.comment}&rdquo;</p>
+                            )}
+                            <p className="text-[10px] text-muted-foreground mt-1.5">
+                              {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </p>
                           </div>
-                          {r.comment && <p className="text-xs text-muted-foreground mt-1">{r.comment}</p>}
-                          <p className="text-[10px] text-muted-foreground mt-1.5">
-                            {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
-                          </p>
                         </div>
                       </div>
                     ))}
