@@ -15,9 +15,9 @@ import {
 
 const REMEMBER_KEY = "peerfit_remember_email"
 const EMAIL_OTP_COOLDOWN_KEY = "peerfit_email_otp_last_sent_at"
-const EMAIL_OTP_COOLDOWN_SECONDS = 90
+const EMAIL_OTP_COOLDOWN_SECONDS = 60
 const PHONE_OTP_COOLDOWN_KEY = "peerfit_phone_otp_last_sent_at"
-const PHONE_OTP_COOLDOWN_SECONDS = 90
+const PHONE_OTP_COOLDOWN_SECONDS = 60
 
 type SignupStep = "email" | "verify-email" | "terms" | "dob" | "phone" | "verify-phone"
 
@@ -242,6 +242,7 @@ function AuthPageContent() {
   const [phoneCode,  setPhoneCode]  = useState("")
   const [suLoading,  setSuLoading]  = useState(false)
   const [suError,    setSuError]    = useState("")
+  const [phoneDebug, setPhoneDebug] = useState("")
   const [countdown,  setCountdown]  = useState(0)
 
   useEffect(() => {
@@ -438,17 +439,20 @@ function AuthPageContent() {
 
   const sendPhoneCode = async () => {
     setSuError("")
+    setPhoneDebug("")
     if (phone.replace(/\D/g, "").length < 7) { setSuError("Please enter a valid phone number."); return }
     const remaining = getPhoneOtpSecondsRemaining(cc, phone)
     if (remaining > 0) {
       setCountdown(remaining)
       setStep("verify-phone")
+      setPhoneDebug(`blocked_by_local_cooldown (${remaining}s remaining)`)
       setSuError(`A code was already sent recently. Please wait ${remaining}s before requesting another one.`)
       return
     }
     setSuLoading(true)
     const sb = createClient()
     const fullPhone = normalizePhoneOtpTarget(cc, phone)
+    setPhoneDebug(`sending OTP to ${fullPhone}`)
     const { data: { user } } = await sb.auth.getUser()
     const metadata =
       user?.user_metadata && typeof user.user_metadata === "object"
@@ -463,6 +467,16 @@ function AuthPageContent() {
       },
     })
     if (error) {
+      setPhoneDebug(
+        JSON.stringify({
+          stage: "updateUser(phone)",
+          message: error.message,
+          name: "name" in error ? error.name : undefined,
+          status: "status" in error ? error.status : undefined,
+          code: "code" in error ? error.code : undefined,
+          fullPhone,
+        }, null, 2)
+      )
       if (/rate limit/i.test(error.message)) {
         const fallbackSeconds = PHONE_OTP_COOLDOWN_SECONDS
         markPhoneOtpSent(cc, phone)
@@ -475,6 +489,13 @@ function AuthPageContent() {
       setSuLoading(false)
       return
     }
+    setPhoneDebug(
+      JSON.stringify({
+        stage: "updateUser(phone)",
+        result: "success",
+        fullPhone,
+      }, null, 2)
+    )
     markPhoneOtpSent(cc, phone)
     setStep("verify-phone"); setCountdown(PHONE_OTP_COOLDOWN_SECONDS); setSuLoading(false)
   }
@@ -863,6 +884,13 @@ function AuthPageContent() {
 
                   {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
 
+                  {phoneDebug && (
+                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs text-white/65">
+                      <p className="mb-1 font-semibold uppercase tracking-[0.18em] text-white/35">SMS debug</p>
+                      <pre className="whitespace-pre-wrap break-words font-mono">{phoneDebug}</pre>
+                    </div>
+                  )}
+
                   <button onClick={sendPhoneCode} disabled={suLoading} className={greenBtn}>
                     {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}
                   </button>
@@ -894,6 +922,13 @@ function AuthPageContent() {
                   <OtpInput value={phoneCode} onChange={setPhoneCode} />
 
                   {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300 text-center">{suError}</div>}
+
+                  {phoneDebug && (
+                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-left text-xs text-white/65">
+                      <p className="mb-1 font-semibold uppercase tracking-[0.18em] text-white/35">SMS debug</p>
+                      <pre className="whitespace-pre-wrap break-words font-mono">{phoneDebug}</pre>
+                    </div>
+                  )}
 
                   <button onClick={verifyPhone} disabled={suLoading || !otpReady(phoneCode)} className={greenBtn}>
                     {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Verify &amp; Finish <CheckCircle2 className="w-4 h-4" /></>}
