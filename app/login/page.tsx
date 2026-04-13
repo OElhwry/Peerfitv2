@@ -216,6 +216,20 @@ function AuthPageContent() {
     return () => clearTimeout(t)
   }, [countdown])
 
+  useEffect(() => {
+    if (requestedStep !== "terms" || step !== "terms") return
+
+    const currentUrl = `${window.location.pathname}${window.location.search}`
+    window.history.pushState(null, "", currentUrl)
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", currentUrl)
+    }
+
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [requestedStep, step])
+
   /* ── sign in ── */
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault(); setSiLoading(true); setSiError("")
