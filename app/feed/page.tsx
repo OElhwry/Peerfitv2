@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import {
   Users,
   MapPin,
+  Camera,
   Calendar,
   Clock,
   Search,
@@ -33,6 +34,7 @@ import {
   Globe,
   UserPlus,
   UserCheck,
+  ArrowRight,
 } from "lucide-react"
 import Link from "next/link"
 import WeeklyCalendar from "@/components/weekly-calendar"
@@ -178,7 +180,7 @@ export default function ActivityFeedPage() {
   const [activities, setActivities] = useState<DbActivity[]>([])
   const [dbSports, setDbSports] = useState<DbSport[]>([])
   const [userId, setUserId] = useState<string | null>(null)
-  const [userProfile, setUserProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null)
+  const [userProfile, setUserProfile] = useState<{ full_name: string | null; location: string | null; avatar_url: string | null } | null>(null)
   const [joinedIds, setJoinedIds] = useState<Set<string>>(new Set())
   const [joiningId, setJoiningId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -303,7 +305,7 @@ export default function ActivityFeedPage() {
         { data: pendingFriends },
         { data: myJoinRequests },
       ] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single(),
+        supabase.from("profiles").select("full_name, location, avatar_url").eq("id", user.id).single(),
         supabase.from("sports").select("id, name, emoji").order("name"),
         supabase.from("activity_participants").select("activity_id").eq("user_id", user.id),
         supabase.from("activity_likes").select("activity_id").eq("user_id", user.id),
@@ -628,6 +630,7 @@ export default function ActivityFeedPage() {
   }
 
   const activeDates = [...new Set(activities.map((a) => a.date))]
+  const profileNeedsCompletion = !userProfile?.full_name || userProfile.full_name === "Your Name" || !userProfile?.location || !userProfile?.avatar_url
 
   const handleToggleLike = async (activityId: string) => {
     if (!userId) return
@@ -737,6 +740,33 @@ export default function ActivityFeedPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {profileNeedsCompletion && (
+          <Link
+            href="/profile"
+            className="mb-6 block overflow-hidden rounded-3xl border border-emerald-500/20 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.2),_transparent_35%),linear-gradient(135deg,rgba(2,6,23,0.98),rgba(15,23,42,0.96),rgba(6,78,59,0.92))] shadow-[0_20px_60px_rgba(6,78,59,0.18)] transition-transform duration-200 hover:-translate-y-0.5"
+          >
+            <div className="flex flex-col gap-4 px-5 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                  <Camera className="h-3.5 w-3.5" />
+                  Profile boost
+                </div>
+                <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                  Complete your profile so people know who they&apos;re playing with.
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70 sm:text-[15px]">
+                  Add your full name, location, and a profile photo to make your account feel real and help other players trust your requests faster.
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-3 self-start rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/80">
+                <span className="font-semibold">Go to profile</span>
+                <ArrowRight className="h-4 w-4" />
+              </div>
+            </div>
+          </Link>
+        )}
+
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-4">
