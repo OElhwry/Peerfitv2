@@ -18,6 +18,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [passwordForm, setPasswordForm] = useState({ password: "", confirmPassword: "" })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState("")
+  const [passwordError, setPasswordError] = useState("")
   const { theme, setTheme } = useTheme()
 
   // Account form
@@ -68,6 +72,33 @@ export default function SettingsPage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  const handlePasswordSave = async () => {
+    if (passwordForm.password.length < 8) {
+      setPasswordError("Your password must be at least 8 characters.")
+      return
+    }
+    if (passwordForm.password !== passwordForm.confirmPassword) {
+      setPasswordError("Your passwords do not match.")
+      return
+    }
+
+    setPasswordError("")
+    setPasswordMessage("")
+    setPasswordSaving(true)
+
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.password })
+
+    if (error) {
+      setPasswordError(error.message)
+      setPasswordSaving(false)
+      return
+    }
+
+    setPasswordForm({ password: "", confirmPassword: "" })
+    setPasswordSaving(false)
+    setPasswordMessage("Password updated.")
   }
 
   return (
@@ -195,16 +226,58 @@ export default function SettingsPage() {
                 </div>
                 <Switch checked={profileVisibility} onCheckedChange={setProfileVisibility} />
               </div>
-              <Separator />
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 bg-transparent"
-                onClick={() => router.push("/forgot-password")}
-              >
-                <Lock className="w-4 h-4" />
-                Change Password
-              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-background/60 backdrop-blur-xl border-border/50 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Lock className="w-4 h-4 text-primary" />
+                Email Sign-In Password
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-xs text-muted-foreground">
+                Set a password so you can sign in with your email and password as well as Google.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium block mb-1.5">New Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.password}
+                    onChange={(e) => setPasswordForm((f) => ({ ...f, password: e.target.value }))}
+                    placeholder="At least 8 characters"
+                    className="w-full p-2.5 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1.5">Confirm Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    onChange={(e) => setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    placeholder="Re-enter password"
+                    className="w-full p-2.5 bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm"
+                  />
+                </div>
+              </div>
+              {passwordError && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2 text-sm text-red-600">
+                  {passwordError}
+                </div>
+              )}
+              {passwordMessage && (
+                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 text-sm text-emerald-700 font-medium">
+                  {passwordMessage}
+                </div>
+              )}
+              <div className="flex justify-end">
+                <Button onClick={handlePasswordSave} disabled={passwordSaving} size="sm" className="gap-2">
+                  {passwordSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+                  Save Password
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
@@ -218,7 +291,7 @@ export default function SettingsPage() {
               onClick={handleSave}
               disabled={saving}
               size="sm"
-              className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 gap-2"
+              className="gap-2"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? "Saving..." : "Save Changes"}

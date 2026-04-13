@@ -1,19 +1,59 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, Suspense } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react"
+import {
+  Eye, EyeOff, Mail, Lock, ArrowRight, Loader2,
+  ChevronLeft, Phone, CheckCircle2, Info, Users, MapPin, Zap,
+} from "lucide-react"
+import PeerfitLogo from "@/components/peerfit-logo"
 
 const REMEMBER_KEY = "peerfit_remember_email"
+
+type SignupStep = "email" | "verify-email" | "terms" | "dob" | "phone" | "verify-phone"
+
+const COUNTRY_CODES = [
+  { code: "+1",   label: "🇺🇸 US  +1" },
+  { code: "+1",   label: "🇨🇦 CA  +1" },
+  { code: "+44",  label: "🇬🇧 UK  +44" },
+  { code: "+61",  label: "🇦🇺 AU  +61" },
+  { code: "+91",  label: "🇮🇳 IN  +91" },
+  { code: "+49",  label: "🇩🇪 DE  +49" },
+  { code: "+33",  label: "🇫🇷 FR  +33" },
+  { code: "+34",  label: "🇪🇸 ES  +34" },
+  { code: "+39",  label: "🇮🇹 IT  +39" },
+  { code: "+81",  label: "🇯🇵 JP  +81" },
+  { code: "+55",  label: "🇧🇷 BR  +55" },
+  { code: "+52",  label: "🇲🇽 MX  +52" },
+  { code: "+971", label: "🇦🇪 AE  +971" },
+  { code: "+234", label: "🇳🇬 NG  +234" },
+  { code: "+27",  label: "🇿🇦 ZA  +27" },
+]
+
+const SIGNUP_STEPS: SignupStep[] = ["email", "verify-email", "terms", "dob", "phone", "verify-phone"]
+const PREV_STEP: Record<SignupStep, SignupStep> = {
+  "email":        "email",
+  "verify-email": "email",
+  "terms":        "verify-email",
+  "dob":          "terms",
+  "phone":        "dob",
+  "verify-phone": "phone",
+}
+
+const SPORT_TILES = [
+  { img: "/images/sports/football.jpg",   label: "Football" },
+  { img: "/images/sports/basketball.jpg", label: "Basketball" },
+  { img: "/images/sports/tennis.jpg",     label: "Tennis" },
+  { img: "/images/sports/boxing.jpg",     label: "Boxing" },
+  { img: "/images/sports/running.jpg",    label: "Running" },
+  { img: "/images/sports/swimming.jpg",   label: "Swimming" },
+]
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -24,416 +64,684 @@ const GoogleIcon = () => (
   </svg>
 )
 
-export default function AuthPage() {
-  const router = useRouter()
+/* ── OTP boxes ── */
+function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const r0 = useRef<HTMLInputElement>(null)
+  const r1 = useRef<HTMLInputElement>(null)
+  const r2 = useRef<HTMLInputElement>(null)
+  const r3 = useRef<HTMLInputElement>(null)
+  const r4 = useRef<HTMLInputElement>(null)
+  const r5 = useRef<HTMLInputElement>(null)
+  const refs = [r0, r1, r2, r3, r4, r5]
+
+  const handle = (i: number, v: string) => {
+    const d = v.replace(/\D/g, "").slice(-1)
+    const a = value.padEnd(6, " ").split("")
+    a[i] = d || " "
+    onChange(a.join("").trimEnd())
+    if (d && i < 5) refs[i + 1].current?.focus()
+  }
+  const onKey = (i: number, e: React.KeyboardEvent) => {
+    if (e.key !== "Backspace") return
+    const a = value.padEnd(6, " ").split("")
+    if (!a[i].trim() && i > 0) {
+      a[i - 1] = " "; onChange(a.join("").trimEnd()); refs[i - 1].current?.focus()
+    } else {
+      a[i] = " "; onChange(a.join("").trimEnd())
+    }
+  }
+
+  return (
+    <div className="flex gap-2 justify-center">
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <input key={i} ref={refs[i]} type="text" inputMode="numeric" maxLength={1}
+          value={value[i]?.trim() ?? ""}
+          onChange={(e) => handle(i, e.target.value)}
+          onKeyDown={(e) => onKey(i, e)}
+          className="w-11 h-12 text-center text-xl font-bold border-2 rounded-xl border-slate-200 focus:border-emerald-500 focus:outline-none transition-colors bg-white text-slate-800 shadow-sm"
+        />
+      ))}
+    </div>
+  )
+}
+
+function pwStrength(pw: string): { bars: number; label: string; color: string } {
+  if (!pw) return { bars: 0, label: "", color: "" }
+  if (pw.length < 8) return { bars: 1, label: "Too short", color: "bg-red-500" }
+  const variety = [/[a-z]/, /[A-Z]/, /\d/, /[^a-zA-Z\d]/].filter((r) => r.test(pw)).length
+  if (variety <= 2) return { bars: 2, label: "Fair", color: "bg-amber-400" }
+  return { bars: 3, label: "Strong", color: "bg-emerald-400" }
+}
+
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@")
+  if (!local || !domain) return email
+  return `${local[0]}${"*".repeat(Math.max(local.length - 2, 2))}${local.slice(-1)}@${domain}`
+}
+
+function AuthPageContent() {
+  const router       = useRouter()
   const searchParams = useSearchParams()
   const [active, setActive] = useState<"signin" | "signup">(
     searchParams.get("mode") === "signup" ? "signup" : "signin"
   )
 
-  // Sign In state
-  const [signInEmail, setSignInEmail] = useState("")
-  const [signInPassword, setSignInPassword] = useState("")
+  /* sign-in */
+  const [siEmail,  setSiEmail]  = useState("")
+  const [siPw,     setSiPw]     = useState("")
   const [rememberMe, setRememberMe] = useState(false)
-  const [showSignInPw, setShowSignInPw] = useState(false)
-  const [signInLoading, setSignInLoading] = useState(false)
-  const [signInError, setSignInError] = useState("")
+  const [showPw,   setShowPw]   = useState(false)
+  const [siLoading, setSiLoading] = useState(false)
+  const [siError,  setSiError]  = useState("")
 
-  // Sign Up state
-  const [signUpName, setSignUpName] = useState("")
-  const [signUpEmail, setSignUpEmail] = useState("")
-  const [signUpPassword, setSignUpPassword] = useState("")
-  const [showSignUpPw, setShowSignUpPw] = useState(false)
-  const [signUpLoading, setSignUpLoading] = useState(false)
-  const [signUpError, setSignUpError] = useState("")
+  /* sign-up stepped */
+  const [step,       setStep]       = useState<SignupStep>("email")
+  const [suEmail,    setSuEmail]    = useState("")
+  const [suPw,       setSuPw]       = useState("")
+  const [showSuPw,   setShowSuPw]   = useState(false)
+  const [emailCode,  setEmailCode]  = useState("")
+  const [ageTerms,   setAgeTerms]   = useState(false)
+  const [ageCons,    setAgeCons]    = useState(false)
+  const [ageMkt,     setAgeMkt]     = useState(false)
+  const [dobD, setDobD] = useState("")
+  const [dobM, setDobM] = useState("")
+  const [dobY, setDobY] = useState("")
+  const [cc,         setCc]         = useState("+44")
+  const [phone,      setPhone]      = useState("")
+  const [phoneCode,  setPhoneCode]  = useState("")
+  const [suLoading,  setSuLoading]  = useState(false)
+  const [suError,    setSuError]    = useState("")
+  const [countdown,  setCountdown]  = useState(0)
 
   useEffect(() => {
-    const saved = localStorage.getItem(REMEMBER_KEY)
-    if (saved) {
-      setSignInEmail(saved)
-      setRememberMe(true)
-    }
+    const s = localStorage.getItem(REMEMBER_KEY)
+    if (s) { setSiEmail(s); setRememberMe(true) }
   }, [])
 
+  useEffect(() => {
+    if (countdown <= 0) return
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [countdown])
+
+  /* ── sign in ── */
   const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSignInLoading(true)
-    setSignInError("")
-    const supabase = createClient()
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: signInEmail.trim().toLowerCase(),
-      password: signInPassword,
+    e.preventDefault(); setSiLoading(true); setSiError("")
+    const sb = createClient()
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: siEmail.trim().toLowerCase(), password: siPw,
     })
-
     if (error) {
-      setSignInError(
-        error.message.includes("Invalid login credentials")
-          ? "Incorrect email or password."
-          : error.message
-      )
-      setSignInLoading(false)
-      return
+      setSiError(error.message.includes("Invalid login credentials") ? "Incorrect email or password." : error.message)
+      setSiLoading(false); return
     }
-
     if (data.session) {
-      if (rememberMe) {
-        localStorage.setItem(REMEMBER_KEY, signInEmail.trim().toLowerCase())
-      } else {
-        localStorage.removeItem(REMEMBER_KEY)
-      }
+      rememberMe ? localStorage.setItem(REMEMBER_KEY, siEmail.trim().toLowerCase()) : localStorage.removeItem(REMEMBER_KEY)
       router.push("/feed")
     }
-    setSignInLoading(false)
+    setSiLoading(false)
   }
 
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSignUpLoading(true)
-    setSignUpError("")
+  /* ── sign up steps ── */
+  const sendEmailCode = async () => {
+    setSuError("")
+    const email = suEmail.trim().toLowerCase()
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setSuError("Please enter a valid email address."); return }
+    if (suPw.length < 8) { setSuError("Password must be at least 8 characters."); return }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(suPw)) { setSuError("Password needs uppercase, lowercase & a number."); return }
+    setSuLoading(true)
+    const { error } = await createClient().auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
+    if (error) { setSuError(error.message); setSuLoading(false); return }
+    setStep("verify-email"); setCountdown(60); setSuLoading(false)
+  }
 
-    if (signUpPassword.length < 8 || !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(signUpPassword)) {
-      setSignUpError("Password needs 8+ chars with uppercase, lowercase & a number.")
-      setSignUpLoading(false)
-      return
+  const verifyEmail = async () => {
+    setSuError("")
+    const code = emailCode.replace(/\s/g, "")
+    if (code.length !== 6) { setSuError("Please enter the 6-digit code."); return }
+    setSuLoading(true)
+    const { error } = await createClient().auth.verifyOtp({ email: suEmail.trim().toLowerCase(), token: code, type: "email" })
+    if (error) { setSuError("Invalid code. Try again."); setSuLoading(false); return }
+    // Set the password on the now-verified account
+    await createClient().auth.updateUser({ password: suPw })
+    setStep("terms"); setSuLoading(false)
+  }
+
+  const acceptTerms = () => {
+    if (!ageTerms || !ageCons) { setSuError("You must agree to both Terms of Service and Consumer Terms."); return }
+    setSuError(""); setStep("dob")
+  }
+
+  const saveDob = async () => {
+    const d = parseInt(dobD), m = parseInt(dobM), y = parseInt(dobY)
+    if (!d || !m || !y || d < 1 || d > 31 || m < 1 || m > 12 || y < 1900 || y > new Date().getFullYear()) {
+      setSuError("Please enter a valid date of birth."); return
     }
-
-    const supabase = createClient()
-    const { data, error } = await supabase.auth.signUp({
-      email: signUpEmail.trim().toLowerCase(),
-      password: signUpPassword,
-      options: { data: { full_name: signUpName.trim() } },
-    })
-
-    if (error) {
-      setSignUpError(
-        error.message.includes("already registered")
-          ? "An account with this email already exists."
-          : error.message
-      )
-      setSignUpLoading(false)
-      return
+    const age = Math.floor((Date.now() - new Date(y, m - 1, d).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    if (age < 13) { setSuError("You must be at least 13 years old."); return }
+    setSuError(""); setSuLoading(true)
+    const { data: { user } } = await createClient().auth.getUser()
+    if (user) {
+      await createClient().from("profiles").update({
+        date_of_birth: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
+      }).eq("id", user.id)
     }
+    setSuLoading(false); setStep("phone")
+  }
 
-    if (data.user) {
-      await supabase.from("profiles").update({
-        full_name: signUpName.trim() || null,
-        onboarding_complete: true,
-      }).eq("id", data.user.id)
-      router.push("/feed")
-    }
-    setSignUpLoading(false)
+  const sendPhoneCode = async () => {
+    setSuError("")
+    if (phone.replace(/\D/g, "").length < 7) { setSuError("Please enter a valid phone number."); return }
+    setSuLoading(true)
+    const { error } = await createClient().auth.updateUser({ phone: `${cc}${phone.replace(/\D/g, "")}` })
+    if (error) { setSuError(error.message); setSuLoading(false); return }
+    setStep("verify-phone"); setCountdown(60); setSuLoading(false)
+  }
+
+  const verifyPhone = async () => {
+    setSuError("")
+    const code = phoneCode.replace(/\s/g, "")
+    if (code.length !== 6) { setSuError("Please enter the 6-digit code."); return }
+    setSuLoading(true)
+    const fullPhone = `${cc}${phone.replace(/\D/g, "")}`
+    const { error } = await createClient().auth.verifyOtp({ phone: fullPhone, token: code, type: "sms" })
+    if (error) { setSuError("Invalid code. Try again."); setSuLoading(false); return }
+    const { data: { user } } = await createClient().auth.getUser()
+    if (user) await createClient().from("profiles").update({ phone: fullPhone, onboarding_complete: true }).eq("id", user.id)
+    setSuLoading(false); router.push("/feed")
   }
 
   const handleGoogle = async () => {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
+    await createClient().auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?next=/onboarding` },
     })
   }
 
+  const otpReady = (v: string) => v.replace(/\s/g, "").length === 6
+  const stepIdx  = SIGNUP_STEPS.indexOf(step)
+  const suStrength = pwStrength(suPw)
+
+  /* shared input class for dark panel */
+  const darkInput = "w-full h-11 bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/25 text-sm px-4 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+  const greenBtn  = "w-full h-11 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 rounded-xl text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40 disabled:cursor-not-allowed"
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-4">
-        <Link href="/" className="flex items-center gap-2.5">
-          <Image src="/images/peerfit-logo.png" alt="PeerFit" width={36} height={36} className="object-contain" />
-          <span className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent"
+    <div className="min-h-screen flex">
+
+      {/* ══════════════════════════════════════
+          LEFT — dark panel with full auth UI
+      ══════════════════════════════════════ */}
+      <div className="w-full md:w-[460px] lg:w-[500px] flex-shrink-0 flex flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-emerald-950 px-8 py-10 relative overflow-hidden">
+
+        {/* background glows */}
+        <div className="pointer-events-none absolute -top-32 -left-32 w-80 h-80 rounded-full bg-emerald-600/10 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 right-0 w-56 h-56 rounded-full bg-teal-500/8 blur-3xl" />
+
+        {/* Logo + back nav */}
+        <div className="relative mb-12 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <PeerfitLogo size={36} className="text-emerald-400" />
+            <span className="text-[17px] font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+              PeerFit
+            </span>
+          </Link>
+          <Link href="/" className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors">
+            <ChevronLeft className="w-3.5 h-3.5" />Back to home
+          </Link>
+        </div>
+
+        {/* Hero headline */}
+        <div className="relative mb-10">
+          <h1 className="text-[2.6rem] lg:text-5xl font-black leading-[1.08] tracking-tight text-white mb-4"
             style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            PeerFit
-          </span>
-        </Link>
-        <p className="text-sm text-slate-500 hidden sm:block">Find People. Play Sports. Stay Active.</p>
-      </header>
-
-      {/* Main content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="w-full max-w-4xl">
-          {/* Heading */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-              {active === "signin" ? "Welcome back!" : "Join PeerFit"}
-            </h1>
-            <p className="text-slate-500">
-              {active === "signin" ? "Sign in to continue your sports journey" : "Create your account and start playing"}
-            </p>
-          </div>
-
-          {/* Dual panel */}
-          <div className="flex flex-col md:flex-row gap-4 items-stretch">
-            {/* ── SIGN IN PANEL ── */}
-            <div
-              className={`flex-1 rounded-2xl border bg-white shadow-lg transition-all duration-300 overflow-hidden ${
-                active === "signin"
-                  ? "opacity-100 shadow-xl ring-2 ring-emerald-200"
-                  : "opacity-40 cursor-pointer hover:opacity-60"
-              }`}
-              onClick={() => active !== "signin" && setActive("signin")}
-            >
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-slate-800">Sign In</h2>
-                  {active !== "signin" && (
-                    <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-3 py-1 rounded-full">
-                      Click to switch
-                    </span>
-                  )}
-                </div>
-
-                <form
-                  onSubmit={handleSignIn}
-                  className="space-y-4"
-                  onClick={(e) => active !== "signin" && e.preventDefault()}
-                >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={active === "signin" ? handleGoogle : undefined}
-                    disabled={active !== "signin"}
-                    className="w-full h-11 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 gap-3 bg-transparent"
-                  >
-                    <GoogleIcon />
-                    Continue with Google
-                  </Button>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-slate-400">or email</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        value={signInEmail}
-                        onChange={(e) => setSignInEmail(e.target.value)}
-                        disabled={active !== "signin"}
-                        className="pl-10 h-11 border-slate-200 focus:border-emerald-400"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <Label className="text-xs font-semibold text-slate-600">Password</Label>
-                      <Link href="/forgot-password" className="text-xs text-emerald-600 hover:underline font-medium" tabIndex={active !== "signin" ? -1 : 0}>
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <Input
-                        type={showSignInPw ? "text" : "password"}
-                        placeholder="Your password"
-                        value={signInPassword}
-                        onChange={(e) => setSignInPassword(e.target.value)}
-                        disabled={active !== "signin"}
-                        className="pl-10 pr-10 h-11 border-slate-200 focus:border-emerald-400"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSignInPw(!showSignInPw)}
-                        disabled={active !== "signin"}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        {showSignInPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="remember"
-                      checked={rememberMe}
-                      onCheckedChange={(c) => setRememberMe(!!c)}
-                      disabled={active !== "signin"}
-                      className="data-[state=checked]:bg-emerald-600 data-[state=checked]:border-emerald-600"
-                    />
-                    <Label htmlFor="remember" className="text-sm text-slate-600 cursor-pointer">Remember me</Label>
-                  </div>
-
-                  {signInError && (
-                    <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
-                      {signInError}
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={signInLoading || active !== "signin"}
-                    className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    {signInLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <span className="flex items-center gap-2">Sign In <ArrowRight className="w-4 h-4" /></span>
-                    )}
-                  </Button>
-                </form>
-              </div>
-            </div>
-
-            {/* Divider — desktop only */}
-            <div className="hidden md:flex flex-col items-center justify-center gap-3 px-2">
-              <div className="w-px h-24 bg-slate-200" />
-              <span className="text-xs text-slate-400 font-medium bg-white border border-slate-200 rounded-full w-8 h-8 flex items-center justify-center">or</span>
-              <div className="w-px h-24 bg-slate-200" />
-            </div>
-
-            {/* ── SIGN UP PANEL ── */}
-            <div
-              className={`flex-1 rounded-2xl border bg-white shadow-lg transition-all duration-300 overflow-hidden ${
-                active === "signup"
-                  ? "opacity-100 shadow-xl ring-2 ring-emerald-200"
-                  : "opacity-40 cursor-pointer hover:opacity-60"
-              }`}
-              onClick={() => active !== "signup" && setActive("signup")}
-            >
-              <div className="p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-slate-800">Create Account</h2>
-                  {active !== "signup" && (
-                    <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-3 py-1 rounded-full">
-                      Click to switch
-                    </span>
-                  )}
-                </div>
-
-                <form
-                  onSubmit={handleSignUp}
-                  className="space-y-4"
-                  onClick={(e) => active !== "signup" && e.preventDefault()}
-                >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={active === "signup" ? handleGoogle : undefined}
-                    disabled={active !== "signup"}
-                    className="w-full h-11 border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 gap-3 bg-transparent"
-                  >
-                    <GoogleIcon />
-                    Sign up with Google
-                  </Button>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center"><Separator className="w-full" /></div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-slate-400">or email</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="text"
-                        placeholder="Your name"
-                        value={signUpName}
-                        onChange={(e) => setSignUpName(e.target.value)}
-                        disabled={active !== "signup"}
-                        className="pl-10 h-11 border-slate-200 focus:border-emerald-400"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        value={signUpEmail}
-                        onChange={(e) => setSignUpEmail(e.target.value)}
-                        disabled={active !== "signup"}
-                        className="pl-10 h-11 border-slate-200 focus:border-emerald-400"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs font-semibold text-slate-600 mb-1.5 block">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <Input
-                        type={showSignUpPw ? "text" : "password"}
-                        placeholder="Min 8 chars, upper, lower & number"
-                        value={signUpPassword}
-                        onChange={(e) => setSignUpPassword(e.target.value)}
-                        disabled={active !== "signup"}
-                        className="pl-10 pr-10 h-11 border-slate-200 focus:border-emerald-400"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSignUpPw(!showSignUpPw)}
-                        disabled={active !== "signup"}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                      >
-                        {showSignUpPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    {signUpPassword && (
-                      <p className={`text-xs mt-1 font-medium ${
-                        signUpPassword.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(signUpPassword)
-                          ? "text-emerald-600"
-                          : "text-amber-500"
-                      }`}>
-                        {signUpPassword.length >= 8 && /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(signUpPassword)
-                          ? "✓ Strong password"
-                          : "Needs uppercase, lowercase & number"}
-                      </p>
-                    )}
-                  </div>
-
-                  {signUpError && (
-                    <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
-                      {signUpError}
-                    </div>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={signUpLoading || active !== "signup"}
-                    className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    {signUpLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <span className="flex items-center gap-2">Create Account <ArrowRight className="w-4 h-4" /></span>
-                    )}
-                  </Button>
-
-                  <p className="text-center text-xs text-slate-400">
-                    Want full onboarding?{" "}
-                    <Link href="/signup" className="text-emerald-600 hover:underline font-medium" tabIndex={active !== "signup" ? -1 : 0}>
-                      Complete profile setup →
-                    </Link>
-                  </p>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-center text-xs text-slate-400 mt-6">
-            By continuing, you agree to our{" "}
-            <Link href="/terms" className="text-emerald-600 hover:underline">Terms</Link>
-            {" "}and{" "}
-            <Link href="/privacy" className="text-emerald-600 hover:underline">Privacy Policy</Link>
+            Train smarter.<br />
+            <span className="text-emerald-400">Stay consistent.</span>
+          </h1>
+          <p className="text-white/50 text-[15px] leading-relaxed max-w-xs">
+            Find local games, connect with nearby players, and build the habits that actually stick.
           </p>
         </div>
+
+        {/* ── Auth form ── */}
+        <div className="relative flex-1 flex flex-col min-h-0">
+
+          {/* Tab switcher */}
+          <div className="flex items-end border-b border-white/10 mb-7">
+            {(["signin", "signup"] as const).map((tab) => (
+              <button key={tab}
+                onClick={() => { setActive(tab); setSuError(""); setSiError("") }}
+                className={`pb-3 mr-7 text-sm font-semibold border-b-2 -mb-px transition-all ${
+                  active === tab
+                    ? "text-white border-emerald-400"
+                    : "text-white/30 border-transparent hover:text-white/55"
+                }`}
+              >
+                {tab === "signin" ? "Sign in" : "Create account"}
+              </button>
+            ))}
+            {/* Progress dots — only visible on signup, sits inline with tabs */}
+            {active === "signup" && (
+              <div className="ml-auto pb-3 flex items-center gap-1.5">
+                {step !== "email" && (
+                  <button onClick={() => { setStep(PREV_STEP[step]); setSuError("") }}
+                    className="flex items-center gap-0.5 text-white/35 hover:text-white/65 text-xs transition-colors mr-2">
+                    <ChevronLeft className="w-3.5 h-3.5" />Back
+                  </button>
+                )}
+                {SIGNUP_STEPS.map((s, i) => (
+                  <div key={s} className={`h-1 rounded-full transition-all duration-300 ${
+                    s === step ? "w-5 bg-emerald-400" : i < stepIdx ? "w-2 bg-emerald-700" : "w-2 bg-white/10"
+                  }`} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ────────── SIGN IN ────────── */}
+          {active === "signin" && (
+            <form onSubmit={handleSignIn} className="space-y-4 min-h-[420px]">
+              {/* Google */}
+              <button type="button" onClick={handleGoogle}
+                className="w-full h-11 flex items-center justify-center gap-3 bg-white/8 hover:bg-white/13 border border-white/12 rounded-xl text-white/85 text-sm font-medium transition-all">
+                <GoogleIcon />Continue with Google
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-white/25 text-xs">or</span>
+                <div className="flex-1 h-px bg-white/10" />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 block">Email</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                  <input type="email" placeholder="your@email.com" value={siEmail}
+                    onChange={(e) => setSiEmail(e.target.value)}
+                    className={`${darkInput} pl-10`} required />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Password</label>
+                  <Link href="/forgot-password" className="text-xs text-emerald-400/80 hover:text-emerald-400 font-medium">
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                  <input type={showPw ? "text" : "password"} placeholder="Your password" value={siPw}
+                    onChange={(e) => setSiPw(e.target.value)}
+                    className={`${darkInput} pl-10 pr-10`} required />
+                  <button type="button" onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/55">
+                    {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Remember me */}
+              <div className="flex items-center gap-2">
+                <Checkbox id="rem" checked={rememberMe} onCheckedChange={(c) => setRememberMe(!!c)}
+                  className="border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
+                <Label htmlFor="rem" className="text-sm text-white/45 cursor-pointer">Remember me</Label>
+              </div>
+
+              {siError && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{siError}</div>
+              )}
+
+              <button type="submit" disabled={siLoading} className={greenBtn}>
+                {siLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Sign In <ArrowRight className="w-4 h-4" /></>}
+              </button>
+            </form>
+          )}
+
+          {/* ────────── SIGN UP (stepped) ────────── */}
+          {active === "signup" && (
+            <div className="min-h-[420px] flex flex-col">
+
+              {/* ── Step: email ── */}
+              {step === "email" && (
+                  <div className="space-y-4 flex-1">
+                    <button type="button" onClick={handleGoogle}
+                      className="w-full h-11 flex items-center justify-center gap-3 bg-white/8 hover:bg-white/13 border border-white/12 rounded-xl text-white/85 text-sm font-medium transition-all">
+                      <GoogleIcon />Continue with Google
+                    </button>
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-px bg-white/10" />
+                      <span className="text-white/25 text-xs">or continue with email</span>
+                      <div className="flex-1 h-px bg-white/10" />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 block">Email address</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                        <input type="email" placeholder="your@email.com" value={suEmail}
+                          onChange={(e) => setSuEmail(e.target.value)}
+                          className={`${darkInput} pl-10`} />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 block">Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                        <input type={showSuPw ? "text" : "password"} placeholder="Min 8 chars, upper, lower & number"
+                          value={suPw} onChange={(e) => setSuPw(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && sendEmailCode()}
+                          className={`${darkInput} pl-10 pr-10`} />
+                        <button type="button" onClick={() => setShowSuPw(!showSuPw)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/55">
+                          {showSuPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      {/* Strength bar — fixed height so it never shifts layout */}
+                      <div className="mt-2 h-5">
+                        {suPw && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex gap-1 flex-1">
+                              {[1, 2, 3].map((n) => (
+                                <div key={n} className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                                  n <= suStrength.bars ? suStrength.color : "bg-white/10"
+                                }`} />
+                              ))}
+                            </div>
+                            <span className={`text-[10px] font-semibold ${
+                              suStrength.bars === 1 ? "text-red-400" : suStrength.bars === 2 ? "text-amber-400" : "text-emerald-400"
+                            }`}>{suStrength.label}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
+
+                    <button onClick={sendEmailCode} disabled={suLoading} className={greenBtn}>
+                      {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                    </button>
+                  </div>
+              )}
+
+              {/* ── Step: verify-email ── */}
+              {step === "verify-email" && (
+                <div className="space-y-5">
+                  <div className="text-center">
+                    <div className="w-14 h-14 bg-emerald-500/12 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Mail className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <p className="text-white/45 text-sm">We sent a 6-digit code to</p>
+                    <p className="text-white font-semibold mt-0.5">{suEmail}</p>
+                  </div>
+
+                  <OtpInput value={emailCode} onChange={setEmailCode} />
+
+                  {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300 text-center">{suError}</div>}
+
+                  <button onClick={verifyEmail} disabled={suLoading || !otpReady(emailCode)} className={greenBtn}>
+                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Verify Email <CheckCircle2 className="w-4 h-4" /></>}
+                  </button>
+
+                  <p className="text-center text-sm">
+                    {countdown > 0
+                      ? <span className="text-white/25">Resend in {countdown}s</span>
+                      : <button onClick={sendEmailCode} className="text-emerald-400 hover:text-emerald-300 font-medium">Resend code</button>}
+                  </p>
+                </div>
+              )}
+
+              {/* ── Step: terms ── */}
+              {step === "terms" && (
+                <div className="space-y-4">
+                  <p className="text-white/45 text-sm">Before you continue, review and agree to our terms.</p>
+
+                  <div className="space-y-4 bg-white/5 border border-white/8 rounded-xl p-4">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <Checkbox checked={ageTerms} onCheckedChange={(c) => setAgeTerms(!!c)}
+                        className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
+                      <span className="text-sm text-white/65 leading-snug">
+                        I agree to PeerFit's{" "}
+                        <Link href="/terms" className="text-emerald-400 hover:underline font-medium">Terms of Service</Link>
+                      </span>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <Checkbox checked={ageCons} onCheckedChange={(c) => setAgeCons(!!c)}
+                        className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
+                      <span className="text-sm text-white/65 leading-snug">
+                        I agree to the{" "}
+                        <Link href="/consumer-terms" className="text-emerald-400 hover:underline font-medium">Consumer Terms</Link>
+                      </span>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <Checkbox checked={ageMkt} onCheckedChange={(c) => setAgeMkt(!!c)}
+                        className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
+                      <span className="text-sm text-white/45 leading-snug">
+                        Email me news, sport releases &amp; offers{" "}
+                        <span className="text-white/25 text-xs">(optional — opt out anytime)</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
+
+                  <button onClick={acceptTerms} disabled={!ageTerms || !ageCons} className={greenBtn}>
+                    Create Account <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* ── Step: dob ── */}
+              {step === "dob" && (
+                <div className="space-y-5">
+                  <p className="text-white/45 text-sm">What's your date of birth?</p>
+
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: "Day",   val: dobD, set: setDobD, ph: "DD",   min: 1,    max: 31 },
+                      { label: "Month", val: dobM, set: setDobM, ph: "MM",   min: 1,    max: 12 },
+                      { label: "Year",  val: dobY, set: setDobY, ph: "YYYY", min: 1900, max: new Date().getFullYear() },
+                    ].map(({ label, val, set, ph }) => (
+                      <div key={label}>
+                        <label className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5 block text-center">{label}</label>
+                        <input type="number" placeholder={ph} value={val}
+                          onChange={(e) => set(e.target.value)}
+                          className="w-full h-12 text-center text-lg font-bold bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/18 focus:outline-none focus:border-emerald-500/50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-xs text-white/25 text-center">You must be at least 13 years old.</p>
+
+                  {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
+
+                  <button onClick={saveDob} disabled={suLoading || !dobD || !dobM || !dobY} className={greenBtn}>
+                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                  </button>
+                </div>
+              )}
+
+              {/* ── Step: phone ── */}
+              {step === "phone" && (
+                <div className="space-y-4">
+                  <p className="text-white/45 text-sm">Verify your phone number to secure your account.</p>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 block">Phone number</label>
+                    <div className="flex gap-2">
+                      <select value={cc} onChange={(e) => setCc(e.target.value)}
+                        className="h-11 px-2.5 text-sm bg-white/8 border border-white/12 rounded-xl text-white shrink-0 focus:outline-none focus:border-emerald-500/50">
+                        {COUNTRY_CODES.map((c) => (
+                          <option key={c.label} value={c.code} className="bg-slate-800 text-white">{c.label}</option>
+                        ))}
+                      </select>
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                        <input type="tel" placeholder="7911 123456" value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className={`${darkInput} pl-10`} />
+                      </div>
+                    </div>
+                    <p className="text-xs text-white/25 mt-1.5 flex items-center gap-1">
+                      <Info className="w-3 h-3 shrink-0" />
+                      SMS and data charges may apply.{" "}
+                      <Link href="/sms-info" className="text-emerald-400/60 hover:text-emerald-400">Learn more</Link>
+                    </p>
+                  </div>
+
+                  {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
+
+                  <button onClick={sendPhoneCode} disabled={suLoading} className={greenBtn}>
+                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}
+                  </button>
+
+                  <div className="border-t border-white/8 pt-3 space-y-1.5">
+                    <p className="text-xs text-white/35 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      Email verified as <span className="text-white/55 font-medium">{maskEmail(suEmail)}</span>
+                    </p>
+                    <button onClick={() => { setStep("email"); setSuEmail(""); setSuPw(""); setEmailCode("") }}
+                      className="text-xs text-emerald-400/60 hover:text-emerald-400">
+                      Use a different email
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Step: verify-phone ── */}
+              {step === "verify-phone" && (
+                <div className="space-y-5">
+                  <div className="text-center">
+                    <div className="w-14 h-14 bg-emerald-500/12 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Phone className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <p className="text-white/45 text-sm">We sent a code to</p>
+                    <p className="text-white font-semibold mt-0.5">{cc} {phone}</p>
+                  </div>
+
+                  <OtpInput value={phoneCode} onChange={setPhoneCode} />
+
+                  {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300 text-center">{suError}</div>}
+
+                  <button onClick={verifyPhone} disabled={suLoading || !otpReady(phoneCode)} className={greenBtn}>
+                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Verify &amp; Finish <CheckCircle2 className="w-4 h-4" /></>}
+                  </button>
+
+                  <p className="text-center text-sm">
+                    {countdown > 0
+                      ? <span className="text-white/25">Resend in {countdown}s</span>
+                      : <button onClick={sendPhoneCode} className="text-emerald-400 hover:text-emerald-300 font-medium">Resend code</button>}
+                  </p>
+
+                  <div className="border-t border-white/8 pt-3 space-y-1.5">
+                    <p className="text-xs text-white/35 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      Email verified as <span className="text-white/55 font-medium">{maskEmail(suEmail)}</span>
+                    </p>
+                    <button onClick={() => { setStep("email"); setSuEmail(""); setSuPw(""); setEmailCode("") }}
+                      className="text-xs text-emerald-400/60 hover:text-emerald-400">
+                      Use a different email
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <p className="relative text-[11px] text-white/18 mt-8 leading-relaxed">
+          By continuing you agree to our{" "}
+          <Link href="/terms" className="text-white/35 hover:text-white/55 underline">Terms</Link>
+          {" "}&amp;{" "}
+          <Link href="/privacy" className="text-white/35 hover:text-white/55 underline">Privacy Policy</Link>
+        </p>
       </div>
+
+      {/* ══════════════════════════════════════
+          RIGHT — sport imagery + features
+      ══════════════════════════════════════ */}
+      <div className="hidden md:flex flex-1 flex-col bg-slate-50 relative overflow-hidden">
+
+        {/* Sport image mosaic */}
+        <div className="flex-1 relative min-h-0">
+          <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-2 p-6 pb-0">
+            {SPORT_TILES.map(({ img, label }) => (
+              <div key={label} className="relative rounded-2xl overflow-hidden group">
+                <Image src={img} alt={label} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+                <span className="absolute bottom-3 left-3.5 text-white text-[10px] font-black tracking-widest uppercase opacity-90">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* fade to section below */}
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-slate-50 to-transparent pointer-events-none" />
+        </div>
+
+        {/* Features + testimonial */}
+        <div className="px-10 pb-10 pt-4 flex-shrink-0">
+
+          <div className="space-y-4 mb-7">
+            {[
+              { icon: <MapPin className="w-4 h-4" />, title: "Find local games", desc: "Browse activities near you and join with a single tap." },
+              { icon: <Users className="w-4 h-4" />,  title: "Connect with players", desc: "Meet people at your level, for your sport, right in your area." },
+              { icon: <Zap className="w-4 h-4" />,    title: "Build lasting habits", desc: "Stay consistent with a community that keeps you accountable." },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} className="flex items-start gap-3">
+                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                  {icon}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{title}</p>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-snug">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Testimonial card */}
+          <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+            <p className="text-sm text-slate-600 leading-relaxed italic">
+              "Found a 5-a-side team in my area within a week. Now we play every Thursday without fail."
+            </p>
+            <div className="flex items-center gap-2.5 mt-3.5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-black">
+                J
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-700">James K.</p>
+                <p className="text-xs text-slate-400">London · Football</p>
+              </div>
+              <div className="ml-auto flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-3.5 h-3.5 text-emerald-400 fill-current" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
+  )
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageContent />
+    </Suspense>
   )
 }

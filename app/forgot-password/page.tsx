@@ -3,140 +3,136 @@
 import { useState } from "react"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ArrowLeft, Mail, CheckCircle } from "lucide-react"
+import { Mail, ArrowLeft, CheckCircle2, Loader2, ArrowRight } from "lucide-react"
+import PeerfitLogo from "@/components/peerfit-logo"
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [sent, setSent] = useState(false)
-  const [errorMsg, setErrorMsg] = useState("")
+  const [email, setEmail]     = useState("")
+  const [loading, setLoading] = useState(false)
+  const [sent, setSent]       = useState(false)
+  const [error, setError]     = useState("")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
-    setErrorMsg("")
-
-    const supabase = createClient()
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    setIsLoading(false)
-
-    if (error) {
-      setErrorMsg(error.message)
-    } else {
-      setSent(true)
-    }
+    setLoading(true)
+    setError("")
+    const { error: err } = await createClient().auth.resetPasswordForEmail(
+      email.trim().toLowerCase(),
+      { redirectTo: `${window.location.origin}/reset-password` }
+    )
+    setLoading(false)
+    if (err) setError(err.message)
+    else setSent(true)
   }
 
+  const darkInput = "w-full h-11 bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/25 text-sm px-4 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all"
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="mb-6">
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Sign In
-          </Link>
-        </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-900 to-emerald-950 flex flex-col items-center justify-center px-5 relative overflow-hidden">
 
-        <Card className="shadow-xl border-0 bg-white/90 backdrop-blur-sm">
-          <CardHeader className="text-center space-y-1 pb-4">
-            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Mail className="w-6 h-6 text-emerald-600" />
+      {/* background glows */}
+      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-emerald-600/10 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 right-0 w-64 h-64 rounded-full bg-teal-500/8 blur-3xl" />
+
+      <div className="relative w-full max-w-sm">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center justify-center gap-2 mb-10 group">
+          <PeerfitLogo size={34} className="text-emerald-400" />
+          <span className="text-[15px] font-black text-white tracking-tight group-hover:text-emerald-400 transition-colors"
+            style={{ fontFamily: "var(--font-space-grotesk)" }}>
+            PeerFit
+          </span>
+        </Link>
+
+        {/* Back link */}
+        <Link href="/login"
+          className="inline-flex items-center gap-1.5 text-white/35 hover:text-white/65 text-sm mb-8 transition-colors">
+          <ArrowLeft className="w-3.5 h-3.5" />Back to sign in
+        </Link>
+
+        {sent ? (
+          /* ── Success state ── */
+          <div className="text-center space-y-5">
+            <div className="w-16 h-16 bg-emerald-500/15 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
             </div>
-            <CardTitle className="text-2xl font-semibold text-slate-800">Forgot Password?</CardTitle>
-            <CardDescription className="text-slate-600">
-              Enter your email and we'll send you a reset link
-            </CardDescription>
-          </CardHeader>
+            <div>
+              <h1 className="text-2xl font-black text-white mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                Check your inbox
+              </h1>
+              <p className="text-white/45 text-sm leading-relaxed">
+                We sent a reset link to{" "}
+                <span className="text-white/70 font-medium">{email}</span>
+              </p>
+            </div>
+            <p className="text-xs text-white/25">
+              Didn't get it?{" "}
+              <button onClick={() => setSent(false)} className="text-emerald-400/80 hover:text-emerald-400">
+                Try again
+              </button>
+            </p>
+            <Link href="/login"
+              className="w-full h-11 bg-emerald-500 hover:bg-emerald-400 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-900/40">
+              Back to sign in <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
 
-          <CardContent className="space-y-5">
-            {sent ? (
-              <div className="text-center space-y-4 py-4">
-                <div className="w-14 h-14 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-8 h-8 text-emerald-600" />
+        ) : (
+          /* ── Form state ── */
+          <div className="space-y-6">
+            <div>
+              <h1 className="text-3xl font-black text-white tracking-tight mb-2"
+                style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                Reset password
+              </h1>
+              <p className="text-white/45 text-sm leading-relaxed">
+                Enter your email and we'll send you a reset link.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 block">
+                  Email address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`${darkInput} pl-10`}
+                    required
+                  />
                 </div>
-                <div>
-                  <p className="font-semibold text-slate-800 text-lg">Check your inbox</p>
-                  <p className="text-slate-600 text-sm mt-1">
-                    We sent a password reset link to{" "}
-                    <span className="font-medium text-emerald-700">{email}</span>
-                  </p>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Didn't receive it? Check your spam folder or{" "}
-                  <button
-                    onClick={() => setSent(false)}
-                    className="text-emerald-600 hover:underline font-medium"
-                  >
-                    try again
-                  </button>
-                </p>
-                <Link href="/login">
-                  <Button className="w-full mt-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white">
-                    Back to Sign In
-                  </Button>
-                </Link>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium text-slate-700">
-                    Email Address
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 h-12 border-slate-200 focus:border-emerald-400 focus:ring-emerald-400/20"
-                      required
-                    />
-                  </div>
+
+              {error && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">
+                  {error}
                 </div>
+              )}
 
-                {errorMsg && (
-                  <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                    {errorMsg}
-                  </div>
-                )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 rounded-xl text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/40"
+              >
+                {loading
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <>Send reset link <ArrowRight className="w-4 h-4" /></>
+                }
+              </button>
+            </form>
 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Sending...
-                    </div>
-                  ) : (
-                    "Send Reset Link"
-                  )}
-                </Button>
-
-                <p className="text-center text-xs text-slate-500">
-                  Remember your password?{" "}
-                  <Link href="/login" className="text-emerald-600 hover:underline font-medium">
-                    Sign in
-                  </Link>
-                </p>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+            <p className="text-center text-xs text-white/20">
+              Remember your password?{" "}
+              <Link href="/login" className="text-emerald-400/70 hover:text-emerald-400">Sign in</Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )

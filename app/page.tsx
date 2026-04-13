@@ -1,587 +1,334 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Users, MapPin, Calendar, Star, Play, UserPlus, Search, ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight, CheckCircle, Star } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import PeerfitLogo from "@/components/peerfit-logo"
+
+/* ── Sport image grid data ── */
+const HERO_SPORTS = [
+  { src: "/images/sports/football.jpg",   label: "Football" },
+  { src: "/images/sports/tennis.jpg",     label: "Tennis" },
+  { src: "/images/sports/running.jpg",    label: "Running" },
+  { src: "/images/sports/basketball.jpg", label: "Basketball" },
+]
+
+const SPORT_CHIPS = [
+  { src: "/images/sports/football.jpg",   label: "Football" },
+  { src: "/images/sports/tennis.jpg",     label: "Tennis" },
+  { src: "/images/sports/running.jpg",    label: "Running" },
+  { src: "/images/sports/basketball.jpg", label: "Basketball" },
+  { src: "/images/sports/boxing.jpg",     label: "Boxing" },
+  { src: "/images/sports/swimming.jpg",   label: "Swimming" },
+  { src: "/images/sports/cycling.jpg",    label: "Cycling" },
+  { src: "/images/sports/gym.jpg",        label: "Gym" },
+  { src: "/images/sports/rugby.jpg",      label: "Rugby" },
+  { src: "/images/sports/volleyball.jpg", label: "Volleyball" },
+  { src: "/images/sports/padel.jpg",      label: "Padel" },
+  { src: "/images/sports/yoga.jpg",       label: "Yoga" },
+]
+
+const TESTIMONIALS = [
+  {
+    quote: "Found a 5-a-side team in my area within a week. We play every Thursday now without fail.",
+    name: "James K.", role: "London · Football", initial: "J",
+  },
+  {
+    quote: "I was new to the city and didn't know anyone. PeerFit changed that — I've made real friends through running groups.",
+    name: "Priya S.", role: "Manchester · Running", initial: "P",
+  },
+  {
+    quote: "Finally a tennis partner at my level. We've been playing twice a week for six months.",
+    name: "Sarah M.", role: "London · Tennis", initial: "S",
+  },
+]
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Image
-                src="/images/peerfit-logo.png"
-                alt="PeerFit Logo"
-                width={100}
-                height={100}
-                className="w-25 h-25 object-contain"
-              />
-              <span className="text-2xl font-bold text-foreground" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                PeerFit
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link href="/login">
-                <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90">
-                  Join Now
-                </Button>
-              </Link>
-            </div>
+    <div className="min-h-screen bg-white text-slate-900 antialiased">
+
+      {/* ══════════════════════════════════════════
+          NAV
+      ══════════════════════════════════════════ */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-100">
+        <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <PeerfitLogo size={34} className="text-emerald-600" />
+            <span className="font-black text-lg tracking-tight text-slate-900 group-hover:text-emerald-600 transition-colors"
+              style={{ fontFamily: "var(--font-space-grotesk)" }}>
+              PeerFit
+            </span>
+          </Link>
+
+          {/* Nav links — desktop */}
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-500">
+            <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How it works</a>
+            <a href="#sports" className="hover:text-slate-900 transition-colors">Sports</a>
+            <a href="#community" className="hover:text-slate-900 transition-colors">Community</a>
+          </nav>
+
+          {/* Auth */}
+          <div className="flex items-center gap-3">
+            <Link href="/login"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5">
+              Log in
+            </Link>
+            <Link href="/login?mode=signup"
+              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
+              Get started
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/10 py-16 px-4">
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-primary/5 to-accent/5 rounded-full blur-3xl"></div>
-        </div>
+      {/* ══════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-5 pt-20 pb-24 grid lg:grid-cols-2 gap-14 items-center">
 
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left side - Content */}
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6">
-                <Sparkles className="w-4 h-4" />
-                Join Our Growing Community
-              </div>
-
-              <h1
-                className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
-                style={{ fontFamily: "var(--font-space-grotesk)" }}
-              >
-                <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-                  Find People.
-                </span>
-                <br />
-                <span className="text-foreground">Play Sports.</span>
-                <br />
-                <span className="bg-gradient-to-r from-accent via-primary to-accent bg-clip-text text-transparent">
-                  Stay Active.
-                </span>
-              </h1>
-
-              <p
-                className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
-                style={{ fontFamily: "var(--font-dm-sans)" }}
-              >
-                Connect with teammates and partners for any sport, anytime, anywhere. Join a community of active people
-                and never play alone again.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <Link href="/signup">
-                  <Button
-                    size="lg"
-                    className="group relative overflow-hidden bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      Join Now - It's Free!
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-accent to-primary opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </Button>
-                </Link>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="group relative overflow-hidden bg-background/80 backdrop-blur-sm border-2 border-primary/20 hover:border-primary/40 text-foreground hover:text-primary text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    Explore Activities
-                    <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                </Button>
-              </div>
-
-              {/* Trust indicators */}
-              <div className="flex items-center justify-center lg:justify-start gap-6 mt-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <div className="flex -space-x-2">
-                    <div className="w-8 h-8 bg-primary/20 rounded-full border-2 border-background"></div>
-                    <div className="w-8 h-8 bg-accent/20 rounded-full border-2 border-background"></div>
-                    <div className="w-8 h-8 bg-secondary/20 rounded-full border-2 border-background"></div>
-                  </div>
-                  <span className="ml-2">Active members</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-accent text-accent" />
-                  <span>4.9/5 rating</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span>🔒 100% Free</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right side - Visual element */}
-            <div className="relative">
-              <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-8 backdrop-blur-sm border border-primary/10">
-                {/* Mock activity cards floating */}
-                <div className="space-y-4">
-                  <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-primary/10 transform rotate-2 hover:rotate-0 transition-transform duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center">
-                        <Play className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm">Football in Hyde Park</p>
-                        <p className="text-xs text-muted-foreground">3/11 players</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      Today 6PM
-                    </Badge>
-                  </div>
-
-                  <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-accent/10 transform -rotate-1 hover:rotate-0 transition-transform duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
-                        <Users className="w-5 h-5 text-accent" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm">Tennis Partner Needed</p>
-                        <p className="text-xs text-muted-foreground">1/2 players</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      Tomorrow 10AM
-                    </Badge>
-                  </div>
-
-                  <div className="bg-background/90 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-secondary/10 transform rotate-1 hover:rotate-0 transition-transform duration-300">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-secondary/20 rounded-full flex items-center justify-center">
-                        <MapPin className="w-5 h-5 text-secondary" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-sm">Morning Run Group</p>
-                        <p className="text-xs text-muted-foreground">5/10 runners</p>
-                      </div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      Every Wed 7AM
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Floating elements */}
-                <div className="absolute -top-4 -right-4 w-8 h-8 bg-primary/20 rounded-full animate-pulse"></div>
-                <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-accent/20 rounded-full animate-pulse delay-1000"></div>
-              </div>
-            </div>
+        {/* Left — copy */}
+        <div>
+          <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-emerald-100">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+            Free to join · 15+ sports · Local games
           </div>
-        </div>
-      </section>
 
-      {/* How It Works Section */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            How PeerFit Works
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                <Play className="w-10 h-10 text-primary-foreground" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                1. Post an Activity
-              </h3>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Share what sport you want to play, when, and where. Whether it's tennis, football, running, or any
-                activity.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-6">
-                <Search className="w-10 h-10 text-accent-foreground" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                2. Find Teammates
-              </h3>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Discover people nearby who want to play the same sport. Filter by skill level, location, and
-                availability.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-                <UserPlus className="w-10 h-10 text-secondary-foreground" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                3. Play & Connect
-              </h3>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Meet up, play your sport, and build lasting friendships with people who share your passion for staying
-                active.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+          <h1 className="text-5xl lg:text-6xl font-black leading-[1.05] tracking-tight text-slate-900 mb-6"
+            style={{ fontFamily: "var(--font-space-grotesk)" }}>
+            Find your game.<br />
+            <span className="text-emerald-600">Play more.</span>
+          </h1>
 
-      {/* Activity Preview Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            See What's Happening
-          </h2>
-          <p className="text-xl text-muted-foreground text-center mb-12" style={{ fontFamily: "var(--font-dm-sans)" }}>
-            Get a taste of the activities happening in your area
+          <p className="text-lg text-slate-500 leading-relaxed mb-8 max-w-md">
+            PeerFit connects you with local players for any sport. Browse activities near you or post your own — and never play alone again.
           </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge variant="secondary">Football</Badge>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-1" />
-                    3/11 players
-                  </div>
-                </div>
-                <h3 className="font-semibold mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                  5-a-side Football in Hyde Park
-                </h3>
-                <div className="flex items-center text-sm text-muted-foreground mb-2">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  Hyde Park, London
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground mb-4">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Today, 6:00 PM
-                </div>
-                <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                  Looking for 8 more players for a friendly match. All skill levels welcome!
-                </p>
-                <Button className="w-full">Join Game</Button>
-              </CardContent>
-            </Card>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge variant="secondary">Tennis</Badge>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-1" />
-                    1/2 players
-                  </div>
-                </div>
-                <h3 className="font-semibold mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                  Tennis Doubles Partner Needed
-                </h3>
-                <div className="flex items-center text-sm text-muted-foreground mb-2">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  Wimbledon Courts, London
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground mb-4">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Tomorrow, 10:00 AM
-                </div>
-                <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                  Intermediate level player looking for doubles partner. Let's have some fun!
-                </p>
-                <Button className="w-full">Join Game</Button>
-              </CardContent>
-            </Card>
+          {/* Primary CTA */}
+          <Link href="/login?mode=signup"
+            className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-base px-6 py-3.5 rounded-xl transition-colors shadow-md shadow-emerald-100">
+            Get started — it's free
+            <ArrowRight className="w-4 h-4" />
+          </Link>
 
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge variant="secondary">Running</Badge>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-1" />
-                    5/10 runners
-                  </div>
-                </div>
-                <h3 className="font-semibold mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                  Morning Run Group
-                </h3>
-                <div className="flex items-center text-sm text-muted-foreground mb-2">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  Regent's Park, London
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground mb-4">
-                  <Calendar className="w-4 h-4 mr-1" />
-                  Every Wednesday, 7:00 AM
-                </div>
-                <p className="text-sm text-muted-foreground mb-4" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                  Weekly 5K run with a friendly group. Perfect pace for beginners to intermediate.
-                </p>
-                <Button className="w-full">Join Group</Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="py-20 px-4 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            Why Choose PeerFit?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Users className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                Stay Healthy
-              </h3>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                More motivation when you're not alone. Find accountability partners who keep you active and engaged.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <UserPlus className="w-8 h-8 text-accent" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                Meet People
-              </h3>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Expand your social circle with like-minded people who share your passion for sports and fitness.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Play className="w-8 h-8 text-secondary" />
-              </div>
-              <h3 className="text-2xl font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                Play Your Way
-              </h3>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Any sport, any time, anywhere. From casual games to competitive matches, find exactly what you're
-                looking for.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            What Our Community Says
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-accent text-accent" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                  "I finally found a regular tennis partner through PeerFit. We've been playing twice a week for months
-                  now!"
-                </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-primary font-semibold">S</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                      Sarah M.
-                    </p>
-                    <p className="text-sm text-muted-foreground">Tennis Player</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-accent text-accent" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                  "Great way to meet new people and stay active. The football group I joined has become like family!"
-                </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-primary font-semibold">M</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                      Mike R.
-                    </p>
-                    <p className="text-sm text-muted-foreground">Football Enthusiast</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-accent text-accent" />
-                  ))}
-                </div>
-                <p className="text-muted-foreground mb-4" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                  "Perfect for someone new to the city. I've made so many friends through the running groups!"
-                </p>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-primary font-semibold">A</span>
-                  </div>
-                  <div>
-                    <p className="font-semibold" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                      Alex K.
-                    </p>
-                    <p className="text-sm text-muted-foreground">Runner</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-primary to-accent">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2
-            className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6"
-            style={{ fontFamily: "var(--font-space-grotesk)" }}
-          >
-            Ready to Get Active?
-          </h2>
-          <p className="text-xl text-primary-foreground/90 mb-8" style={{ fontFamily: "var(--font-dm-sans)" }}>
-            Join thousands of people who are staying active and making friends through sports.
+          <p className="mt-4 text-sm text-slate-400">
+            Already have an account?{" "}
+            <Link href="/login" className="text-emerald-600 hover:underline font-medium">Sign in</Link>
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/signup">
-              <Button size="lg" variant="secondary" className="text-lg px-8 py-6">
-                Sign Up Now - It's Free!
-              </Button>
-            </Link>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 py-6 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary bg-transparent"
-            >
-              Learn More
-            </Button>
+
+          {/* Trust pills */}
+          <div className="flex flex-wrap gap-3 mt-10">
+            {[
+              "No subscription fee",
+              "Any skill level",
+              "Your neighbourhood",
+            ].map((t) => (
+              <span key={t} className="flex items-center gap-1.5 text-xs font-medium text-slate-600 bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Right — sport image grid */}
+        <div className="grid grid-cols-2 gap-3 lg:gap-4">
+          {HERO_SPORTS.map(({ src, label }, i) => (
+            <div key={label}
+              className={`relative overflow-hidden rounded-2xl ${i === 0 ? "aspect-[4/3]" : i === 3 ? "aspect-[4/3]" : "aspect-square"}`}>
+              <Image src={src} alt={label} fill className="object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+              <span className="absolute bottom-3 left-3.5 text-white text-xs font-black tracking-widest uppercase">
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          HOW IT WORKS
+      ══════════════════════════════════════════ */}
+      <section id="how-it-works" className="bg-slate-50 border-y border-slate-100 py-20 px-5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-3"
+              style={{ fontFamily: "var(--font-space-grotesk)" }}>
+              Up and running in minutes
+            </h2>
+            <p className="text-slate-500 text-base max-w-md mx-auto">
+              No setup, no fee. Just pick a sport and go.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 relative">
+            {/* connector line */}
+            <div className="hidden md:block absolute top-8 left-[calc(16.666%+1rem)] right-[calc(16.666%+1rem)] h-px bg-emerald-100" />
+
+            {[
+              {
+                n: "01",
+                title: "Post an activity",
+                desc: "Choose a sport, pick a time and location, set how many players you need. Done in under a minute.",
+              },
+              {
+                n: "02",
+                title: "Players join you",
+                desc: "Nearby players browse the feed and request to join. You approve and chat in the activity thread.",
+              },
+              {
+                n: "03",
+                title: "Show up & play",
+                desc: "Meet your new teammates, enjoy the game, and build the habit with people who keep you accountable.",
+              },
+            ].map(({ n, title, desc }) => (
+              <div key={n} className="relative text-center md:text-left">
+                <div className="w-14 h-14 bg-emerald-600 text-white font-black text-lg rounded-2xl flex items-center justify-center mx-auto md:mx-0 mb-5 relative z-10"
+                  style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                  {n}
+                </div>
+                <h3 className="font-bold text-slate-900 text-lg mb-2"
+                  style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                  {title}
+                </h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-muted py-12 px-4">
+      {/* ══════════════════════════════════════════
+          SPORTS GRID
+      ══════════════════════════════════════════ */}
+      <section id="sports" className="py-20 px-5">
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Image
-                  src="/images/peerfit-logo.png"
-                  alt="PeerFit Logo"
-                  width={100}
-                  height={100}
-                  className="w-20 h-20 object-contain"
-                />
-                <h3 className="text-2xl font-bold" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                  PeerFit
-                </h3>
-              </div>
-              <p className="text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                Find people. Play sports. Stay active.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                Product
-              </h4>
-              <ul className="space-y-2 text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Features
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    How it Works
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Pricing
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                Company
-              </h4>
-              <ul className="space-y-2 text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Careers
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                Legal
-              </h4>
-              <ul className="space-y-2 text-muted-foreground" style={{ fontFamily: "var(--font-dm-sans)" }}>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Terms of Service
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground">
-                    Cookie Policy
-                  </a>
-                </li>
-              </ul>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-3"
+              style={{ fontFamily: "var(--font-space-grotesk)" }}>
+              Every sport. Your area.
+            </h2>
+            <p className="text-slate-500 text-base">
+              From 5-a-side to yoga, find your activity or create one.
+            </p>
           </div>
-          <div
-            className="border-t border-border mt-8 pt-8 text-center text-muted-foreground"
-            style={{ fontFamily: "var(--font-dm-sans)" }}
-          >
-            <p>&copy; 2024 PeerFit. All rights reserved.</p>
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+            {SPORT_CHIPS.map(({ src, label }) => (
+              <div key={label}
+                className="relative aspect-square rounded-xl overflow-hidden group cursor-default">
+                <Image src={src} alt={label} fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                <span className="absolute inset-0 flex items-end justify-center pb-2.5 text-white text-[11px] font-bold tracking-wide uppercase">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          TESTIMONIALS
+      ══════════════════════════════════════════ */}
+      <section id="community" className="bg-slate-50 border-y border-slate-100 py-20 px-5">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-black tracking-tight text-slate-900 mb-3"
+              style={{ fontFamily: "var(--font-space-grotesk)" }}>
+              Real people. Real games.
+            </h2>
+            <p className="text-slate-500 text-base">What the PeerFit community says.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {TESTIMONIALS.map(({ quote, name, role, initial }) => (
+              <div key={name} className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+                {/* Stars */}
+                <div className="flex gap-0.5 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+                  ))}
+                </div>
+                <p className="text-slate-600 text-sm leading-relaxed mb-5 italic">"{quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-black shrink-0">
+                    {initial}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">{name}</p>
+                    <p className="text-xs text-slate-400">{role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          FINAL CTA
+      ══════════════════════════════════════════ */}
+      <section className="py-24 px-5 bg-emerald-950 relative overflow-hidden">
+        {/* background glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-xl mx-auto text-center relative">
+          <h2 className="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight mb-5"
+            style={{ fontFamily: "var(--font-space-grotesk)" }}>
+            Ready to play?
+          </h2>
+          <p className="text-emerald-300/80 text-base mb-8 leading-relaxed">
+            Join PeerFit for free and find local games in your sport today.
+          </p>
+
+          <Link href="/login?mode=signup"
+            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-base px-7 py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-900/40">
+            Create your free account
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          <p className="mt-5 text-emerald-600 text-sm">
+            Have an account?{" "}
+            <Link href="/login" className="text-emerald-400 hover:text-emerald-300 underline">Sign in</Link>
+          </p>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════ */}
+      <footer className="bg-slate-900 text-slate-400 px-5 py-10">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
+            {/* Brand */}
+            <div className="flex items-center gap-2">
+              <PeerfitLogo size={26} className="text-emerald-500 opacity-80" />
+              <span className="font-black text-white text-base" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                PeerFit
+              </span>
+              <span className="text-slate-600 text-sm ml-1">— Find people. Play sports. Stay active.</span>
+            </div>
+
+            {/* Links */}
+            <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              {[
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms of Service", href: "/terms" },
+                { label: "Consumer Terms", href: "/consumer-terms" },
+                { label: "Contact", href: "/contact" },
+              ].map(({ label, href }) => (
+                <Link key={label} href={href} className="hover:text-slate-200 transition-colors">{label}</Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="border-t border-slate-800 pt-6 text-xs text-slate-600">
+            &copy; {new Date().getFullYear()} PeerFit. All rights reserved.
           </div>
         </div>
       </footer>
+
     </div>
   )
 }

@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label"
 import {
   MapPin, Calendar, Edit, Shield, Activity, Clock, Star,
   TrendingUp, Trophy, Users, Save, X, Loader2, Camera,
-  CheckCircle2, Flame, Zap,
+  CheckCircle2, Flame, Zap, Info,
 } from "lucide-react"
 import AppNav from "@/components/app-nav"
 import { useRouter } from "next/navigation"
@@ -139,12 +139,15 @@ export default function ProfilePage() {
   const [givenReviews, setGivenReviews] = useState<{ activity_id: string; reviewee_id: string }[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [userId, setUserId] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [editForm, setEditForm] = useState({ full_name: "", location: "", bio: "", favourite_sport: "" })
+  const [saveError, setSaveError] = useState("")
+  const [editForm, setEditForm] = useState({ full_name: "", location: "", bio: "" })
 
   const avatarInputRef = useRef<HTMLInputElement>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState("")
 
   const [ratingModal, setRatingModal] = useState<{ activityId: string; revieweeId: string; revieweeName: string } | null>(null)
   const [ratingValue, setRatingValue] = useState(5)
@@ -155,11 +158,12 @@ export default function ProfilePage() {
     async function init() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push("/login"); return }
+      setUserId(user.id)
 
       const today = new Date().toISOString().split("T")[0]
 
       const [{ data: profileData }, { data: sportsData }, { data: joinedData }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).single(),
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
         supabase.from("user_sports").select("sport_id, skill_level, sports(name,emoji)").eq("user_id", user.id),
         supabase.from("activity_participants").select("activity_id").eq("user_id", user.id),
       ])
@@ -170,7 +174,6 @@ export default function ProfilePage() {
           full_name: profileData.full_name ?? "",
           location: profileData.location ?? "",
           bio: profileData.bio ?? "",
-          favourite_sport: profileData.favourite_sport ?? "",
         })
       }
       if (sportsData) setUserSports(sportsData as unknown as UserSport[])
@@ -182,8 +185,11 @@ export default function ProfilePage() {
           .select("id, activity_id, reviewer_id, rating, comment, created_at, profiles:reviewer_id(full_name, avatar_url)")
           .eq("reviewee_id", user.id)
           .order("created_at", { ascending: false })
-          .then((r) => r),
-        supabase.from("activity_reviews").select("activity_id, reviewee_id").eq("reviewer_id", user.id),
+          .then((r) => (r.error ? { data: null } : r)),
+        supabase.from("activity_reviews")
+          .select("activity_id, reviewee_id")
+          .eq("reviewer_id", user.id)
+          .then((r) => (r.error ? { data: null } : r)),
       ])
       if (receivedData) setReceivedReviews(receivedData as unknown as Review[])
       if (givenData) setGivenReviews(givenData as { activity_id: string; reviewee_id: string }[])
@@ -210,30 +216,53 @@ export default function ProfilePage() {
   }, [router, supabase])
 
   const handleSave = async () => {
-    if (!profile) return
+    if (!userId) return
     setSaving(true)
-    await supabase.from("profiles").update({
-      full_name: editForm.full_name || null,
-      location: editForm.location || null,
-      bio: editForm.bio || null,
-      favourite_sport: editForm.favourite_sport || null,
-    }).eq("id", profile.id)
-    setProfile((prev) => prev ? { ...prev, ...editForm } : prev)
-    setEditing(false)
+    setSaveError("")
+    const { error } = await supabase.from("profiles").update({
+      full_name: editForm.full_name.trim() || null,
+      location: editForm.location.trim() || null,
+      bio: editForm.bio.trim() || null,
+    }).eq("id", userId)
     setSaving(false)
+    if (error) {
+      setSaveError(error.message)
+      return
+    }
+    setProfile((prev) => prev ? {
+      ...prev,
+      full_name: editForm.full_name.trim() || null,
+      location: editForm.location.trim() || null,
+      bio: editForm.bio.trim() || null,
+    } : prev)
+    setEditing(false)
   }
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !profile) return
+    if (!file || !userId) return
+    setAvatarError("")
     setUploadingAvatar(true)
     const ext = file.name.split(".").pop()
-    const path = `${profile.id}.${ext}`
+    // Include a timestamp in the filename so the new image bypasses browser/CDN cache
+    const path = `${userId}_${Date.now()}.${ext}`
     const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true })
     if (!uploadError) {
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path)
-      await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", profile.id)
-      setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev)
+      const { error: dbError } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId)
+      if (dbError) {
+        setAvatarError(dbError.message)
+      } else {
+        setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev)
+      }
+    } else {
+      setAvatarError(
+        uploadError.message.includes("Bucket not found")
+          ? "The 'avatars' storage bucket doesn't exist yet in Supabase."
+          : uploadError.message.includes("row-level security")
+            ? "Your storage policy is blocking uploads to the 'avatars' bucket."
+            : uploadError.message
+      )
     }
     setUploadingAvatar(false)
     e.target.value = ""
@@ -284,6 +313,29 @@ export default function ProfilePage() {
       <AppNav />
 
       <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Incomplete profile nudge */}
+        {(!profile?.full_name || profile.full_name === "Your Name" || !profile?.location) && !editing && (
+          <div className="mb-5 flex items-start gap-3 bg-amber-500/10 border border-amber-500/25 rounded-2xl px-4 py-3.5">
+            <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">Finish setting up your profile</p>
+              <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">
+                {!profile?.full_name || profile.full_name === "Your Name"
+                  ? "Add your real name"
+                  : "Add your city"}
+                {(!profile?.full_name || profile.full_name === "Your Name") && !profile?.location && " and city"}
+                {" "}so other players know who you are.
+              </p>
+            </div>
+            <button
+              onClick={() => setEditing(true)}
+              className="shrink-0 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+            >
+              Edit profile
+            </button>
+          </div>
+        )}
+
         {/* Hero card */}
         <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl border border-border/40">
           {/* Dynamic banner */}
@@ -327,21 +379,27 @@ export default function ProfilePage() {
           <div className="bg-background/95 backdrop-blur-sm px-6 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-12 mb-5">
               {/* Avatar */}
-              <div className="relative flex-shrink-0 group w-fit">
-                <Avatar className="w-24 h-24 ring-4 ring-background shadow-xl">
-                  <AvatarImage src={profile?.avatar_url ?? undefined} />
-                  <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
-                    {getInitials(profile?.full_name ?? null)}
-                  </AvatarFallback>
-                </Avatar>
-                <button
-                  onClick={() => avatarInputRef.current?.click()}
-                  disabled={uploadingAvatar}
-                  className="absolute inset-0 rounded-full flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                >
-                  {uploadingAvatar ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
-                </button>
-                <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+              <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
+                {/* group only wraps the 24×24 circle so inset-0 never overflows */}
+                <div className="relative w-24 h-24 group">
+                  <Avatar className="w-24 h-24 ring-4 ring-background shadow-xl">
+                    <AvatarImage src={profile?.avatar_url ?? undefined} />
+                    <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
+                      {getInitials(profile?.full_name ?? null)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute inset-0 rounded-full flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    {uploadingAvatar ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+                  </button>
+                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                </div>
+                {avatarError && (
+                  <p className="text-xs text-red-600 max-w-[120px] text-center leading-tight">{avatarError}</p>
+                )}
               </div>
 
               {!editing && (
@@ -399,36 +457,16 @@ export default function ProfilePage() {
                     className="w-full mt-1 p-2 bg-muted/30 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none text-sm"
                   />
                 </div>
-                {userSports.length > 0 && (
-                  <div>
-                    <Label className="text-sm font-medium">Favourite Sport</Label>
-                    <p className="text-xs text-muted-foreground mb-2">Shown prominently on your profile — sets your banner theme too</p>
-                    <div className="flex flex-wrap gap-2">
-                      {userSports.map((us) => {
-                        const isSelected = editForm.favourite_sport === us.sports.name
-                        const style = getSportBadgeStyle(us.sports.name)
-                        return (
-                          <button
-                            key={us.sport_id}
-                            type="button"
-                            onClick={() => setEditForm((f) => ({ ...f, favourite_sport: isSelected ? "" : us.sports.name }))}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all ${
-                              isSelected ? style + " ring-2 ring-current ring-offset-1" : "border-border/50 bg-muted/30 text-muted-foreground hover:border-primary/50"
-                            }`}
-                          >
-                            <span>{us.sports.emoji}</span>{us.sports.name}
-                            {isSelected && <Zap className="w-3 h-3" />}
-                          </button>
-                        )
-                      })}
-                    </div>
+                {saveError && (
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-600">
+                    {saveError}
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <Button onClick={handleSave} disabled={saving} className="bg-gradient-to-r from-primary to-accent">
+                  <Button onClick={handleSave} disabled={saving}>
                     {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}Save Changes
                   </Button>
-                  <Button variant="outline" onClick={() => setEditing(false)}>
+                  <Button variant="outline" onClick={() => { setEditing(false); setSaveError("") }}>
                     <X className="w-4 h-4 mr-2" />Cancel
                   </Button>
                 </div>

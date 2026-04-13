@@ -132,33 +132,43 @@ function activityIsCompleted(date: string, time: string, durationMinutes: number
   return new Date() >= getActivityEnd(date, time, durationMinutes)
 }
 
-function getSportStyle(sportName: string | null | undefined): { bar: string; circle: string } {
+type SportStyle = { image: string; bar: string; accent: string; position?: string }
+
+function getSportStyle(sportName: string | null | undefined): SportStyle {
   const n = sportName?.toLowerCase() ?? ""
   if (n.includes("football") || n.includes("soccer"))
-    return { bar: "from-emerald-500 to-teal-400", circle: "from-emerald-500/15 to-teal-400/15 border-emerald-400/20" }
+    return { image: "/images/sports/football.jpg", bar: "from-emerald-400 to-teal-400", accent: "from-emerald-500 to-teal-500" }
   if (n.includes("basketball"))
-    return { bar: "from-orange-500 to-amber-400", circle: "from-orange-500/15 to-amber-400/15 border-orange-400/20" }
-  if (n.includes("tennis") || n.includes("badminton") || n.includes("squash"))
-    return { bar: "from-yellow-400 to-lime-400", circle: "from-yellow-400/15 to-lime-400/15 border-yellow-400/20" }
+    return { image: "/images/sports/basketball.jpg", bar: "from-orange-400 to-amber-400", accent: "from-orange-500 to-amber-500" }
+  if (n.includes("badminton"))
+    return { image: "/images/sports/badminton.jpg", bar: "from-yellow-400 to-lime-400", accent: "from-yellow-500 to-lime-500" }
+  if (n.includes("tennis") || n.includes("squash"))
+    return { image: "/images/sports/tennis.jpg", bar: "from-yellow-400 to-lime-400", accent: "from-yellow-500 to-lime-500", position: "center 62%" }
   if (n.includes("swim"))
-    return { bar: "from-blue-500 to-cyan-400", circle: "from-blue-500/15 to-cyan-400/15 border-blue-400/20" }
+    return { image: "/images/sports/swimming.jpg", bar: "from-blue-400 to-cyan-400", accent: "from-blue-500 to-cyan-500" }
   if (n.includes("run") || n.includes("athletics") || n.includes("track"))
-    return { bar: "from-violet-500 to-purple-400", circle: "from-violet-500/15 to-purple-400/15 border-violet-400/20" }
+    return { image: "/images/sports/running.jpg", bar: "from-violet-400 to-purple-400", accent: "from-violet-500 to-purple-500" }
   if (n.includes("cycl") || n.includes("bike"))
-    return { bar: "from-teal-500 to-cyan-400", circle: "from-teal-500/15 to-cyan-400/15 border-teal-400/20" }
+    return { image: "/images/sports/cycling.jpg", bar: "from-teal-400 to-cyan-400", accent: "from-teal-500 to-cyan-500" }
+  if (n.includes("yoga"))
+    return { image: "/images/sports/yoga.jpg", bar: "from-fuchsia-400 to-pink-400", accent: "from-fuchsia-500 to-pink-500" }
   if (n.includes("gym") || n.includes("fitness") || n.includes("weight") || n.includes("crossfit"))
-    return { bar: "from-red-500 to-rose-400", circle: "from-red-500/15 to-rose-400/15 border-red-400/20" }
+    return { image: "/images/sports/gym.jpg", bar: "from-red-400 to-rose-400", accent: "from-red-500 to-rose-500", position: "center 38%" }
   if (n.includes("rugby") || n.includes("american football"))
-    return { bar: "from-amber-600 to-orange-500", circle: "from-amber-600/15 to-orange-500/15 border-amber-400/20" }
+    return { image: "/images/sports/rugby.jpg", bar: "from-amber-400 to-orange-400", accent: "from-amber-500 to-orange-500", position: "center 72%" }
   if (n.includes("volleyball") || n.includes("beach"))
-    return { bar: "from-sky-500 to-blue-400", circle: "from-sky-500/15 to-blue-400/15 border-sky-400/20" }
+    return { image: "/images/sports/volleyball.jpg", bar: "from-sky-400 to-blue-400", accent: "from-sky-500 to-blue-500" }
   if (n.includes("hockey") || n.includes("ice"))
-    return { bar: "from-indigo-500 to-blue-500", circle: "from-indigo-500/15 to-blue-500/15 border-indigo-400/20" }
+    return { image: "/images/sports/hockey.jpg", bar: "from-indigo-400 to-blue-400", accent: "from-indigo-500 to-blue-500" }
   if (n.includes("cricket"))
-    return { bar: "from-lime-500 to-green-500", circle: "from-lime-500/15 to-green-500/15 border-lime-400/20" }
+    return { image: "/images/sports/cricket.jpg", bar: "from-lime-400 to-green-400", accent: "from-lime-500 to-green-500", position: "center 69%" }
   if (n.includes("golf"))
-    return { bar: "from-green-600 to-emerald-400", circle: "from-green-600/15 to-emerald-400/15 border-green-400/20" }
-  return { bar: "from-primary to-accent", circle: "from-primary/15 to-accent/15 border-primary/20" }
+    return { image: "/images/sports/golf.jpg", bar: "from-green-400 to-emerald-400", accent: "from-green-500 to-emerald-500", position: "center 60%" }
+  if (n.includes("padel") || n.includes("pickleball"))
+    return { image: "/images/sports/padel.jpg", bar: "from-sky-400 to-indigo-400", accent: "from-sky-500 to-indigo-500" }
+  if (n.includes("box") || n.includes("muay") || n.includes("mma") || n.includes("martial"))
+    return { image: "/images/sports/boxing.jpg", bar: "from-red-500 to-rose-500", accent: "from-red-600 to-rose-600" }
+  return { image: "/images/sports/sport.jpg", bar: "from-primary to-accent", accent: "from-primary to-accent" }
 }
 
 export default function ActivityFeedPage() {
@@ -301,7 +311,7 @@ export default function ActivityFeedPage() {
         supabase.from("friendships").select("requester_id, addressee_id").eq("status", "accepted")
           .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`),
         supabase.from("friendships").select("addressee_id").eq("requester_id", user.id).eq("status", "pending"),
-        supabase.from("activity_join_requests").select("activity_id").eq("user_id", user.id).eq("status", "pending"),
+        supabase.from("activity_join_requests").select("activity_id, id, status").eq("user_id", user.id).in("status", ["pending", "accepted"]),
       ])
 
       if (profile) setUserProfile(profile)
@@ -319,7 +329,26 @@ export default function ActivityFeedPage() {
         setPendingRequestIds(new Set(pendingFriends.map((f: { addressee_id: string }) => f.addressee_id)))
       }
       if (myJoinRequests) {
-        setJoinRequestIds(new Set(myJoinRequests.map((r: { activity_id: string }) => r.activity_id)))
+        const pending = myJoinRequests.filter((r: { status: string }) => r.status === "pending")
+        const accepted = myJoinRequests.filter((r: { status: string }) => r.status === "accepted")
+        setJoinRequestIds(new Set(pending.map((r: { activity_id: string }) => r.activity_id)))
+
+        // Self-insert into activities where the host has accepted our join request
+        if (accepted.length > 0) {
+          const alreadyJoinedIds = new Set(joined?.map((j: { activity_id: string }) => j.activity_id) ?? [])
+          const toJoin = accepted.filter((r: { activity_id: string }) => !alreadyJoinedIds.has(r.activity_id))
+          for (const req of toJoin as { activity_id: string; id: string }[]) {
+            await supabase.from("activity_participants").insert({ activity_id: req.activity_id, user_id: user.id })
+            await supabase.from("activity_join_requests").update({ status: "joined" }).eq("id", req.id)
+          }
+          if (toJoin.length > 0) {
+            const newJoinedIds = new Set([
+              ...(joined?.map((j: { activity_id: string }) => j.activity_id) ?? []),
+              ...toJoin.map((r: { activity_id: string }) => r.activity_id),
+            ])
+            setJoinedIds(newJoinedIds)
+          }
+        }
       }
       await fetchActivities()
       setLoading(false)
@@ -370,20 +399,45 @@ export default function ActivityFeedPage() {
   const openJoinRequestsPanel = async (activityId: string) => {
     if (joinRequestsPanel === activityId) { setJoinRequestsPanel(null); return }
     setJoinRequestsPanel(activityId)
-    if (joinRequestsList[activityId]) return
-    const { data } = await supabase
+    if (joinRequestsList[activityId] !== undefined) return
+    // Two-step fetch to avoid FK join issues (user_id → auth.users, not public.profiles)
+    const { data: requestsData } = await supabase
       .from("activity_join_requests")
-      .select("id, user_id, status, profiles:user_id(full_name, avatar_url)")
+      .select("id, user_id, status")
       .eq("activity_id", activityId)
       .eq("status", "pending")
-    if (data) setJoinRequestsList((prev) => ({ ...prev, [activityId]: data as unknown as JoinRequester[] }))
+    if (!requestsData || requestsData.length === 0) {
+      setJoinRequestsList((prev) => ({ ...prev, [activityId]: [] }))
+      return
+    }
+    const userIds = requestsData.map((r: { user_id: string }) => r.user_id)
+    const { data: profilesData } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", userIds)
+    const pm: Record<string, { full_name: string | null; avatar_url: string | null }> = {}
+    for (const p of (profilesData ?? []) as { id: string; full_name: string | null; avatar_url: string | null }[]) {
+      pm[p.id] = { full_name: p.full_name, avatar_url: p.avatar_url }
+    }
+    setJoinRequestsList((prev) => ({
+      ...prev,
+      [activityId]: requestsData.map((r: { id: string; user_id: string; status: string }) => ({
+        ...r,
+        profiles: pm[r.user_id] ?? null,
+      })),
+    }))
   }
 
   const handleManageJoinRequest = async (requestId: string, requestUserId: string, action: "accepted" | "declined", activityId: string) => {
     if (action === "accepted") {
+      // Mark as accepted — the requester's session will self-insert on next load (RLS only allows uid=user_id inserts)
       await supabase.from("activity_join_requests").update({ status: "accepted" }).eq("id", requestId)
-      await supabase.from("activity_participants").insert({ activity_id: activityId, user_id: requestUserId })
-      await fetchActivities()
+      // Also notify the requester so they know they've been accepted
+      if (userId) {
+        await supabase.from("notifications").insert({
+          user_id: requestUserId, type: "join_accepted", from_user_id: userId, read: false,
+        })
+      }
     } else {
       await supabase.from("activity_join_requests").update({ status: "declined" }).eq("id", requestId)
     }
@@ -392,6 +446,7 @@ export default function ActivityFeedPage() {
       [activityId]: (prev[activityId] ?? []).filter((r) => r.id !== requestId),
     }))
     setJoinRequestCounts((prev) => ({ ...prev, [activityId]: Math.max((prev[activityId] ?? 1) - 1, 0) }))
+    await fetchActivities()
   }
 
   const handleCreateActivity = async () => {
@@ -806,350 +861,309 @@ export default function ActivityFeedPage() {
                   const inProgress = activityIsInProgress(activity.date, activity.time, activity.duration_minutes)
 
                   return (
-                    <Card key={activity.id} className={`group hover:shadow-xl transition-all duration-200 bg-background/80 backdrop-blur-sm overflow-hidden ${inProgress ? "border-red-400/50 shadow-red-500/10 shadow-lg" : "border-border/50 hover:border-border/80"}`}>
-                      {/* Top accent bar — pulses red when live */}
-                      <div className={`h-1 bg-gradient-to-r ${inProgress ? "from-red-400 to-rose-500 animate-pulse" : sportStyle.bar}`} />
-                      <CardContent className="p-5">
-                        {/* Sport + host row */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${sportStyle.circle} flex items-center justify-center text-2xl shadow-sm shrink-0 border`}>
-                              {activity.sports?.emoji ?? "🏃"}
+                    <Card key={activity.id} className={`group overflow-hidden transition-all duration-200 hover:-translate-y-0.5 ${inProgress ? "border-red-400/50 shadow-lg shadow-red-500/10" : "border-border/40 hover:shadow-lg hover:shadow-black/8"}`}>
+                      <CardContent className="p-0">
+
+                        {/* ── HERO HEADER ── */}
+                        <div
+                          className="relative px-4 pt-3.5 pb-14 overflow-hidden"
+                          style={{
+                            backgroundImage: `url(${inProgress ? "/images/sports/sport.jpg" : sportStyle.image})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: inProgress ? "center" : (sportStyle.position ?? "center"),
+                            minHeight: "140px",
+                          }}
+                        >
+                          {/* Dark overlay for text legibility */}
+                          <div className="absolute inset-0 bg-black/50" />
+                          {/* Subtle vignette at bottom */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-transparent" />
+                          {/* Live pulse overlay */}
+                          {inProgress && <div className="absolute inset-0 bg-red-900/30" />}
+                          {/* Ghost sport name — kept inside overflow bounds */}
+                          <span className="absolute right-3 bottom-3 text-[64px] font-black text-white/[0.2] leading-none select-none pointer-events-none tracking-tighter uppercase">
+                            {activity.sports?.name ?? ""}
+                          </span>
+
+                          {/* Top row: sport label + status chips */}
+                          <div className="relative flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-black tracking-[0.18em] text-white/60 uppercase">
+                              {activity.sports?.name ?? "Activity"}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              {inProgress && (
+                                <span className="flex items-center gap-1 text-[10px] font-bold text-white bg-white/20 rounded-full px-2 py-0.5 animate-pulse">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />LIVE
+                                </span>
+                              )}
+                              {isPrivate && (
+                                <span className="flex items-center gap-1 text-[10px] text-white/80 bg-white/10 border border-white/20 rounded-full px-2 py-0.5">
+                                  <Lock className="w-2.5 h-2.5" />Private
+                                </span>
+                              )}
+                              <span className="text-[10px] text-white/70 bg-white/10 border border-white/15 rounded-full px-2 py-0.5">
+                                {activity.skill_level}
+                              </span>
                             </div>
-                            <div>
-                              <h3 className="text-base font-bold leading-tight group-hover:text-primary transition-colors" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-                                {activity.title}
-                              </h3>
-                              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                <Avatar className="w-5 h-5">
-                                  <AvatarImage src={activity.host?.avatar_url ?? undefined} />
-                                  <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-bold">
-                                    {getInitials(activity.host?.full_name ?? null)}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <p className="text-xs text-muted-foreground">
-                                  {activity.host_id !== userId ? (
-                                    <Link href={`/profile/${activity.host_id}`} className="font-medium text-foreground hover:text-primary transition-colors">
-                                      {activity.host?.full_name ?? "Unknown"}
-                                    </Link>
-                                  ) : (
-                                    <span className="font-medium text-foreground">You</span>
-                                  )}
-                                  {" · "}{formatDate(activity.date)}
-                                </p>
-                                {/* Friend indicator */}
+                          </div>
+
+                          {/* Title */}
+                          <h3 className="relative text-white font-black text-lg leading-tight tracking-tight" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+                            {activity.title}
+                          </h3>
+
+                          {/* Time + location row */}
+                          <div className="relative flex items-center gap-3 mt-1.5 flex-wrap">
+                            <span className="flex items-center gap-1 text-[11px] text-white/75 font-medium">
+                              <Calendar className="w-3 h-3" />{formatDate(activity.date)}
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px] text-white/75 font-medium">
+                              <Clock className="w-3 h-3" />{formatTime(activity.time)} · {formatDuration(activity.duration_minutes)}
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px] text-white/75 font-medium">
+                              <MapPin className="w-3 h-3" />{activity.location}
+                            </span>
+                            {inProgress && (
+                              <span className="text-[11px] text-white/90 font-semibold">
+                                ends {formatTime(getActivityEnd(activity.date, activity.time, activity.duration_minutes).toTimeString().slice(0, 5))}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ── BODY ── pulled up to overlap header */}
+                        <div className="relative -mt-6 mx-3 bg-background rounded-xl border border-border/50 shadow-sm px-3.5 pt-3 pb-3">
+
+                          {/* Host row */}
+                          <div className="flex items-center gap-2 mb-3">
+                            <Avatar className="w-7 h-7 ring-2 ring-border/60 shrink-0">
+                              <AvatarImage src={activity.host?.avatar_url ?? undefined} />
+                              <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">{getInitials(activity.host?.full_name ?? null)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {activity.host_id !== userId ? (
+                                  <Link href={`/profile/${activity.host_id}`} className="text-xs font-semibold text-foreground hover:text-primary transition-colors truncate">
+                                    {activity.host?.full_name ?? "Unknown"}
+                                  </Link>
+                                ) : <span className="text-xs font-semibold">You</span>}
                                 {activity.host_id !== userId && (
                                   isFriend ? (
-                                    <Badge className="text-[10px] px-1.5 py-0 h-4 bg-green-500/10 text-green-600 border-green-500/20 gap-0.5">
+                                    <span className="text-[10px] font-medium text-green-600 bg-green-500/10 border border-green-500/20 rounded-full px-1.5 py-0 flex items-center gap-0.5">
                                       <UserCheck className="w-2.5 h-2.5" />Friends
-                                    </Badge>
+                                    </span>
                                   ) : isPendingFriend ? (
-                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 text-muted-foreground border-border/40">
-                                      Pending
-                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground bg-muted rounded-full px-1.5 py-0">Pending</span>
                                   ) : (
-                                    <button
-                                      onClick={() => handleAddFriend(activity.host_id)}
-                                      className="text-[10px] text-primary hover:text-primary/80 flex items-center gap-0.5 font-medium transition-colors"
-                                    >
-                                      <UserPlus className="w-2.5 h-2.5" />Add
+                                    <button onClick={() => handleAddFriend(activity.host_id)}
+                                      className="text-[10px] text-primary font-semibold flex items-center gap-0.5 hover:text-primary/70 transition-colors">
+                                      <UserPlus className="w-2.5 h-2.5" />Add friend
                                     </button>
                                   )
                                 )}
                               </div>
                             </div>
-                          </div>
-                          <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            <div className="flex items-center gap-1.5">
-                              {inProgress && (
-                                <Badge className="text-[10px] px-1.5 py-0 h-5 bg-red-500 text-white border-red-400 gap-1 animate-pulse">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-white inline-block" />Live
-                                </Badge>
-                              )}
-                              <Badge className="text-xs bg-primary/10 text-primary border-primary/20 font-semibold">
-                                {activity.sports?.name}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              {isPrivate && (
-                                <Badge variant="outline" className="text-[10px] gap-0.5 border-border/60 text-muted-foreground h-5 px-1.5">
-                                  <Lock className="w-2.5 h-2.5" />Private
-                                </Badge>
-                              )}
-                              <Badge variant="outline" className="text-xs border-border/60">
-                                <Star className="w-2.5 h-2.5 mr-1 text-yellow-500 fill-yellow-500" />
-                                {activity.skill_level}
-                              </Badge>
-                            </div>
-                            <span className="text-[10px] text-muted-foreground">
-                              Posted {activity.created_at ? formatPostedTime(activity.created_at) : ""}
-                            </span>
-                          </div>
-                        </div>
-
-                        {activity.description && (
-                          <p className="text-xs text-muted-foreground mb-3 leading-relaxed line-clamp-2 pl-15">{activity.description}</p>
-                        )}
-
-                        {/* Details pills */}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-2.5 py-1.5 border border-border/40">
-                            <MapPin className="w-3 h-3 text-primary shrink-0" />{activity.location}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-2.5 py-1.5 border border-border/40">
-                            <Calendar className="w-3 h-3 text-accent shrink-0" />{formatDate(activity.date)}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/40 rounded-lg px-2.5 py-1.5 border border-border/40">
-                            <Clock className="w-3 h-3 text-primary/70 shrink-0" />{formatTime(activity.time)} · {formatDuration(activity.duration_minutes)}
-                          </span>
-                        </div>
-
-                        {/* In-progress banner */}
-                        {inProgress && (
-                          <div className="mb-3 flex items-center gap-2 bg-red-500/8 border border-red-400/20 rounded-xl px-3 py-2">
-                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
-                            <p className="text-xs font-semibold text-red-600 dark:text-red-400">Session in progress</p>
-                            <span className="text-xs text-muted-foreground ml-auto">
-                              ends {formatTime(getActivityEnd(activity.date, activity.time, activity.duration_minutes).toTimeString().slice(0, 5))}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Participants row + progress */}
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex -space-x-2">
-                                {visibleParticipants.map((p, i) => (
-                                  <Avatar key={i} className="w-6 h-6 ring-2 ring-background">
-                                    <AvatarImage src={p.profiles?.avatar_url ?? undefined} />
-                                    <AvatarFallback className={`text-[9px] font-bold bg-gradient-to-br ${sportStyle.circle}`}>
-                                      {getInitials(p.profiles?.full_name ?? null)}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                                {extraParticipants > 0 && (
-                                  <div className="w-6 h-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground">
-                                    +{extraParticipants}
-                                  </div>
+                            {/* Host controls / join button */}
+                            {isHost ? (
+                              <div className="flex items-center gap-1 shrink-0">
+                                {isPrivate && joinReqCount > 0 && (
+                                  <Button variant="outline" size="sm"
+                                    onClick={() => openJoinRequestsPanel(activity.id)}
+                                    className={`h-7 px-2.5 text-[11px] rounded-xl gap-1 border-orange-400/50 font-semibold ${joinRequestsPanel === activity.id ? "bg-orange-50 text-orange-600" : "text-orange-600 hover:bg-orange-50"}`}>
+                                    <Users className="w-3 h-3" />{joinReqCount}
+                                  </Button>
                                 )}
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {participantCount}/{activity.max_participants} joined
-                              </span>
-                            </div>
-                            <span className={`text-xs font-semibold ${isFull ? "text-red-500" : spotsLeft <= 2 ? "text-orange-500" : "text-muted-foreground"}`}>
-                              {isFull ? "Full" : `${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} left`}
-                            </span>
-                          </div>
-                          <div className="w-full bg-muted/40 rounded-full h-1 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all bg-gradient-to-r ${isFull ? "from-red-400 to-red-500" : spotsLeft <= 2 ? "from-orange-400 to-red-400" : sportStyle.bar}`}
-                              style={{ width: `${fillPct}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-0.5">
-                            <Button variant="ghost" size="sm" onClick={() => handleToggleLike(activity.id)}
-                              className={`h-8 px-2.5 gap-1 text-xs rounded-lg ${likedIds.has(activity.id) ? "text-red-500 bg-red-50 dark:bg-red-950/30" : "text-muted-foreground hover:text-red-400 hover:bg-red-50/50"}`}>
-                              <Heart className={`w-3.5 h-3.5 ${likedIds.has(activity.id) ? "fill-current" : ""}`} />
-                              <span className="tabular-nums">{likeCounts[activity.id] ?? 0}</span>
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => openChat(activity.id)}
-                              className={`h-8 px-2.5 gap-1 text-xs rounded-lg ${chatOpen ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-primary/5"}`}>
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              <span className="tabular-nums">{messageCounts[activity.id] ?? 0}</span>
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleToggleSave(activity.id)}
-                              className={`h-8 px-2.5 gap-1 text-xs rounded-lg ${savedIds.has(activity.id) ? "text-accent bg-accent/10" : "text-muted-foreground hover:text-accent hover:bg-accent/5"}`}>
-                              {savedIds.has(activity.id) ? <BookmarkCheck className="w-3.5 h-3.5 fill-current" /> : <Bookmark className="w-3.5 h-3.5" />}
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleShare(activity)}
-                              className={`h-8 px-2.5 gap-1 text-xs rounded-lg ${shareToastId === activity.id ? "text-green-600 bg-green-50" : "text-muted-foreground hover:text-green-500 hover:bg-green-50/50"}`}>
-                              <Share2 className="w-3.5 h-3.5" />
-                              <span className="hidden sm:inline">{shareToastId === activity.id ? "Copied!" : ""}</span>
-                            </Button>
-                          </div>
-
-                          {isHost ? (
-                            <div className="flex items-center gap-1">
-                              {isPrivate && joinReqCount > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openJoinRequestsPanel(activity.id)}
-                                  className={`h-8 px-2.5 text-xs rounded-lg gap-1 border-orange-400/50 ${joinRequestsPanel === activity.id ? "bg-orange-50 text-orange-600 dark:bg-orange-950/30" : "text-orange-600 hover:bg-orange-50/50"}`}
-                                >
-                                  <Users className="w-3 h-3" />
-                                  {joinReqCount} request{joinReqCount !== 1 ? "s" : ""}
+                                <Button variant="ghost" size="sm" onClick={() => openEditModal(activity)}
+                                  className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10">
+                                  <Pencil className="w-3.5 h-3.5" />
                                 </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => openEditModal(activity)}
-                                className="h-8 px-2.5 gap-1 text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />Edit
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setDeleteConfirmId(activity.id)}
-                                className="h-8 px-2.5 gap-1 text-xs text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button
-                              onClick={() => handleJoinLeave(activity.id, isPrivate, activity.host_id, activity.host?.full_name ?? "Host")}
-                              disabled={isLoading || (isFull && !isJoined && !hasJoinRequest)}
-                              size="sm"
-                              className={`h-8 px-4 text-xs rounded-xl font-semibold ${
-                                isJoined
-                                  ? "bg-muted text-muted-foreground hover:bg-red-50 hover:text-red-600 border border-border"
-                                  : hasJoinRequest
-                                  ? "bg-muted text-muted-foreground border border-border hover:bg-red-50/60 hover:text-red-500"
-                                  : isPrivate
-                                  ? "bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 shadow-md text-white"
-                                  : "bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-md text-white"
-                              }`}
-                            >
-                              {isLoading ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : isJoined ? (
-                                "✓ Joined"
-                              ) : hasJoinRequest ? (
-                                "Requested"
-                              ) : isPrivate ? (
-                                <span className="flex items-center gap-1"><Lock className="w-3 h-3" />Request</span>
-                              ) : isFull ? (
-                                "Full"
-                              ) : (
-                                "Join"
-                              )}
-                            </Button>
-                          )}
-                        </div>
-
-                        {/* Join requests panel (host only, private activities) */}
-                        {isHost && joinRequestsPanel === activity.id && (
-                          <div className="mt-4 border-t border-border/50 pt-4">
-                            <div className="flex items-center justify-between mb-3">
-                              <p className="text-sm font-semibold flex items-center gap-1.5">
-                                <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                                Join Requests
-                              </p>
-                              <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => setJoinRequestsPanel(null)}>
-                                <ChevronUp className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                            {(joinRequestsList[activity.id] ?? []).length === 0 ? (
-                              <p className="text-xs text-muted-foreground text-center py-3">No pending requests</p>
-                            ) : (
-                              <div className="space-y-2">
-                                {(joinRequestsList[activity.id] ?? []).map((req) => (
-                                  <div key={req.id} className="flex items-center gap-2.5 py-1">
-                                    <Link href={`/profile/${req.user_id}`}>
-                                      <Avatar className="w-8 h-8 hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer">
-                                        <AvatarImage src={req.profiles?.avatar_url ?? undefined} />
-                                        <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                                          {getInitials(req.profiles?.full_name ?? null)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                    </Link>
-                                    <Link href={`/profile/${req.user_id}`} className="flex-1 text-sm font-medium hover:text-primary transition-colors">
-                                      {req.profiles?.full_name ?? "User"}
-                                    </Link>
-                                    <Button
-                                      size="sm"
-                                      className="h-7 px-3 text-xs bg-gradient-to-r from-primary to-accent text-white"
-                                      onClick={() => handleManageJoinRequest(req.id, req.user_id, "accepted", activity.id)}
-                                    >
-                                      Accept
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-7 px-3 text-xs text-muted-foreground hover:text-destructive hover:border-destructive/30"
-                                      onClick={() => handleManageJoinRequest(req.id, req.user_id, "declined", activity.id)}
-                                    >
-                                      Decline
-                                    </Button>
-                                  </div>
-                                ))}
+                                <Button variant="ghost" size="sm" onClick={() => setDeleteConfirmId(activity.id)}
+                                  className="h-7 w-7 p-0 rounded-lg text-muted-foreground hover:text-red-600 hover:bg-red-50">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
                               </div>
+                            ) : (
+                              <Button
+                                onClick={() => handleJoinLeave(activity.id, isPrivate, activity.host_id, activity.host?.full_name ?? "Host")}
+                                disabled={isLoading || (isFull && !isJoined && !hasJoinRequest)}
+                                size="sm"
+                                className={`h-8 px-4 text-xs rounded-xl font-bold shrink-0 shadow-sm ${
+                                  isJoined
+                                    ? "bg-muted text-muted-foreground hover:bg-red-50 hover:text-red-600 border border-border"
+                                    : hasJoinRequest
+                                    ? "bg-muted text-muted-foreground border border-border cursor-default"
+                                    : isFull
+                                    ? "bg-muted text-muted-foreground border border-border cursor-not-allowed"
+                                    : isPrivate
+                                    ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700"
+                                    : `bg-gradient-to-r ${sportStyle.accent} text-white hover:opacity-90`
+                                }`}
+                              >
+                                {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  : isJoined ? "✓ Joined"
+                                  : hasJoinRequest ? "Requested"
+                                  : isPrivate ? <span className="flex items-center gap-1.5"><Lock className="w-3 h-3" />Request to join</span>
+                                  : isFull ? "Full"
+                                  : "Join session"}
+                              </Button>
                             )}
                           </div>
-                        )}
 
-                        {/* Chat panel */}
-                        {chatOpen && (() => {
-                          const isExpanded = expandedChats.has(activity.id)
-                          const visibleMessages = isExpanded ? activityMessages : activityMessages.slice(-2)
-                          const hiddenCount = activityMessages.length - 2
-                          return (
-                            <div className="mt-4 border-t border-border/50 pt-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <p className="text-sm font-semibold">Activity Chat</p>
-                                <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => setOpenChatId(null)}>
-                                  <ChevronUp className="w-3.5 h-3.5" />
-                                </Button>
+                          {activity.description && (
+                            <p className="text-[11px] text-muted-foreground mb-2.5 leading-relaxed line-clamp-1 italic">{activity.description}</p>
+                          )}
+
+                          {/* Participants + fill bar */}
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <div className="flex -space-x-2 shrink-0">
+                              {visibleParticipants.map((p, i) => (
+                                <Avatar key={i} className="w-6 h-6 ring-2 ring-background">
+                                  <AvatarImage src={p.profiles?.avatar_url ?? undefined} />
+                                  <AvatarFallback className="text-[9px] font-bold bg-muted/80">{getInitials(p.profiles?.full_name ?? null)}</AvatarFallback>
+                                </Avatar>
+                              ))}
+                              {extraParticipants > 0 && (
+                                <div className="w-6 h-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[9px] font-bold text-muted-foreground">+{extraParticipants}</div>
+                              )}
+                            </div>
+                            <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[11px] text-muted-foreground">{participantCount} joined</span>
+                                <span className={`text-[11px] font-semibold ${isFull ? "text-red-500" : spotsLeft <= 2 ? "text-orange-500" : "text-muted-foreground"}`}>
+                                  {isFull ? "Full" : `${spotsLeft} spot${spotsLeft !== 1 ? "s" : ""} left`}
+                                </span>
                               </div>
-                              <div className="space-y-2 max-h-56 overflow-y-auto mb-3">
-                                {loadingMessages ? (
-                                  <div className="flex justify-center py-4">
-                                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                                  </div>
-                                ) : activityMessages.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground text-center py-4">No messages yet. Start the conversation!</p>
-                                ) : (
-                                  <>
-                                    {!isExpanded && hiddenCount > 0 && (
-                                      <button
-                                        onClick={() => setExpandedChats((prev) => new Set([...prev, activity.id]))}
-                                        className="w-full text-xs text-primary hover:underline py-1 text-center"
-                                      >
-                                        View {hiddenCount} earlier {hiddenCount === 1 ? "message" : "messages"}
-                                      </button>
-                                    )}
-                                    {visibleMessages.map((msg) => (
-                                      <div key={msg.id} className={`flex gap-2 ${msg.user_id === userId ? "flex-row-reverse" : ""}`}>
-                                        <Avatar className="w-6 h-6 shrink-0">
-                                          <AvatarImage src={msg.profiles?.avatar_url ?? undefined} />
-                                          <AvatarFallback className="text-xs">{getInitials(msg.profiles?.full_name ?? null)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className={`max-w-xs rounded-xl px-3 py-2 ${msg.user_id === userId ? "bg-primary text-primary-foreground" : "bg-muted/40"}`}>
-                                          {msg.user_id !== userId && (
-                                            <p className="text-xs font-semibold mb-0.5 text-muted-foreground">{msg.profiles?.full_name ?? "User"}</p>
-                                          )}
-                                          <p className="text-sm">{msg.content}</p>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </>
-                                )}
-                              </div>
-                              <div className="flex gap-2">
-                                <Input
-                                  placeholder="Type a message..."
-                                  value={newMessage}
-                                  onChange={(e) => setNewMessage(e.target.value)}
-                                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(activity.id) } }}
-                                  className="text-sm h-8"
+                              <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all bg-gradient-to-r ${isFull ? "from-red-400 to-red-500" : spotsLeft <= 2 ? "from-orange-400 to-red-400" : sportStyle.bar}`}
+                                  style={{ width: `${fillPct}%` }}
                                 />
-                                <Button size="sm" onClick={() => sendMessage(activity.id)} disabled={sendingMsg || !newMessage.trim()}
-                                  className="h-8 w-8 p-0 bg-gradient-to-r from-primary to-accent shrink-0">
-                                  {sendingMsg ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                                </Button>
                               </div>
                             </div>
-                          )
-                        })()}
+                          </div>
+
+                          {/* Social actions */}
+                          <div className="flex items-center gap-0.5 pt-2 border-t border-border/40">
+                            <button onClick={() => handleToggleLike(activity.id)}
+                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${likedIds.has(activity.id) ? "text-red-500 bg-red-50" : "text-muted-foreground hover:text-red-400 hover:bg-red-50/60"}`}>
+                              <Heart className={`w-3.5 h-3.5 ${likedIds.has(activity.id) ? "fill-current" : ""}`} />
+                              <span className="tabular-nums">{likeCounts[activity.id] ?? 0}</span>
+                            </button>
+                            <button onClick={() => openChat(activity.id)}
+                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${chatOpen ? "text-primary bg-primary/8" : "text-muted-foreground hover:text-primary hover:bg-primary/5"}`}>
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span className="tabular-nums">{messageCounts[activity.id] ?? 0}</span>
+                            </button>
+                            <button onClick={() => handleToggleSave(activity.id)}
+                              className={`px-2.5 py-1.5 rounded-lg text-xs transition-all ${savedIds.has(activity.id) ? "text-amber-500 bg-amber-50" : "text-muted-foreground hover:text-amber-500 hover:bg-amber-50/60"}`}>
+                              {savedIds.has(activity.id) ? <BookmarkCheck className="w-3.5 h-3.5 fill-current" /> : <Bookmark className="w-3.5 h-3.5" />}
+                            </button>
+                            <button onClick={() => handleShare(activity)}
+                              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all ${shareToastId === activity.id ? "text-green-600 bg-green-50" : "text-muted-foreground hover:text-green-500 hover:bg-green-50/60"}`}>
+                              <Share2 className="w-3.5 h-3.5" />
+                              {shareToastId === activity.id && <span>Copied!</span>}
+                            </button>
+                            <span className="ml-auto text-[10px] text-muted-foreground/60">
+                              {activity.created_at ? formatPostedTime(activity.created_at) : ""}
+                            </span>
+                          </div>
+
+                            {/* Join requests panel (host only, private activities) */}
+                            {isHost && joinRequestsPanel === activity.id && (
+                              <div className="mt-3 border-t border-border/50 pt-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <p className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+                                    <Lock className="w-3 h-3" />Join Requests
+                                  </p>
+                                  <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => setJoinRequestsPanel(null)}>
+                                    <ChevronUp className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                                {(joinRequestsList[activity.id] ?? []).length === 0 ? (
+                                  <p className="text-xs text-muted-foreground text-center py-2">No pending requests</p>
+                                ) : (
+                                  <div className="space-y-1.5">
+                                    {(joinRequestsList[activity.id] ?? []).map((req) => (
+                                      <div key={req.id} className="flex items-center gap-2 py-0.5">
+                                        <Link href={`/profile/${req.user_id}`}>
+                                          <Avatar className="w-7 h-7 hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer">
+                                            <AvatarImage src={req.profiles?.avatar_url ?? undefined} />
+                                            <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">{getInitials(req.profiles?.full_name ?? null)}</AvatarFallback>
+                                          </Avatar>
+                                        </Link>
+                                        <Link href={`/profile/${req.user_id}`} className="flex-1 text-xs font-medium hover:text-primary transition-colors">
+                                          {req.profiles?.full_name ?? "User"}
+                                        </Link>
+                                        <Button size="sm" className="h-6 px-2.5 text-[11px] bg-gradient-to-r from-primary to-accent text-white"
+                                          onClick={() => handleManageJoinRequest(req.id, req.user_id, "accepted", activity.id)}>Accept</Button>
+                                        <Button size="sm" variant="outline" className="h-6 px-2.5 text-[11px] text-muted-foreground hover:text-destructive hover:border-destructive/30"
+                                          onClick={() => handleManageJoinRequest(req.id, req.user_id, "declined", activity.id)}>Decline</Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Chat panel */}
+                            {chatOpen && (() => {
+                              const isExpanded = expandedChats.has(activity.id)
+                              const visibleMessages = isExpanded ? activityMessages : activityMessages.slice(-2)
+                              const hiddenCount = activityMessages.length - 2
+                              return (
+                                <div className="mt-3 border-t border-border/50 pt-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs font-semibold text-muted-foreground">Chat</p>
+                                    <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => setOpenChatId(null)}>
+                                      <ChevronUp className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                  <div className="space-y-2 max-h-48 overflow-y-auto mb-2">
+                                    {loadingMessages ? (
+                                      <div className="flex justify-center py-4">
+                                        <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                                      </div>
+                                    ) : activityMessages.length === 0 ? (
+                                      <p className="text-xs text-muted-foreground text-center py-3">No messages yet.</p>
+                                    ) : (
+                                      <>
+                                        {!isExpanded && hiddenCount > 0 && (
+                                          <button onClick={() => setExpandedChats((prev) => new Set([...prev, activity.id]))}
+                                            className="w-full text-xs text-primary hover:underline py-1 text-center">
+                                            View {hiddenCount} earlier {hiddenCount === 1 ? "message" : "messages"}
+                                          </button>
+                                        )}
+                                        {visibleMessages.map((msg) => (
+                                          <div key={msg.id} className={`flex gap-2 ${msg.user_id === userId ? "flex-row-reverse" : ""}`}>
+                                            <Avatar className="w-6 h-6 shrink-0">
+                                              <AvatarImage src={msg.profiles?.avatar_url ?? undefined} />
+                                              <AvatarFallback className="text-xs">{getInitials(msg.profiles?.full_name ?? null)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className={`max-w-xs rounded-xl px-2.5 py-1.5 ${msg.user_id === userId ? "bg-primary text-primary-foreground" : "bg-muted/40"}`}>
+                                              {msg.user_id !== userId && (
+                                                <p className="text-[10px] font-semibold mb-0.5 text-muted-foreground">{msg.profiles?.full_name ?? "User"}</p>
+                                              )}
+                                              <p className="text-xs">{msg.content}</p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Input placeholder="Type a message..." value={newMessage}
+                                      onChange={(e) => setNewMessage(e.target.value)}
+                                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(activity.id) } }}
+                                      className="text-xs h-7" />
+                                    <Button size="sm" onClick={() => sendMessage(activity.id)} disabled={sendingMsg || !newMessage.trim()}
+                                      className="h-7 w-7 p-0 bg-gradient-to-r from-primary to-accent shrink-0">
+                                      {sendingMsg ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )
+                            })()}
+                        </div>{/* end body */}
                       </CardContent>
                     </Card>
                   )
