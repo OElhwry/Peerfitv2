@@ -280,8 +280,8 @@ function AuthPageContent() {
     if (code.length !== 6) { setSuError("Please enter the 6-digit code."); return }
     setSuLoading(true)
     const fullPhone = `${cc}${phone.replace(/\D/g, "")}`
-    const { error } = await createClient().auth.verifyOtp({ phone: fullPhone, token: code, type: "sms" })
-    if (error) { setSuError("Invalid code. Try again."); setSuLoading(false); return }
+    const { error } = await createClient().auth.verifyOtp({ phone: fullPhone, token: code, type: "phone_change" })
+    if (error) { setSuError(error.message || "We couldn't verify that code. Please try again."); setSuLoading(false); return }
     const { data: { user } } = await createClient().auth.getUser()
     if (user) await createClient().from("profiles").update({ phone: fullPhone, onboarding_complete: true }).eq("id", user.id)
     setSuLoading(false); router.push("/feed")
@@ -548,7 +548,7 @@ function AuthPageContent() {
                         className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
                       <span className="text-sm text-white/65 leading-snug">
                         I agree to PeerFit's{" "}
-                        <Link href="/terms" className="text-emerald-400 hover:underline font-medium">Terms of Service</Link>
+                        <Link href="/terms" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-medium">Terms of Service</Link>
                       </span>
                     </label>
 
@@ -557,7 +557,7 @@ function AuthPageContent() {
                         className="mt-0.5 shrink-0 border-white/20 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
                       <span className="text-sm text-white/65 leading-snug">
                         I agree to the{" "}
-                        <Link href="/consumer-terms" className="text-emerald-400 hover:underline font-medium">Consumer Terms</Link>
+                        <Link href="/consumer-terms" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline font-medium">Consumer Terms</Link>
                       </span>
                     </label>
 
