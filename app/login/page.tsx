@@ -10,19 +10,16 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Eye, EyeOff, Mail, Lock, ArrowRight, Loader2,
-  ChevronLeft, Phone, CheckCircle2, Info, Users, MapPin, Zap,
+  ChevronLeft, Phone, CheckCircle2, Users, MapPin, Zap,
 } from "lucide-react"
 
 const REMEMBER_KEY = "peerfit_remember_email"
 const EMAIL_OTP_COOLDOWN_KEY = "peerfit_email_otp_last_sent_at"
 const EMAIL_OTP_COOLDOWN_SECONDS = 60
-const PHONE_OTP_COOLDOWN_KEY = "peerfit_phone_otp_last_sent_at"
-const PHONE_OTP_COOLDOWN_SECONDS = 60
-
-type SignupStep = "email" | "verify-email" | "terms" | "dob" | "phone" | "verify-phone"
+type SignupStep = "email" | "verify-email" | "terms" | "dob" | "phone"
 
 function isSignupStep(value: string | null): value is SignupStep {
-  return value !== null && ["email", "verify-email", "terms", "dob", "phone", "verify-phone"].includes(value)
+  return value !== null && ["email", "verify-email", "terms", "dob", "phone"].includes(value)
 }
 
 const COUNTRY_CODES = [
@@ -43,14 +40,13 @@ const COUNTRY_CODES = [
   { code: "+27",  label: "🇿🇦 ZA  +27" },
 ]
 
-const SIGNUP_STEPS: SignupStep[] = ["email", "verify-email", "terms", "dob", "phone", "verify-phone"]
+const SIGNUP_STEPS: SignupStep[] = ["email", "verify-email", "terms", "dob", "phone"]
 const PREV_STEP: Record<SignupStep, SignupStep> = {
   "email":        "email",
   "verify-email": "email",
   "terms":        "verify-email",
   "dob":          "terms",
   "phone":        "dob",
-  "verify-phone": "phone",
 }
 
 function splitPhoneNumber(fullPhone: string) {
@@ -98,47 +94,6 @@ function markEmailOtpSent(email: string) {
   const cooldowns = readEmailOtpCooldowns()
   cooldowns[normalizedEmail] = Date.now()
   window.localStorage.setItem(EMAIL_OTP_COOLDOWN_KEY, JSON.stringify(cooldowns))
-}
-
-function normalizePhoneOtpTarget(countryCode: string, localPhone: string) {
-  const digits = localPhone.replace(/\D/g, "")
-  return digits ? `${countryCode}${digits}` : ""
-}
-
-function readPhoneOtpCooldowns(): Record<string, number> {
-  if (typeof window === "undefined") return {}
-
-  try {
-    const stored = window.localStorage.getItem(PHONE_OTP_COOLDOWN_KEY)
-    if (!stored) return {}
-
-    const parsed = JSON.parse(stored)
-    return parsed && typeof parsed === "object" ? (parsed as Record<string, number>) : {}
-  } catch {
-    return {}
-  }
-}
-
-function getPhoneOtpSecondsRemaining(countryCode: string, localPhone: string) {
-  const normalizedPhone = normalizePhoneOtpTarget(countryCode, localPhone)
-  if (!normalizedPhone) return 0
-
-  const sentAt = readPhoneOtpCooldowns()[normalizedPhone]
-  if (!sentAt || Number.isNaN(sentAt)) return 0
-
-  const elapsedSeconds = Math.floor((Date.now() - sentAt) / 1000)
-  return Math.max(0, PHONE_OTP_COOLDOWN_SECONDS - elapsedSeconds)
-}
-
-function markPhoneOtpSent(countryCode: string, localPhone: string) {
-  if (typeof window === "undefined") return
-
-  const normalizedPhone = normalizePhoneOtpTarget(countryCode, localPhone)
-  if (!normalizedPhone) return
-
-  const cooldowns = readPhoneOtpCooldowns()
-  cooldowns[normalizedPhone] = Date.now()
-  window.localStorage.setItem(PHONE_OTP_COOLDOWN_KEY, JSON.stringify(cooldowns))
 }
 
 const SPORT_TILES = [
@@ -239,10 +194,8 @@ function AuthPageContent() {
   const [dobY, setDobY] = useState("")
   const [cc,         setCc]         = useState("+44")
   const [phone,      setPhone]      = useState("")
-  const [phoneCode,  setPhoneCode]  = useState("")
   const [suLoading,  setSuLoading]  = useState(false)
   const [suError,    setSuError]    = useState("")
-  const [phoneDebug, setPhoneDebug] = useState("")
   const [countdown,  setCountdown]  = useState(0)
 
   useEffect(() => {
@@ -271,18 +224,12 @@ function AuthPageContent() {
       if (cancelled || !user) return
 
       if (user.email) setSuEmail(user.email.toLowerCase())
-
-      const metadata =
-        user.user_metadata && typeof user.user_metadata === "object"
-          ? (user.user_metadata as Record<string, unknown>)
-          : {}
-      const pendingPhone = typeof metadata.pending_phone === "string" ? metadata.pending_phone : ""
-
-      if (pendingPhone) {
-        const { code, local } = splitPhoneNumber(pendingPhone)
+      if (user.phone) {
+        const { code, local } = splitPhoneNumber(user.phone)
         setCc(code)
         setPhone(local)
       }
+
     }
 
     loadUser()
@@ -304,13 +251,8 @@ function AuthPageContent() {
       return
     }
 
-    if (step === "verify-phone") {
-      setCountdown(getPhoneOtpSecondsRemaining(cc, phone))
-      return
-    }
-
     setCountdown(0)
-  }, [cc, phone, step, suEmail])
+  }, [step, suEmail])
 
   useEffect(() => {
     if (requestedStep !== "terms" || step !== "terms") return
@@ -434,96 +376,39 @@ function AuthPageContent() {
         date_of_birth: `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`,
       }).eq("id", user.id)
     }
-    setSuLoading(false); setStep("phone")
+    setSuLoading(false)
+    setStep("phone")
   }
 
-  const sendPhoneCode = async () => {
+  const finishSignup = async (skipPhone = false) => {
     setSuError("")
-    setPhoneDebug("")
-    if (phone.replace(/\D/g, "").length < 7) { setSuError("Please enter a valid phone number."); return }
-    const remaining = getPhoneOtpSecondsRemaining(cc, phone)
-    if (remaining > 0) {
-      setCountdown(remaining)
-      setStep("verify-phone")
-      setPhoneDebug(`blocked_by_local_cooldown (${remaining}s remaining)`)
-      setSuError(`A code was already sent recently. Please wait ${remaining}s before requesting another one.`)
+
+    const digits = phone.replace(/\D/g, "")
+    if (!skipPhone && phone.trim() && digits.length < 7) {
+      setSuError("Please enter a valid phone number or skip for now.")
       return
     }
+
     setSuLoading(true)
     const sb = createClient()
-    const fullPhone = normalizePhoneOtpTarget(cc, phone)
-    setPhoneDebug(`sending OTP to ${fullPhone}`)
     const { data: { user } } = await sb.auth.getUser()
-    const metadata =
-      user?.user_metadata && typeof user.user_metadata === "object"
-        ? (user.user_metadata as Record<string, unknown>)
-        : {}
 
-    const { error } = await sb.auth.updateUser({
-      phone: fullPhone,
-      data: {
-        ...metadata,
-        pending_phone: fullPhone,
-      },
-    })
-    if (error) {
-      setPhoneDebug(
-        JSON.stringify({
-          stage: "updateUser(phone)",
-          message: error.message,
-          name: "name" in error ? error.name : undefined,
-          status: "status" in error ? error.status : undefined,
-          code: "code" in error ? error.code : undefined,
-          fullPhone,
-        }, null, 2)
-      )
-      if (/rate limit/i.test(error.message)) {
-        const fallbackSeconds = PHONE_OTP_COOLDOWN_SECONDS
-        markPhoneOtpSent(cc, phone)
-        setCountdown(fallbackSeconds)
-        setStep("verify-phone")
-        setSuError(`A code was already sent recently. Please wait ${fallbackSeconds}s before requesting another one.`)
-      } else {
-        setSuError(error.message)
+    if (user) {
+      const profileUpdate: { onboarding_complete: boolean; phone?: string | null } = {
+        onboarding_complete: true,
       }
-      setSuLoading(false)
-      return
+
+      if (skipPhone || !phone.trim()) {
+        profileUpdate.phone = null
+      } else {
+        profileUpdate.phone = `${cc}${digits}`
+      }
+
+      await sb.from("profiles").update(profileUpdate).eq("id", user.id)
     }
-    setPhoneDebug(
-      JSON.stringify({
-        stage: "updateUser(phone)",
-        result: "success",
-        fullPhone,
-      }, null, 2)
-    )
-    markPhoneOtpSent(cc, phone)
-    setStep("verify-phone"); setCountdown(PHONE_OTP_COOLDOWN_SECONDS); setSuLoading(false)
-  }
 
-  const verifyPhone = async () => {
-    setSuError("")
-    const code = phoneCode.replace(/\s/g, "")
-    if (code.length !== 6) { setSuError("Please enter the 6-digit code."); return }
-    setSuLoading(true)
-    const fullPhone = normalizePhoneOtpTarget(cc, phone)
-    const sb = createClient()
-    const { error } = await sb.auth.verifyOtp({ phone: fullPhone, token: code, type: "phone_change" })
-    if (error) { setSuError(error.message || "We couldn't verify that code. Please try again."); setSuLoading(false); return }
-    const { data: { user } } = await sb.auth.getUser()
-    const metadata =
-      user?.user_metadata && typeof user.user_metadata === "object"
-        ? (user.user_metadata as Record<string, unknown>)
-        : {}
-
-    await sb.auth.updateUser({
-      data: {
-        ...metadata,
-        pending_phone: null,
-      },
-    })
-
-    if (user) await sb.from("profiles").update({ phone: fullPhone, onboarding_complete: true }).eq("id", user.id)
-    setSuLoading(false); router.push("/feed")
+    setSuLoading(false)
+    router.push("/feed")
   }
 
   const handleGoogle = async () => {
@@ -848,110 +733,60 @@ function AuthPageContent() {
                 </div>
               )}
 
-              {/* ── Step: phone ── */}
               {step === "phone" && (
                 <div className="space-y-4">
-                  <p className="text-white/45 text-sm">Verify your phone number to secure your account.</p>
+                  <div>
+                    <p className="text-white/45 text-sm">Add a phone number if you want. You can skip this for now.</p>
+                    <p className="mt-1 text-xs text-white/25">We will only save it in the correct format. No verification code required.</p>
+                  </div>
 
                   <div>
                     <label className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1.5 block">Phone number</label>
                     <div className="flex gap-2">
-                      <select value={cc} onChange={(e) => setCc(e.target.value)}
-                        className="h-11 px-2.5 text-sm bg-white/8 border border-white/12 rounded-xl text-white shrink-0 focus:outline-none focus:border-emerald-500/50">
+                      <select
+                        value={cc}
+                        onChange={(e) => setCc(e.target.value)}
+                        className="h-11 px-2.5 text-sm bg-white/8 border border-white/12 rounded-xl text-white shrink-0 focus:outline-none focus:border-emerald-500/50"
+                      >
                         {COUNTRY_CODES.map((c) => (
                           <option key={c.label} value={c.code} className="bg-slate-800 text-white">{c.label}</option>
                         ))}
                       </select>
                       <div className="relative flex-1">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/25" />
-                        <input type="tel" placeholder="7911 123456" value={phone}
+                        <input
+                          type="tel"
+                          placeholder="7911 123456"
+                          value={phone}
                           onChange={(e) => setPhone(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !suLoading) {
                               e.preventDefault()
-                              sendPhoneCode()
+                              finishSignup()
                             }
                           }}
-                          className={`${darkInput} pl-10`} />
+                          className={`${darkInput} pl-10`}
+                        />
                       </div>
                     </div>
-                    <p className="text-xs text-white/25 mt-1.5 flex items-center gap-1">
-                      <Info className="w-3 h-3 shrink-0" />
-                      SMS and data charges may apply.{" "}
-                      <Link href="/sms-info" className="text-emerald-400/60 hover:text-emerald-400">Learn more</Link>
-                    </p>
                   </div>
 
                   {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{suError}</div>}
 
-                  {phoneDebug && (
-                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-xs text-white/65">
-                      <p className="mb-1 font-semibold uppercase tracking-[0.18em] text-white/35">SMS debug</p>
-                      <pre className="whitespace-pre-wrap break-words font-mono">{phoneDebug}</pre>
-                    </div>
-                  )}
-
-                  <button onClick={sendPhoneCode} disabled={suLoading} className={greenBtn}>
-                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Send Code <ArrowRight className="w-4 h-4" /></>}
+                  <button onClick={() => finishSignup()} disabled={suLoading} className={greenBtn}>
+                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Finish Sign Up <ArrowRight className="w-4 h-4" /></>}
                   </button>
 
-                  <div className="border-t border-white/8 pt-3 space-y-1.5">
-                    <p className="text-xs text-white/35 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      Email verified as <span className="text-white/55 font-medium">{suEmail}</span>
-                    </p>
-                    <button onClick={() => { setStep("email"); setSuEmail(""); setSuPw(""); setEmailCode("") }}
-                      className="text-xs text-emerald-400/60 hover:text-emerald-400">
-                      Use a different email
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => finishSignup(true)}
+                    disabled={suLoading}
+                    className="w-full text-sm font-medium text-white/45 transition-colors hover:text-white/70 disabled:opacity-40"
+                  >
+                    Skip for now
+                  </button>
                 </div>
               )}
 
-              {/* ── Step: verify-phone ── */}
-              {step === "verify-phone" && (
-                <div className="space-y-5">
-                  <div className="text-center">
-                    <div className="w-14 h-14 bg-emerald-500/12 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                      <Phone className="w-6 h-6 text-emerald-400" />
-                    </div>
-                    <p className="text-white/45 text-sm">We sent a code to</p>
-                    <p className="text-white font-semibold mt-0.5">{cc} {phone}</p>
-                  </div>
-
-                  <OtpInput value={phoneCode} onChange={setPhoneCode} />
-
-                  {suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300 text-center">{suError}</div>}
-
-                  {phoneDebug && (
-                    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2.5 text-left text-xs text-white/65">
-                      <p className="mb-1 font-semibold uppercase tracking-[0.18em] text-white/35">SMS debug</p>
-                      <pre className="whitespace-pre-wrap break-words font-mono">{phoneDebug}</pre>
-                    </div>
-                  )}
-
-                  <button onClick={verifyPhone} disabled={suLoading || !otpReady(phoneCode)} className={greenBtn}>
-                    {suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Verify &amp; Finish <CheckCircle2 className="w-4 h-4" /></>}
-                  </button>
-
-                  <p className="text-center text-sm">
-                    {countdown > 0
-                      ? <span className="text-white/25">Resend in {countdown}s</span>
-                      : <button onClick={sendPhoneCode} className="text-emerald-400 hover:text-emerald-300 font-medium">Resend code</button>}
-                  </p>
-
-                  <div className="border-t border-white/8 pt-3 space-y-1.5">
-                    <p className="text-xs text-white/35 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      Email verified as <span className="text-white/55 font-medium">{suEmail}</span>
-                    </p>
-                    <button onClick={() => { setStep("email"); setSuEmail(""); setSuPw(""); setEmailCode("") }}
-                      className="text-xs text-emerald-400/60 hover:text-emerald-400">
-                      Use a different email
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

@@ -30,11 +30,11 @@ export default function SmsInfoPage() {
     <main className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-emerald-950 px-5 py-10 text-white">
       <div className="mx-auto max-w-2xl">
         <Link
-          href="/login?mode=signup&step=phone"
+          href="/login?mode=signup&step=dob"
           className="mb-8 inline-flex items-center gap-2 text-sm text-white/55 transition-colors hover:text-white/80"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to phone verification
+          Back to sign up
         </Link>
 
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-emerald-950/30 backdrop-blur">
