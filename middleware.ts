@@ -14,13 +14,10 @@ function getRequiredOnboardingStep(
   const acceptedTerms = typeof metadata.accepted_terms_at === 'string' && metadata.accepted_terms_at.length > 0
   const acceptedConsumerTerms =
     typeof metadata.accepted_consumer_terms_at === 'string' && metadata.accepted_consumer_terms_at.length > 0
-  const pendingPhone = typeof metadata.pending_phone === 'string' && metadata.pending_phone.length > 0
 
   if (!acceptedTerms || !acceptedConsumerTerms) return 'terms'
   if (!profile?.date_of_birth) return 'dob'
-  if (profile.onboarding_complete && profile.phone) return null
-  if (pendingPhone) return 'verify-phone'
-  return 'phone'
+  return null
 }
 
 export async function middleware(request: NextRequest) {
