@@ -4,6 +4,7 @@
   import { ThemeProvider } from "next-themes"
   import { DM_Sans, Space_Grotesk } from "next/font/google"
   import type React from "react"
+  import { Analytics } from "@vercel/analytics/next"
   import "./globals.css"
 
   const spaceGrotesk = Space_Grotesk({
@@ -46,6 +47,7 @@ html {
         <body>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             { children }
+            <Analytics />
           </ThemeProvider>
         </body>
       </html>
