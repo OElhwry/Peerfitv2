@@ -135,10 +135,10 @@
     return (
       <>
         <header className="bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
             {/* Logo */ }
             <Link href="/feed" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
-              <Image src="/images/peerfit-logo.png" alt="PeerFit" width={ 180 } height={ 120 } className="h-16 w-auto object-contain -my-3" />
+              <Image src="/images/peerfit-logo.png" alt="PeerFit" width={ 180 } height={ 120 } className="h-12 sm:h-16 w-auto object-contain -my-2 sm:-my-3" />
             </Link>
 
             {/* Desktop Nav */ }
@@ -179,7 +179,7 @@
                 { notifOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={ () => setNotifOpen(false) } />
-                    <div className="absolute top-full right-0 mt-2 w-80 bg-background border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-background border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-r from-primary/5 to-accent/5">
                         <p className="font-semibold text-sm">Notifications</p>
                         { notifications.length > 0 && (
@@ -337,24 +337,25 @@
 
         {/* Mobile bottom bar (only when onCreateActivity is provided — i.e. on the feed) */ }
         { onCreateActivity && (
-          <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/50 md:hidden shadow-2xl z-40">
-            <div className="flex items-center justify-around py-2 px-4">
+          <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/50 md:hidden shadow-2xl z-40 pb-[env(safe-area-inset-bottom)]">
+            <div className="flex items-center justify-around py-1.5 px-1.5 gap-1">
               { navLinks.map(({ href, icon: Icon, label }) => (
                 <Link key={ href } href={ href } className="flex-1 flex justify-center">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className={ `flex flex-col gap-0.5 rounded-xl px-3 py-1.5 ${pathname === href ? "text-primary bg-primary/10" : "text-muted-foreground"
+                    className={ `flex flex-col gap-0.5 rounded-xl px-1 py-1.5 w-full min-w-0 ${pathname === href ? "text-primary bg-primary/10" : "text-muted-foreground"
                       }` }
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="text-xs">{ label }</span>
+                    <Icon className="w-5 h-5 shrink-0" />
+                    <span className="text-[10px] leading-none">{ label }</span>
                   </Button>
                 </Link>
               )) }
               <button
                 onClick={ onCreateActivity }
-                className="rounded-2xl w-12 h-12 bg-gradient-to-r from-primary to-accent shadow-lg -mt-4 flex items-center justify-center text-white"
+                aria-label="Create activity"
+                className="shrink-0 rounded-2xl w-12 h-12 bg-gradient-to-r from-primary to-accent shadow-lg -mt-4 flex items-center justify-center text-white"
               >
                 <Plus className="w-5 h-5" />
               </button>

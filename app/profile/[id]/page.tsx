@@ -180,7 +180,7 @@
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <AppNav />
 
-        <div className="max-w-3xl mx-auto px-4 py-8 space-y-5">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-5 sm:py-8 space-y-5">
           {/* Hero card */ }
           <Card className="overflow-hidden shadow-xl border-border/40">
             <div className="h-36 bg-gradient-to-br from-primary/70 via-accent/50 to-primary/40 relative">
@@ -189,15 +189,15 @@
                 { sports.slice(0, 3).map((s) => <span key={ s.sport_id }>{ s.sports?.emoji }</span>) }
               </div>
             </div>
-            <CardContent className="px-6 pb-6">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10 mb-4">
+            <CardContent className="px-4 sm:px-6 pb-5 sm:pb-6">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 -mt-10 mb-4">
                 <Avatar className="w-20 h-20 ring-4 ring-background shadow-lg">
                   <AvatarImage src={ profile?.avatar_url ?? undefined } />
                   <AvatarFallback className="text-2xl font-bold bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
                     { getInitials(profile?.full_name ?? null) }
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 pb-1">
+                <div className="flex-1 pb-1 min-w-0">
                   <h1 className="text-xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>
                     { profile?.full_name ?? "User" }
                   </h1>
@@ -212,7 +212,7 @@
                   size="sm"
                   disabled={ actioning || friendStatus === "pending_sent" }
                   onClick={ handleFriendAction }
-                  className={ `shrink-0 gap-2 ${friendBtnClass}` }
+                  className={ `shrink-0 gap-2 w-full sm:w-auto ${friendBtnClass}` }
                 >
                   { actioning ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

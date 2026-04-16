@@ -380,7 +380,7 @@
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <AppNav />
 
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
 
           {/* Incomplete profile nudge */ }
           { (!profile?.full_name || profile.full_name === "Your Name" || !profile?.location || !profile?.avatar_url) && !editing && (
@@ -419,7 +419,7 @@
           <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl border border-border/30">
 
             {/* Banner */ }
-            <div className={ `h-52 bg-gradient-to-br ${resolvedBanner} relative overflow-hidden` }>
+            <div className={ `h-36 sm:h-52 bg-gradient-to-br ${resolvedBanner} relative overflow-hidden` }>
               {/* light overlay */ }
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.25),transparent_55%)]" />
@@ -462,16 +462,16 @@
             </div>
 
             {/* Profile body */ }
-            <div className="bg-background/97 backdrop-blur-sm px-6 pb-6">
+            <div className="bg-background/97 backdrop-blur-sm px-4 sm:px-6 pb-5 sm:pb-6">
 
               {/* Avatar + name row */ }
-              <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-14 mb-5">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 -mt-12 sm:-mt-14 mb-4 sm:mb-5">
 
                 {/* Avatar */ }
                 <div className="flex-shrink-0">
-                  <div className="relative w-28 h-28 group">
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 group">
                     <div className={ `absolute -inset-1 rounded-full bg-gradient-to-br ${resolvedBanner} opacity-60 blur-sm` } />
-                    <Avatar className="relative w-28 h-28 ring-4 ring-background shadow-2xl">
+                    <Avatar className="relative w-24 h-24 sm:w-28 sm:h-28 ring-4 ring-background shadow-2xl">
                       <AvatarImage src={ profile?.avatar_url ?? undefined } />
                       <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
                         { getInitials(profile?.full_name ?? null) }
@@ -490,10 +490,10 @@
                 </div>
 
                 { !editing && (
-                  <div className="flex-1 pb-1 pt-2 sm:pt-0">
+                  <div className="flex-1 pb-1 pt-1 sm:pt-0 min-w-0">
                     {/* Name + badges */ }
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <h1 className="text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                      <h1 className="text-xl sm:text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>
                         { profile?.full_name ?? "Your Name" }
                       </h1>
                       <Badge className="bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0.5">
@@ -595,7 +595,7 @@
                   ) }
 
                   {/* Stats row */ }
-                  <div className="grid grid-cols-4 gap-2 mb-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
                     { [
                       { label: "Sessions", value: totalJoined, color: "text-primary", bg: "bg-primary/8 border-primary/12" },
                       { label: "Completed", value: completedActivities.length, color: "text-yellow-600", bg: "bg-yellow-500/8 border-yellow-500/12" },
@@ -603,7 +603,7 @@
                       { label: "Reviews", value: receivedReviews.length, color: "text-blue-600", bg: "bg-blue-500/8 border-blue-500/12" },
                     ].map(({ label, value, color, bg }) => (
                       <div key={ label } className={ `rounded-2xl p-3 text-center border ${bg}` }>
-                        <p className={ `text-2xl font-bold ${color}` }>{ value }</p>
+                        <p className={ `text-xl sm:text-2xl font-bold ${color}` }>{ value }</p>
                         <p className="text-[10px] font-medium mt-0.5 opacity-70">{ label }</p>
                       </div>
                     )) }
@@ -638,7 +638,7 @@
           </div>
 
           {/* ── Tabs ──────────────────────────────────────────────────────────── */ }
-          <Tabs defaultValue="activities" className="space-y-6">
+          <Tabs defaultValue="activities" className="space-y-5 sm:space-y-6">
             <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-xl border border-border/50 shadow-sm h-11 rounded-2xl p-1">
               { [
                 { value: "activities", label: "Upcoming" },
@@ -647,7 +647,7 @@
                 { value: "reviews", label: `Reviews${receivedReviews.length > 0 ? ` (${receivedReviews.length})` : ""}` },
               ].map((t) => (
                 <TabsTrigger key={ t.value } value={ t.value }
-                  className="text-xs font-medium rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  className="text-[11px] sm:text-xs font-medium rounded-xl px-1 sm:px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   { t.label }
                 </TabsTrigger>
               )) }
@@ -655,7 +655,7 @@
 
             {/* Upcoming */ }
             <TabsContent value="activities">
-              <div className="grid lg:grid-cols-2 gap-6">
+              <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
                 <Card className="bg-background/60 border-border/50 shadow-sm">
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2.5 text-base">

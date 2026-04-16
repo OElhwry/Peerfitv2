@@ -105,9 +105,9 @@
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <AppNav />
 
-        <div className="max-w-3xl mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-1" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={ { fontFamily: "var(--font-space-grotesk)" } }>
               Settings
             </h1>
             <p className="text-muted-foreground text-sm">Manage your account and privacy preferences</p>
@@ -282,16 +282,16 @@
             </Card>
 
             {/* Actions */ }
-            <div className="flex items-center justify-end gap-3">
-              { saved && <span className="text-sm text-green-600 font-medium">Saved!</span> }
-              <Button variant="outline" onClick={ () => router.back() } size="sm">
+            <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+              { saved && <span className="text-sm text-green-600 font-medium w-full sm:w-auto text-right">Saved!</span> }
+              <Button variant="outline" onClick={ () => router.back() } size="sm" className="flex-1 sm:flex-none">
                 Cancel
               </Button>
               <Button
                 onClick={ handleSave }
                 disabled={ saving }
                 size="sm"
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
               >
                 { saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" /> }
                 { saving ? "Saving..." : "Save Changes" }

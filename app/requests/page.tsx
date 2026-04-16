@@ -153,19 +153,19 @@
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <AppNav />
 
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>Friends</h1>
+        <div className="max-w-2xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
+          <div className="mb-5 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>Friends</h1>
             <p className="text-sm text-muted-foreground mt-1">Manage your connections and requests</p>
           </div>
 
           {/* Tab bar */ }
-          <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl border border-border/40 mb-6">
+          <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl border border-border/40 mb-5 sm:mb-6">
             { tabs.map(({ key, label, count }) => (
               <button
                 key={ key }
                 onClick={ () => setTab(key) }
-                className={ `flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-all ${tab === key
+                className={ `flex-1 flex items-center justify-center gap-1.5 sm:gap-2 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all ${tab === key
                     ? "bg-background shadow-sm text-foreground border border-border/60"
                     : "text-muted-foreground hover:text-foreground"
                   }` }

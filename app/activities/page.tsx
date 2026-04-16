@@ -147,16 +147,16 @@
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
         <AppNav />
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
           {/* Page header */ }
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>Activities</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Your schedule and upcoming sessions</p>
+          <div className="flex items-start sm:items-center justify-between mb-5 sm:mb-6 gap-3">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>Activities</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Your schedule and upcoming sessions</p>
             </div>
-            <Link href="/feed">
-              <Button className="bg-gradient-to-r from-primary to-accent gap-2 text-sm">
-                <Plus className="w-4 h-4" />Create Activity
+            <Link href="/feed" className="shrink-0">
+              <Button className="bg-gradient-to-r from-primary to-accent gap-1.5 sm:gap-2 text-xs sm:text-sm px-3 sm:px-4">
+                <Plus className="w-4 h-4" /><span className="hidden sm:inline">Create Activity</span><span className="sm:hidden">Create</span>
               </Button>
             </Link>
           </div>
@@ -166,7 +166,7 @@
               <Loader2 className="w-8 h-8 text-primary animate-spin" />
             </div>
           ) : (
-            <div className="grid lg:grid-cols-3 gap-6">
+            <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Left: Calendar */ }
               <div className="lg:col-span-1 space-y-4">
                 {/* Stats pills */ }
@@ -282,7 +282,7 @@
               {/* Right: My sessions + upcoming */ }
               <div className="lg:col-span-2">
                 {/* Tab bar */ }
-                <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl border border-border/40 mb-5 w-fit">
+                <div className="flex gap-1 p-1 bg-muted/40 rounded-2xl border border-border/40 mb-4 sm:mb-5 w-full sm:w-fit">
                   { ([
                     { key: "mine" as const, label: `My Sessions${myActivities.length > 0 ? ` (${myActivities.length})` : ""}` },
                     { key: "upcoming" as const, label: `Upcoming${upcoming.length > 0 ? ` (${upcoming.length})` : ""}` },
@@ -290,7 +290,7 @@
                     <button
                       key={ key }
                       onClick={ () => setMyTab(key) }
-                      className={ `px-4 py-1.5 rounded-xl text-sm font-medium transition-all ${myTab === key
+                      className={ `flex-1 sm:flex-none px-3 sm:px-4 py-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all ${myTab === key
                           ? "bg-background shadow-sm text-foreground border border-border/60"
                           : "text-muted-foreground hover:text-foreground"
                         }` }

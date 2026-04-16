@@ -82,22 +82,22 @@
           <p className="text-xs text-muted-foreground">{ rangeLabel }</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
             { days.map((day, i) => {
               const dateStr = day.toLocaleDateString("en-CA")
               const isToday = dateStr === todayStr
               const hasActivity = activeDates.includes(dateStr)
-              const dayName = day.toLocaleDateString("en-US", { weekday: "short" })
+              const dayName = day.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 3)
 
               return (
                 <div
                   key={ i }
-                  className={ `flex flex-col items-center py-2 px-1 rounded-lg transition-all ${isToday
+                  className={ `flex flex-col items-center py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-lg transition-all ${isToday
                       ? "bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30"
                       : "hover:bg-muted/30"
                     }` }
                 >
-                  <span className="text-xs font-medium text-muted-foreground">{ dayName }</span>
+                  <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{ dayName }</span>
                   <span className={ `text-sm font-bold mt-0.5 ${isToday ? "text-primary" : "text-foreground"}` }>
                     { day.getDate() }
                   </span>

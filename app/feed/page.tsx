@@ -666,13 +666,13 @@
 
         {/* Toolbar: search + filters + create */ }
         <div className="bg-background/90 backdrop-blur-xl border-b border-border/50 sticky top-14 z-40 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center gap-3 justify-center">
-              <div className="relative flex-1 max-w-xl">
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3">
+            <div className="flex items-center gap-2 sm:gap-3 justify-center">
+              <div className="relative flex-1 max-w-xl min-w-0">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4.5 h-4.5" />
                 <input
                   type="text"
-                  placeholder="Search by sport, location, or activity name..."
+                  placeholder="Search activities..."
                   value={ searchQuery }
                   onChange={ (e) => setSearchQuery(e.target.value) }
                   className="w-full pl-10 pr-4 py-2.5 bg-muted/40 border border-border/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 text-sm transition-all"
@@ -682,10 +682,10 @@
                 variant="outline"
                 size="sm"
                 onClick={ () => setShowFilters(!showFilters) }
-                className={ `relative gap-2 rounded-xl text-sm shrink-0 h-10 px-4 font-medium border-border/60 ${activeFilterCount > 0 ? "border-primary text-primary bg-primary/5" : "hover:bg-muted/40"}` }
+                className={ `relative gap-1.5 sm:gap-2 rounded-xl text-sm shrink-0 h-10 px-3 sm:px-4 font-medium border-border/60 ${activeFilterCount > 0 ? "border-primary text-primary bg-primary/5" : "hover:bg-muted/40"}` }
               >
                 <SlidersHorizontal className="w-4 h-4" />
-                Filters
+                <span className="hidden sm:inline">Filters</span>
                 { activeFilterCount > 0 && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center font-bold shadow-sm">
                     { activeFilterCount }
@@ -703,8 +703,8 @@
           </div>
 
           { showFilters && (
-            <div className="border-t border-border/50 bg-background/95 px-4 py-4">
-              <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+            <div className="border-t border-border/50 bg-background/95 px-3 sm:px-4 py-3 sm:py-4">
+              <div className="max-w-7xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 items-end">
                 <div>
                   <label className="text-xs font-semibold text-muted-foreground mb-1.5 block uppercase tracking-wide">Sport</label>
                   <select value={ selectedSport } onChange={ (e) => setSelectedSport(e.target.value) } className="w-full p-2.5 text-sm bg-muted/30 border border-border/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30">
@@ -742,7 +742,7 @@
           ) }
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
           { profileNeedsCompletion && (
             <Link
               href="/profile"
@@ -770,7 +770,7 @@
             </Link>
           ) }
 
-          <div className="grid lg:grid-cols-4 gap-6">
+          <div className="grid lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Sidebar */ }
             <div className="lg:col-span-1 space-y-4">
               <WeeklyCalendar activeDates={ activeDates } />
@@ -834,16 +834,16 @@
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+              <div className="flex items-center justify-between mb-4 gap-2">
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold truncate" style={ { fontFamily: "var(--font-space-grotesk)" } }>
                     { feedView === "all" ? "Activity Feed" : feedView === "friends" ? "Friends' Activities" : feedView === "saved" ? "Saved Activities" : "Live Sessions" }
                   </h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     { loading ? "Loading..." : `${filteredActivities.length} ${filteredActivities.length === 1 ? "activity" : "activities"}` }
                   </p>
                 </div>
-                <Button size="sm" onClick={ () => setShowCreateModal(true) } className="md:hidden bg-gradient-to-r from-primary to-accent gap-1.5 rounded-xl">
+                <Button size="sm" onClick={ () => setShowCreateModal(true) } className="md:hidden shrink-0 bg-gradient-to-r from-primary to-accent gap-1.5 rounded-xl">
                   <Plus className="w-4 h-4" />Create
                 </Button>
               </div>
@@ -1232,9 +1232,9 @@
 
         {/* Edit Activity Modal */ }
         { editActivityId && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-lg bg-background border-border shadow-2xl">
-              <CardHeader className="pb-3 border-b border-border/50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+            <Card className="w-full max-w-lg bg-background border-border shadow-2xl max-h-[90vh] flex flex-col">
+              <CardHeader className="pb-3 border-b border-border/50 shrink-0">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold">Edit Activity</CardTitle>
                   <Button variant="ghost" size="icon" className="w-8 h-8" onClick={ () => setEditActivityId(null) }>
@@ -1242,8 +1242,8 @@
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="pt-5 space-y-3 max-h-[72vh] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-3">
+              <CardContent className="pt-4 sm:pt-5 space-y-3 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <Label className="text-xs font-medium">Title</Label>
                     <Input placeholder="e.g. 5-a-side Football" value={ editForm.title } onChange={ (e) => setEditForm((f) => ({ ...f, title: e.target.value })) } className="mt-1 h-9 text-sm" />
@@ -1352,9 +1352,9 @@
 
         {/* Create Activity Modal */ }
         { showCreateModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-lg bg-background border-border shadow-2xl">
-              <CardHeader className="pb-3 border-b border-border/50">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+            <Card className="w-full max-w-lg bg-background border-border shadow-2xl max-h-[90vh] flex flex-col">
+              <CardHeader className="pb-3 border-b border-border/50 shrink-0">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-bold">Create Activity</CardTitle>
                   <Button variant="ghost" size="icon" className="w-8 h-8" onClick={ () => setShowCreateModal(false) }>
@@ -1362,8 +1362,8 @@
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="pt-5 space-y-3 max-h-[72vh] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-3">
+              <CardContent className="pt-4 sm:pt-5 space-y-3 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <Label className="text-xs font-medium">Title</Label>
                     <Input placeholder="e.g. 5-a-side Football" value={ createForm.title } onChange={ (e) => setCreateForm((f) => ({ ...f, title: e.target.value })) } className="mt-1 h-9 text-sm" />

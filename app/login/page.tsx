@@ -151,13 +151,13 @@
     }
 
     return (
-      <div className="flex gap-2 justify-center">
+      <div className="flex gap-1.5 sm:gap-2 justify-center">
         { [0, 1, 2, 3, 4, 5].map((i) => (
           <input key={ i } ref={ refs[i] } type="text" inputMode="numeric" maxLength={ 1 }
             value={ value[i]?.trim() ?? "" }
             onChange={ (e) => handle(i, e.target.value) }
             onKeyDown={ (e) => onKey(i, e) }
-            className="w-11 h-12 text-center text-xl font-bold border-2 rounded-xl border-slate-200 focus:border-emerald-500 focus:outline-none transition-colors bg-white text-slate-800 shadow-sm"
+            className="w-10 h-11 sm:w-11 sm:h-12 text-center text-lg sm:text-xl font-bold border-2 rounded-xl border-slate-200 focus:border-emerald-500 focus:outline-none transition-colors bg-white text-slate-800 shadow-sm"
           />
         )) }
       </div>
@@ -444,30 +444,30 @@
         {/* ══════════════════════════════════════
           LEFT — dark panel with full auth UI
       ══════════════════════════════════════ */}
-        <div className="w-full md:w-[460px] lg:w-[500px] flex-shrink-0 flex flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-emerald-950 px-8 py-10 relative overflow-hidden">
+        <div className="w-full md:w-[460px] lg:w-[500px] flex-shrink-0 flex flex-col bg-gradient-to-b from-slate-900 via-slate-900 to-emerald-950 px-5 sm:px-8 py-6 sm:py-10 relative overflow-hidden">
 
           {/* background glows */ }
           <div className="pointer-events-none absolute -top-32 -left-32 w-80 h-80 rounded-full bg-emerald-600/10 blur-3xl" />
           <div className="pointer-events-none absolute bottom-0 right-0 w-56 h-56 rounded-full bg-teal-500/8 blur-3xl" />
 
           {/* Logo + back nav */ }
-          <div className="relative mb-12 flex items-center justify-between">
+          <div className="relative mb-6 sm:mb-12 flex items-center justify-between">
             <Link href="/" className="flex items-center group hover:opacity-80 transition-opacity">
-              <Image src="/images/peerfit-logo.png" alt="PeerFit" width={ 180 } height={ 120 } className="h-16 w-auto object-contain -my-3 [filter:brightness(0)_invert(1)]" />
+              <Image src="/images/peerfit-logo.png" alt="PeerFit" width={ 180 } height={ 120 } className="h-12 sm:h-16 w-auto object-contain -my-2 sm:-my-3 [filter:brightness(0)_invert(1)]" />
             </Link>
-            <Link href="/" className="flex items-center gap-1 text-xs text-white/30 hover:text-white/60 transition-colors">
+            <Link href="/" className="flex items-center gap-1 text-[11px] sm:text-xs text-white/30 hover:text-white/60 transition-colors">
               <ChevronLeft className="w-3.5 h-3.5" />Back to home
             </Link>
           </div>
 
           {/* Hero headline */ }
-          <div className="relative mb-10">
-            <h1 className="text-[2.6rem] lg:text-5xl font-black leading-[1.08] tracking-tight text-white mb-4"
+          <div className="relative mb-6 sm:mb-10">
+            <h1 className="text-[2rem] sm:text-[2.6rem] lg:text-5xl font-black leading-[1.08] tracking-tight text-white mb-3 sm:mb-4"
               style={ { fontFamily: "var(--font-space-grotesk)" } }>
               Train smarter.<br />
               <span className="text-emerald-400">Stay consistent.</span>
             </h1>
-            <p className="text-white/50 text-[15px] leading-relaxed max-w-xs">
+            <p className="text-white/50 text-sm sm:text-[15px] leading-relaxed max-w-xs">
               Find local games, connect with nearby players, and build the habits that actually stick.
             </p>
           </div>
@@ -476,11 +476,11 @@
           <div className="relative flex-1 flex flex-col min-h-0">
 
             {/* Tab switcher */ }
-            <div className="flex items-end border-b border-white/10 mb-7">
+            <div className="flex flex-wrap items-end border-b border-white/10 mb-5 sm:mb-7">
               { (["signin", "signup"] as const).map((tab) => (
                 <button key={ tab }
                   onClick={ () => { setActive(tab); setSuError(""); setSiError("") } }
-                  className={ `pb-3 mr-7 text-sm font-semibold border-b-2 -mb-px transition-all ${active === tab
+                  className={ `pb-3 mr-5 sm:mr-7 text-sm font-semibold border-b-2 -mb-px transition-all ${active === tab
                       ? "text-white border-emerald-400"
                       : "text-white/30 border-transparent hover:text-white/55"
                     }` }
