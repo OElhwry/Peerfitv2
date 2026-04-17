@@ -54,7 +54,7 @@
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white mb-2" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                <h1 className="text-2xl font-black text-white mb-2 font-heading">
                   Check your inbox
                 </h1>
                 <p className="text-white/45 text-sm leading-relaxed">
@@ -78,8 +78,7 @@
             /* ── Form state ── */
             <div className="space-y-6">
               <div>
-                <h1 className="text-3xl font-black text-white tracking-tight mb-2"
-                  style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                <h1 className="text-3xl font-black text-white tracking-tight mb-2 font-heading">
                   Reset password
                 </h1>
                 <p className="text-white/45 text-sm leading-relaxed">

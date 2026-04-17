@@ -140,3 +140,9 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-space-grotesk), sans-serif;
+  }
+}

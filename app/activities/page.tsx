@@ -144,14 +144,14 @@
     const DAY_NAMES = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"]
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-0">
         <AppNav />
 
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
           {/* Page header */ }
           <div className="flex items-start sm:items-center justify-between mb-5 sm:mb-6 gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>Activities</h1>
+              <h1 className="text-xl sm:text-2xl font-bold font-heading">Activities</h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Your schedule and upcoming sessions</p>
             </div>
             <Link href="/feed" className="shrink-0">

@@ -45,7 +45,7 @@
         <div className="mx-auto max-w-4xl px-5 sm:px-8 py-10 sm:py-16">
           <div className="rounded-[1.5rem] sm:rounded-[2rem] border border-sky-200/70 bg-white/90 p-5 sm:p-8 shadow-[0_30px_90px_-45px_rgba(15,23,42,0.45)] backdrop-blur md:p-12">
             <p className="text-xs sm:text-sm font-semibold uppercase tracking-[0.25em] sm:tracking-[0.3em] text-sky-600">PeerFit Legal</p>
-            <h1 className="mt-3 sm:mt-4 text-3xl sm:text-4xl font-black tracking-tight text-slate-950" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+            <h1 className="mt-3 sm:mt-4 text-3xl sm:text-4xl font-black tracking-tight text-slate-950 font-heading">
               Consumer Terms
             </h1>
             <p className="mt-3 sm:mt-4 max-w-2xl text-sm sm:text-base leading-6 sm:leading-7 text-slate-600">

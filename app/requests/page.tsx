@@ -49,6 +49,7 @@
     const [actionId, setActionId] = useState<string | null>(null)
     const [tab, setTab] = useState<"incoming" | "sent" | "friends">("incoming")
     const [friendSearch, setFriendSearch] = useState("")
+    const [unfriendPending, setUnfriendPending] = useState<{ id: string; name: string } | null>(null)
 
     useEffect(() => {
       async function load() {
@@ -150,12 +151,13 @@
     ]
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-0">
         <AppNav />
 
         <div className="max-w-2xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
           <div className="mb-5 sm:mb-6">
-            <h1 className="text-xl sm:text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>Friends</h1>
+            <h1 className="text-xl sm:text-2xl font-bold font-heading">Friends</h1>
             <p className="text-sm text-muted-foreground mt-1">Manage your connections and requests</p>
           </div>
 
@@ -330,9 +332,10 @@
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={ () => removeFriend(f.id) }
+                            onClick={ () => setUnfriendPending({ id: f.id, name: f.profiles?.full_name ?? "this person" }) }
                             disabled={ actionId === f.id }
                             className="h-8 text-xs px-2 text-muted-foreground hover:text-destructive"
+                            aria-label="Remove friend"
                           >
                             { actionId === f.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserX className="w-3.5 h-3.5" /> }
                           </Button>
@@ -346,6 +349,37 @@
           ) }
         </div>
       </div>
+      {/* Unfriend confirmation dialog */ }
+      { unfriendPending && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={ () => setUnfriendPending(null) } />
+          <div className="relative bg-background border border-border/50 rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+            <div className="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserX className="w-6 h-6 text-red-500" />
+            </div>
+            <h3 className="text-base font-bold text-center mb-1 font-heading">Remove friend?</h3>
+            <p className="text-sm text-muted-foreground text-center mb-5">
+              Remove <span className="font-semibold text-foreground">{ unfriendPending.name }</span> as a friend? You&apos;ll need to send a new request to reconnect.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={ () => setUnfriendPending(null) }>
+                Cancel
+              </Button>
+              <Button
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+                onClick={ async () => {
+                  const id = unfriendPending.id
+                  setUnfriendPending(null)
+                  await removeFriend(id)
+                } }
+              >
+                Remove
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) }
+    </>
     )
   }
 

@@ -1,6 +1,6 @@
   "use client"
 
-  import { ArrowRight, CheckCircle, ChevronDown, Star } from "lucide-react"
+  import { ArrowRight, CheckCircle, ChevronDown } from "lucide-react"
   import Image from "next/image"
   import Link from "next/link"
   import { useEffect, useRef } from "react"
@@ -28,19 +28,10 @@
     { src: "/images/sports/yoga.jpg", label: "Yoga" },
   ]
 
-  const TESTIMONIALS = [
-    {
-      quote: "Found a 5-a-side team in my area within a week. We play every Thursday now without fail.",
-      name: "James K.", role: "London · Football", initial: "J",
-    },
-    {
-      quote: "I was new to the city and didn't know anyone. PeerFit changed that — I've made real friends through running groups.",
-      name: "Priya S.", role: "Manchester · Running", initial: "P",
-    },
-    {
-      quote: "Finally a tennis partner at my level. We've been playing twice a week for six months.",
-      name: "Sarah M.", role: "London · Tennis", initial: "S",
-    },
+  const COMMUNITY_STATS = [
+    { value: "15+", label: "Sports supported", desc: "From football to yoga, padel to boxing" },
+    { value: "Free", label: "No subscription", desc: "Join activities and create your own at no cost" },
+    { value: "Local", label: "Your neighbourhood", desc: "Find games near you at any skill level" },
   ]
 
   /* ── Reveal-on-scroll animation hook ── */
@@ -118,7 +109,7 @@
         {/* ══════════════════════════════════════════
           SNAP SCROLL CONTAINER
       ══════════════════════════════════════════ */}
-        <div className="h-screen overflow-y-scroll snap-y snap-mandatory [overscroll-behavior-y:contain]">
+        <div className="h-screen overflow-y-scroll snap-y snap-mandatory [overscroll-behavior-y:contain] scroll-pt-14 sm:scroll-pt-16">
 
           {/* ── 1. HERO ── */ }
           <section className="h-screen snap-start bg-white flex flex-col [will-change:transform]">
@@ -131,8 +122,7 @@
                   Free to join · 15+ sports · Local games
                 </div>
 
-                <h1 className="text-[2.25rem] sm:text-5xl lg:text-[64px] font-black leading-[1.03] tracking-tight text-slate-900 mb-4 sm:mb-6"
-                  style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                <h1 className="text-[2.25rem] sm:text-5xl lg:text-[64px] font-black leading-[1.03] tracking-tight text-slate-900 mb-4 sm:mb-6 font-heading">
                   Find your game.<br />
                   <span className="text-emerald-600">Play more.</span>
                 </h1>
@@ -205,8 +195,7 @@
                 <span className="text-emerald-500/70 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase block mb-3">
                   How it works
                 </span>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight"
-                  style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight font-heading">
                   Up and running<br />in minutes
                 </h2>
               </div>
@@ -221,15 +210,14 @@
                     className="relative bg-white/[0.06] border border-white/10 rounded-3xl p-5 sm:p-8 overflow-hidden hover:bg-white/[0.09] transition-colors duration-300">
                     {/* Watermark number */ }
                     <span
-                      className="absolute -top-6 -left-1 text-[140px] font-black leading-none select-none pointer-events-none text-white/[0.035]"
-                      style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                      className="absolute -top-6 -left-1 text-[140px] font-black leading-none select-none pointer-events-none text-white/[0.035] font-heading">
                       { n }
                     </span>
                     <div className="relative z-10">
                       <div className="w-10 h-10 sm:w-11 sm:h-11 bg-emerald-500 rounded-xl flex items-center justify-center mb-4 sm:mb-6">
-                        <span className="text-white text-xs font-black" style={ { fontFamily: "var(--font-space-grotesk)" } }>{ n }</span>
+                        <span className="text-white text-xs font-black font-heading">{ n }</span>
                       </div>
-                      <h3 className="text-white font-bold text-lg sm:text-xl mb-2 sm:mb-3" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                      <h3 className="text-white font-bold text-lg sm:text-xl mb-2 sm:mb-3 font-heading">
                         { title }
                       </h3>
                       <p className="text-emerald-200/60 text-sm leading-relaxed">{ desc }</p>
@@ -250,8 +238,7 @@
 
               <div ref={ sportsTitle } className="text-center mb-8 sm:mb-10">
                 <span className="text-emerald-500 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase mb-3 sm:mb-4 block">Sports</span>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight"
-                  style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight font-heading">
                   Every sport. Your area.
                 </h2>
                 <p className="text-slate-400 mt-3 text-sm sm:text-base">From 5-a-side to yoga — find your activity or create one.</p>
@@ -259,9 +246,9 @@
 
               <div ref={ sportsGrid } className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                 { SPORT_CHIPS.map(({ src, label }) => (
-                  <div key={ label } className="relative aspect-square rounded-2xl overflow-hidden group cursor-default">
-                    <Image src={ src } alt={ label } fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-black/50 group-hover:bg-black/25 transition-colors duration-400" />
+                  <div key={ label } className="relative aspect-square rounded-2xl overflow-hidden">
+                    <Image src={ src } alt={ label } fill className="object-cover" />
+                    <div className="absolute inset-0 bg-black/45" />
                     <span className="absolute inset-0 flex items-end justify-center pb-3 text-white text-[10px] font-black tracking-widest uppercase">
                       { label }
                     </span>
@@ -271,44 +258,46 @@
             </div>
           </section>
 
-          {/* ── 4. COMMUNITY ── */ }
+          {/* ── 4. WHY PEERFIT ── */ }
           <section id="community" className="min-h-screen snap-start bg-slate-50 flex flex-col justify-center px-5 py-20 sm:py-16 relative overflow-hidden [will-change:transform]">
-            {/* Logo watermark — dark filter for light bg */ }
             <Image src="/images/peerfit-logo.png" alt="" width={ 300 } height={ 200 } aria-hidden
               className="absolute -bottom-6 -right-6 w-[300px] h-auto object-contain pointer-events-none select-none opacity-[0.07] [filter:brightness(0)]" />
 
             <div className="max-w-6xl mx-auto w-full relative z-10">
 
-              <div ref={ commTitle } className="text-center mb-8 sm:mb-12">
-                <span className="text-emerald-600 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase mb-3 sm:mb-4 block">Community</span>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight"
-                  style={ { fontFamily: "var(--font-space-grotesk)" } }>
-                  Real people. Real games.
+              <div ref={ commTitle } className="text-center mb-10 sm:mb-14">
+                <span className="text-emerald-600 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase mb-3 sm:mb-4 block">Why PeerFit</span>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight font-heading">
+                  Built for players,<br />not algorithms.
                 </h2>
-                <p className="text-slate-500 mt-3 text-sm sm:text-base">What the PeerFit community says.</p>
+                <p className="text-slate-500 mt-3 text-sm sm:text-base max-w-lg mx-auto">
+                  No feed, no followers, no ads. Just you, your sport, and people nearby who want to play.
+                </p>
               </div>
 
               <div ref={ commCards } className="grid md:grid-cols-3 gap-4 sm:gap-6">
-                { TESTIMONIALS.map(({ quote, name, role, initial }) => (
-                  <div key={ name }
-                    className="bg-white border border-slate-100 rounded-3xl p-5 sm:p-7 shadow-sm hover:shadow-lg transition-shadow duration-300">
-                    <div className="flex gap-0.5 mb-5">
-                      { [...Array(5)].map((_, i) => (
-                        <Star key={ i } className="w-4 h-4 fill-emerald-400 text-emerald-400" />
-                      )) }
-                    </div>
-                    <p className="text-slate-600 text-sm leading-relaxed mb-6 italic">&ldquo;{ quote }&rdquo;</p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-sm font-black shrink-0">
-                        { initial }
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800">{ name }</p>
-                        <p className="text-xs text-slate-400">{ role }</p>
-                      </div>
-                    </div>
+                { COMMUNITY_STATS.map(({ value, label, desc }) => (
+                  <div key={ label }
+                    className="bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm text-center">
+                    <p className="text-5xl sm:text-6xl font-black text-emerald-600 mb-2 font-heading">
+                      { value }
+                    </p>
+                    <p className="text-base font-bold text-slate-800 mb-2">{ label }</p>
+                    <p className="text-sm text-slate-500 leading-relaxed">{ desc }</p>
                   </div>
                 )) }
+              </div>
+
+              {/* Value prop strip */ }
+              <div className="mt-8 sm:mt-10 grid sm:grid-cols-2 gap-4">
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 sm:p-6">
+                  <p className="text-base font-bold text-slate-800 mb-1">Open to everyone</p>
+                  <p className="text-sm text-slate-500">Any skill level, any sport. Whether you&apos;re a beginner looking for a casual kick-about or a competitive player searching for a serious match.</p>
+                </div>
+                <div className="bg-slate-900 rounded-2xl p-5 sm:p-6">
+                  <p className="text-base font-bold text-white mb-1">Private or public activities</p>
+                  <p className="text-sm text-slate-400">Create open sessions anyone can join, or private invite-only games where you approve every player yourself.</p>
+                </div>
               </div>
             </div>
           </section>
@@ -329,8 +318,7 @@
                   <Image src="/images/peerfit-logo.png" alt="PeerFit" width={ 160 } height={ 107 } className="h-12 sm:h-16 w-auto object-contain opacity-80" />
                 </div>
                 <h2
-                  className="text-5xl sm:text-6xl lg:text-[88px] font-black text-white leading-[0.92] tracking-tight mb-5 sm:mb-7"
-                  style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                  className="text-5xl sm:text-6xl lg:text-[88px] font-black text-white leading-[0.92] tracking-tight mb-5 sm:mb-7 font-heading">
                   Ready<br />to play?
                 </h2>
                 <p className="text-emerald-300/75 text-base sm:text-lg mb-7 sm:mb-10 leading-relaxed max-w-sm mx-auto">

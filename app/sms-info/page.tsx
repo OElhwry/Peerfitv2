@@ -39,7 +39,7 @@
 
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-emerald-950/30 backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-300">SMS verification</p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+            <h1 className="mt-3 text-3xl font-black tracking-tight font-heading">
               Why PeerFit asks for your phone number
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-white/65">

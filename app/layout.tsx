@@ -22,8 +22,18 @@
   export const metadata: Metadata = {
     title: "PeerFit - Find People. Play Sports. Stay Active.",
     description:
-      "Connect with teammates and partners for sports activities. Join a community of active people and never play alone again.",
-    generator: "v0.app",
+      "Connect with teammates and partners for sports activities near you. Join a community of active people and never play alone again.",
+    openGraph: {
+      title: "PeerFit - Find People. Play Sports. Stay Active.",
+      description: "Find local games, connect with players nearby, and build lasting habits. Free to join — 15+ sports.",
+      type: "website",
+      siteName: "PeerFit",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "PeerFit - Find People. Play Sports. Stay Active.",
+      description: "Find local games, connect with players nearby, and build lasting habits. Free to join — 15+ sports.",
+    },
   }
 
   export default function RootLayout({

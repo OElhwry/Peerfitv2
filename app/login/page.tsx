@@ -177,6 +177,7 @@
     const searchParams = useSearchParams()
     const stepParam = searchParams.get("step")
     const requestedMode = searchParams.get("mode")
+    const redirectTo = searchParams.get("redirectTo")
     const requestedStep: SignupStep | null = isSignupStep(stepParam) ? stepParam : null
     const [active, setActive] = useState<"signin" | "signup">(
       requestedMode === "signup" ? "signup" : "signin"
@@ -290,7 +291,7 @@
       }
       if (data.session) {
         rememberMe ? localStorage.setItem(REMEMBER_KEY, siEmail.trim().toLowerCase()) : localStorage.removeItem(REMEMBER_KEY)
-        router.push("/feed")
+        router.push(redirectTo ?? "/feed")
       }
       setSiLoading(false)
     }
@@ -462,8 +463,7 @@
 
           {/* Hero headline */ }
           <div className="relative mb-6 sm:mb-10">
-            <h1 className="text-[2rem] sm:text-[2.6rem] lg:text-5xl font-black leading-[1.08] tracking-tight text-white mb-3 sm:mb-4"
-              style={ { fontFamily: "var(--font-space-grotesk)" } }>
+            <h1 className="text-[2rem] sm:text-[2.6rem] lg:text-5xl font-black leading-[1.08] tracking-tight text-white mb-3 sm:mb-4 font-heading">
               Train smarter.<br />
               <span className="text-emerald-400">Stay consistent.</span>
             </h1>
@@ -559,7 +559,7 @@
                 </div>
 
                 { siError && (
-                  <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ siError }</div>
+                  <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ siError }</div>
                 ) }
 
                 <button type="submit" disabled={ siLoading } className={ greenBtn }>
@@ -626,7 +626,7 @@
                       </div>
                     </div>
 
-                    { suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
+                    { suError && <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
 
                     <button onClick={ sendEmailCode } disabled={ suLoading } className={ greenBtn }>
                       { suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></> }
@@ -693,7 +693,7 @@
                       </label>
                     </div>
 
-                    { suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
+                    { suError && <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
 
                     <button onClick={ acceptTerms } disabled={ !ageTerms } className={ greenBtn }>
                       Create Account <ArrowRight className="w-4 h-4" />
@@ -708,21 +708,33 @@
 
                     <div className="grid grid-cols-3 gap-3">
                       { [
-                        { label: "Day", val: dobD, set: setDobD, ph: "DD", min: 1, max: 31 },
-                        { label: "Month", val: dobM, set: setDobM, ph: "MM", min: 1, max: 12 },
-                        { label: "Year", val: dobY, set: setDobY, ph: "YYYY", min: 1900, max: new Date().getFullYear() },
-                      ].map(({ label, val, set, ph }) => (
+                        { label: "Day", val: dobD, set: setDobD, ph: "DD", maxLen: 2, nextId: "dob-month" },
+                        { label: "Month", val: dobM, set: setDobM, ph: "MM", maxLen: 2, nextId: "dob-year" },
+                        { label: "Year", val: dobY, set: setDobY, ph: "YYYY", maxLen: 4, nextId: null },
+                      ].map(({ label, val, set, ph, maxLen, nextId }) => (
                         <div key={ label }>
                           <label className="text-[10px] font-bold text-white/35 uppercase tracking-widest mb-1.5 block text-center">{ label }</label>
-                          <input type="number" placeholder={ ph } value={ val }
-                            onChange={ (e) => set(e.target.value) }
+                          <input
+                            id={ `dob-${label.toLowerCase()}` }
+                            type="text"
+                            inputMode="numeric"
+                            placeholder={ ph }
+                            value={ val }
+                            maxLength={ maxLen }
+                            onChange={ (e) => {
+                              const v = e.target.value.replace(/\D/g, "").slice(0, maxLen)
+                              set(v)
+                              if (v.length === maxLen && nextId) {
+                                document.getElementById(nextId)?.focus()
+                              }
+                            } }
                             onKeyDown={ (e) => {
                               if (e.key === "Enter" && dobD && dobM && dobY && !suLoading) {
                                 e.preventDefault()
                                 saveDob()
                               }
                             } }
-                            className="w-full h-12 text-center text-lg font-bold bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/18 focus:outline-none focus:border-emerald-500/50 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="w-full h-12 text-center text-lg font-bold bg-white/8 border border-white/12 rounded-xl text-white placeholder:text-white/18 focus:outline-none focus:border-emerald-500/50 transition-all"
                           />
                         </div>
                       )) }
@@ -730,7 +742,7 @@
 
                     <p className="text-xs text-white/25 text-center">You must be at least 13 years old.</p>
 
-                    { suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
+                    { suError && <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
 
                     <button onClick={ saveDob } disabled={ suLoading || !dobD || !dobM || !dobY } className={ greenBtn }>
                       { suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></> }
@@ -776,7 +788,7 @@
                       </div>
                     </div>
 
-                    { suError && <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
+                    { suError && <div role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-300">{ suError }</div> }
 
                     <button onClick={ () => finishSignup() } disabled={ suLoading } className={ greenBtn }>
                       { suLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Finish Sign Up <ArrowRight className="w-4 h-4" /></> }

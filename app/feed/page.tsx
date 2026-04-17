@@ -615,8 +615,8 @@
         return true
       })
       .sort((a, b) => {
-        const ta = new Date(a.created_at).getTime()
-        const tb = new Date(b.created_at).getTime()
+        const ta = new Date(`${a.date}T${a.time}`).getTime()
+        const tb = new Date(`${b.date}T${b.time}`).getTime()
         return sortOrder === "newest" ? tb - ta : ta - tb
       })
 
@@ -649,7 +649,7 @@
     }
 
     const handleShare = async (activity: DbActivity) => {
-      const url = `${window.location.origin}/feed`
+      const url = `${window.location.origin}/feed?activity=${activity.id}`
       const text = `Join me for ${activity.sports?.emoji ?? ""} ${activity.title} on ${formatDate(activity.date)} at ${formatTime(activity.time)} — ${activity.location}`
       if (navigator.share) {
         await navigator.share({ title: activity.title, text, url })
@@ -754,7 +754,7 @@
                     <Camera className="h-3.5 w-3.5" />
                     Profile boost
                   </div>
-                  <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                  <h2 className="text-xl font-black tracking-tight text-white sm:text-2xl font-heading">
                     Complete your profile so people know who they&apos;re playing with.
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-white/70 sm:text-[15px]">
@@ -836,7 +836,7 @@
 
               <div className="flex items-center justify-between mb-4 gap-2">
                 <div className="min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold truncate" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                  <h1 className="text-xl sm:text-2xl font-bold truncate font-heading">
                     { feedView === "all" ? "Activity Feed" : feedView === "friends" ? "Friends' Activities" : feedView === "saved" ? "Saved Activities" : "Live Sessions" }
                   </h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
@@ -939,7 +939,7 @@
                             </div>
 
                             {/* Title */ }
-                            <h3 className="relative text-white font-black text-lg leading-tight tracking-tight" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                            <h3 className="relative text-white font-black text-lg leading-tight tracking-tight font-heading">
                               { activity.title }
                             </h3>
 

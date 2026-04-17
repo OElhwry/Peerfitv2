@@ -23,7 +23,6 @@
     MapPin,
     Palette,
     Save,
-    Shield,
     Star,
     TrendingUp, Trophy, Users,
     X,
@@ -377,7 +376,7 @@
       : ""
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-0">
         <AppNav />
 
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
@@ -493,12 +492,9 @@
                   <div className="flex-1 pb-1 pt-1 sm:pt-0 min-w-0">
                     {/* Name + badges */ }
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <h1 className="text-xl sm:text-2xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                      <h1 className="text-xl sm:text-2xl font-bold font-heading">
                         { profile?.full_name ?? "Your Name" }
                       </h1>
-                      <Badge className="bg-primary/10 text-primary border-primary/20 text-xs gap-1 py-0.5">
-                        <Shield className="w-3 h-3" />Verified
-                      </Badge>
                       { avgRating && (
                         <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs gap-1 py-0.5">
                           <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{ avgRating }

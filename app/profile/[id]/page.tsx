@@ -177,7 +177,7 @@
           : "bg-gradient-to-r from-primary to-accent text-white hover:from-primary/90 hover:to-accent/90"
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-0">
         <AppNav />
 
         <div className="max-w-3xl mx-auto px-3 sm:px-4 py-5 sm:py-8 space-y-5">
@@ -198,7 +198,7 @@
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 pb-1 min-w-0">
-                  <h1 className="text-xl font-bold" style={ { fontFamily: "var(--font-space-grotesk)" } }>
+                  <h1 className="text-xl font-bold font-heading">
                     { profile?.full_name ?? "User" }
                   </h1>
                   <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mt-0.5">
