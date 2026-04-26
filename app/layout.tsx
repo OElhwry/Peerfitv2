@@ -2,11 +2,33 @@
   import { GeistSans } from "geist/font/sans"
   import type { Metadata } from "next"
   import { ThemeProvider } from "next-themes"
-  import { DM_Sans, Space_Grotesk } from "next/font/google"
+  import { Big_Shoulders_Display, DM_Sans, Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google"
   import type React from "react"
   import { Analytics } from "@vercel/analytics/next"
   import "./globals.css"
 
+  // ── PeerFit editorial system fonts ────────────────────────────────────────────
+  const bigShoulders = Big_Shoulders_Display({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-big-shoulders",
+    weight: ["700", "800", "900"],
+  })
+
+  const inter = Inter({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-inter",
+  })
+
+  const jetbrainsMono = JetBrains_Mono({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-jetbrains",
+    weight: ["500", "600"],
+  })
+
+  // ── Legacy fonts (kept until non-revamped surfaces are migrated in V2) ───────
   const spaceGrotesk = Space_Grotesk({
     subsets: ["latin"],
     display: "swap",
@@ -42,7 +64,11 @@
     children: React.ReactNode
   }>) {
     return (
-      <html lang="en" suppressHydrationWarning className={ `${spaceGrotesk.variable} ${dmSans.variable}` }>
+      <html
+        lang="en"
+        suppressHydrationWarning
+        className={ `${bigShoulders.variable} ${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} ${dmSans.variable}` }
+      >
         <head>
           <style>{ `
 html {
@@ -51,6 +77,9 @@ html {
   --font-mono: ${GeistMono.variable};
   --font-space-grotesk: ${spaceGrotesk.variable};
   --font-dm-sans: ${dmSans.variable};
+  --font-big-shoulders: ${bigShoulders.variable};
+  --font-inter: ${inter.variable};
+  --font-jetbrains: ${jetbrainsMono.variable};
 }
         `}</style>
         </head>
