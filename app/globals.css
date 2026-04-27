@@ -326,11 +326,42 @@
     animation: pf-fixture-flip 300ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
+  /* Letter rise — used by landing CTA letter-stagger reveal */
+  @keyframes pf-letter-rise {
+    from { opacity: 0; transform: translateY(36px) rotate(2deg); }
+    to   { opacity: 1; transform: translateY(0) rotate(0); }
+  }
+  .pf-letter-rise {
+    animation: pf-letter-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* Slow horizontal drift — used by landing watermark logos */
+  @keyframes pf-drift-x {
+    0%   { transform: translateX(0); }
+    50%  { transform: translateX(20px); }
+    100% { transform: translateX(0); }
+  }
+  .pf-drift-x {
+    animation: pf-drift-x 14s ease-in-out infinite;
+  }
+
+  /* Glow pulse — for live indicator dots */
+  @keyframes pf-glow-pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    50%      { opacity: 0.85; box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  }
+  .pf-glow-pulse {
+    animation: pf-glow-pulse 2s ease-in-out infinite;
+  }
+
   /* Reduced motion — kill all signature motions */
   @media (prefers-reduced-motion: reduce) {
     .pf-ticker-track,
     .pf-ken-burns,
-    .pf-fixture-flip {
+    .pf-fixture-flip,
+    .pf-letter-rise,
+    .pf-drift-x,
+    .pf-glow-pulse {
       animation: none !important;
     }
   }
@@ -378,5 +409,71 @@
 
   .pf-stinger-fade {
     animation: pf-stinger-overlay-out 2.3s ease-in forwards;
+  }
+
+  /* ── Landing stinger (verb chain → wordmark wipe → lift) ─────────── */
+
+  /* Each verb: fade-up with blur clear */
+  @keyframes pf-stinger-verb {
+    0%   { opacity: 0; transform: translateY(-30px); filter: blur(8px); }
+    100% { opacity: 1; transform: translateY(0);    filter: blur(0); }
+  }
+
+  /* Verb chain exit — slight lift + soft blur */
+  @keyframes pf-stinger-verb-out {
+    0%   { opacity: 1; transform: translateY(0);    filter: blur(0); }
+    100% { opacity: 0; transform: translateY(-14px); filter: blur(4px); }
+  }
+
+  /* Curtain wipe — block anchored right, width recedes from 100% to 0% */
+  @keyframes pf-stinger-wipe {
+    0%   { width: 100%; }
+    100% { width: 0%; }
+  }
+
+  /* Tagline below the wordmark */
+  @keyframes pf-stinger-tagline {
+    0%   { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Whole-stinger exit — lift up and fade out */
+  @keyframes pf-stinger-lift {
+    0%   { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-100%); }
+  }
+
+  /* ── Hero photo autonomous drift (4 off-sync variants) ──────────── */
+
+  @keyframes pf-drift-a {
+    0%, 100% { transform: translate(0, 0); }
+    35%      { transform: translate(6px, -4px); }
+    65%      { transform: translate(-3px, 5px); }
+  }
+  @keyframes pf-drift-b {
+    0%, 100% { transform: translate(0, 0); }
+    40%      { transform: translate(-5px, 4px); }
+    75%      { transform: translate(4px, -5px); }
+  }
+  @keyframes pf-drift-c {
+    0%, 100% { transform: translate(0, 0); }
+    30%      { transform: translate(4px, 5px); }
+    70%      { transform: translate(-6px, -3px); }
+  }
+  @keyframes pf-drift-d {
+    0%, 100% { transform: translate(0, 0); }
+    45%      { transform: translate(-4px, -5px); }
+    80%      { transform: translate(5px, 4px); }
+  }
+
+  .pf-drift-a { animation: pf-drift-a 14s ease-in-out infinite; will-change: transform; }
+  .pf-drift-b { animation: pf-drift-b 17s ease-in-out infinite; will-change: transform; }
+  .pf-drift-c { animation: pf-drift-c 19s ease-in-out infinite; will-change: transform; }
+  .pf-drift-d { animation: pf-drift-d 21s ease-in-out infinite; will-change: transform; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pf-drift-a, .pf-drift-b, .pf-drift-c, .pf-drift-d {
+      animation: none !important;
+    }
   }
 }

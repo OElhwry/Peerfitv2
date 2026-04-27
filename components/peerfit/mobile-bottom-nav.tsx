@@ -7,14 +7,16 @@
  * Renders only on mobile (md:hidden); desktop nav lives inline in
  * AppTopBar's app mode.
  *
- * No floating "+" create button in V1 — that's a feed-page concern and
- * lands when feed is rebuilt in Phase 4.
+ * On /feed, a floating "+" button is rendered between Activities and
+ * Friends — links to /feed?create=true so the FeedView client component
+ * can detect the URL state and open its create modal. URL-driven so the
+ * + CTA is server-renderable, deep-linkable, and refresh-safe.
  *
  * Active state matches by exact path or path-prefix, so /fixture/abc
  * still highlights "Feed" since that's where users navigate from.
  */
 
-import { Calendar, Home, User, Users } from "lucide-react"
+import { Calendar, Home, Plus, User, Users } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -27,6 +29,7 @@ const NAV_ITEMS = [
 
 export function MobileBottomNav() {
   const pathname = usePathname()
+  const showCreate = pathname === "/feed" || pathname.startsWith("/feed?")
 
   function isActive(item: (typeof NAV_ITEMS)[number]) {
     if (pathname === item.href) return true
@@ -41,7 +44,7 @@ export function MobileBottomNav() {
       aria-label="Primary"
       className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border pb-[env(safe-area-inset-bottom)]"
     >
-      <div className="flex items-stretch justify-around h-14">
+      <div className="flex items-stretch justify-around h-14 relative">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const active = isActive(item)
@@ -60,6 +63,16 @@ export function MobileBottomNav() {
             </Link>
           )
         })}
+
+        {showCreate && (
+          <Link
+            href="/feed?create=true"
+            aria-label="Post a new fixture"
+            className="absolute left-1/2 -translate-x-1/2 -top-5 w-12 h-12 bg-brand-pitch hover:bg-brand-pitch-hover text-paper flex items-center justify-center transition-colors shadow-lg shadow-ink/20"
+          >
+            <Plus className="w-5 h-5" strokeWidth={2.5} />
+          </Link>
+        )}
       </div>
     </nav>
   )

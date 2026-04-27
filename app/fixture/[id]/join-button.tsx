@@ -133,7 +133,7 @@ export function JoinButton({
     return (
       <button
         onClick={handleToggle}
-        className="inline-flex items-center justify-center gap-2 px-6 py-4 bg-stone-200 hover:bg-stone-300 text-foreground t-mono transition-colors w-full sm:w-auto"
+        className="inline-flex items-center justify-center gap-2 px-6 py-4 border border-brand-pitch text-brand-pitch hover:bg-brand-pitch hover:text-paper t-mono transition-colors w-full sm:w-auto"
       >
         <Check className="w-4 h-4" /> You&apos;re in — leave fixture
       </button>
