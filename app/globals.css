@@ -443,6 +443,34 @@
     100% { opacity: 0; transform: translateY(-100%); }
   }
 
+  /* Line-draw — horizontal underline that draws in from origin */
+  @keyframes pf-line-draw {
+    0%   { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+
+  /* Curtain wipes — GPU-accelerated, transform-origin controls direction */
+  @keyframes pf-curtain-x {
+    0%   { transform: scaleX(1); }
+    100% { transform: scaleX(0); }
+  }
+  @keyframes pf-curtain-y {
+    0%   { transform: scaleY(1); }
+    100% { transform: scaleY(0); }
+  }
+
+  /* Sport name — gentle blur clear as curtain recedes */
+  @keyframes pf-sport-clear {
+    0%   { filter: blur(2px); opacity: 0.92; }
+    100% { filter: blur(0);   opacity: 1; }
+  }
+
+  /* Format line entrances — 4 directions */
+  @keyframes pf-fmt-from-right  { 0% { opacity: 0; transform: translate3d(22px,0,0);  } 100% { opacity: 1; transform: translate3d(0,0,0); } }
+  @keyframes pf-fmt-from-left   { 0% { opacity: 0; transform: translate3d(-22px,0,0); } 100% { opacity: 1; transform: translate3d(0,0,0); } }
+  @keyframes pf-fmt-from-bottom { 0% { opacity: 0; transform: translate3d(0,14px,0);  } 100% { opacity: 1; transform: translate3d(0,0,0); } }
+  @keyframes pf-fmt-from-top    { 0% { opacity: 0; transform: translate3d(0,-14px,0); } 100% { opacity: 1; transform: translate3d(0,0,0); } }
+
   /* ── Hero photo autonomous drift (4 off-sync variants) ──────────── */
 
   @keyframes pf-drift-a {

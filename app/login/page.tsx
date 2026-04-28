@@ -11,10 +11,7 @@ import {
   Loader2,
   Lock,
   Mail,
-  MapPin,
   Phone,
-  Users,
-  Zap,
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -58,6 +55,18 @@ const PREV_STEP: Record<SignupStep, SignupStep> = {
   "phone": "dob",
 }
 
+const SPORTS_ROTATION = [
+  { name: "FOOTBALL",   formats: "5-A-SIDE · 7-A-SIDE · 11-A-SIDE" },
+  { name: "BASKETBALL", formats: "3V3 · 5V5 · STREETBALL" },
+  { name: "TENNIS",     formats: "SINGLES · DOUBLES · MIXED" },
+  { name: "RUNNING",    formats: "GROUP · INTERVAL · TRAIL" },
+  { name: "CYCLING",    formats: "ROAD · CRITERIUM · GRAVEL" },
+  { name: "BOXING",     formats: "SPARRING · TECHNIQUE · PADWORK" },
+  { name: "PADEL",      formats: "DOUBLES · SOCIAL · LEAGUE" },
+  { name: "CRICKET",    formats: "T20 · TEST · STREET" },
+] as const
+
+
 function splitPhoneNumber(fullPhone: string) {
   const knownCodes = [...new Set(COUNTRY_CODES.map((c) => c.code))].sort((a, b) => b.length - a.length)
   const matchedCode = knownCodes.find((code) => fullPhone.startsWith(code))
@@ -92,14 +101,145 @@ function markEmailOtpSent(email: string) {
   window.localStorage.setItem(EMAIL_OTP_COOLDOWN_KEY, JSON.stringify(cooldowns))
 }
 
-const SPORT_TILES = [
-  { img: "/images/sports/football.jpg",   label: "Football" },
-  { img: "/images/sports/basketball.jpg", label: "Basketball" },
-  { img: "/images/sports/tennis.jpg",     label: "Tennis" },
-  { img: "/images/sports/boxing.jpg",     label: "Boxing" },
-  { img: "/images/sports/running.jpg",    label: "Running" },
-  { img: "/images/sports/swimming.jpg",   label: "Swimming" },
-]
+/* ── Sport line-art — simplified top-down sport surfaces, brand-pitch stroke ── */
+function SportArtwork({ name }: { name: string }) {
+  const s = "oklch(0.55 0.14 158)"
+  const fill = "none"
+  switch (name) {
+    case "FOOTBALL":
+      return (
+        <g stroke={s} fill={fill}>
+          <rect x="2" y="2" width="516" height="516" strokeWidth="1.5" />
+          <line x1="260" y1="2" x2="260" y2="518" strokeWidth="1" />
+          <circle cx="260" cy="260" r="80" strokeWidth="1" />
+          <circle cx="260" cy="260" r="2" strokeWidth="2" />
+          <rect x="2" y="170" width="80" height="180" strokeWidth="1" />
+          <rect x="438" y="170" width="80" height="180" strokeWidth="1" />
+          <path d="M 82 220 A 60 60 0 0 1 82 300" strokeWidth="1" />
+          <path d="M 438 220 A 60 60 0 0 0 438 300" strokeWidth="1" />
+        </g>
+      )
+    case "BASKETBALL":
+      return (
+        <g stroke={s} fill={fill}>
+          <rect x="2" y="2" width="516" height="516" strokeWidth="1.5" />
+          <line x1="260" y1="2" x2="260" y2="518" strokeWidth="1" />
+          <circle cx="260" cy="260" r="56" strokeWidth="1" />
+          <rect x="2" y="180" width="120" height="160" strokeWidth="1" />
+          <circle cx="122" cy="260" r="56" strokeWidth="1" />
+          <rect x="398" y="180" width="120" height="160" strokeWidth="1" />
+          <circle cx="398" cy="260" r="56" strokeWidth="1" />
+          <path d="M 2 70 A 256 256 0 0 1 2 450" strokeWidth="1" />
+          <path d="M 518 70 A 256 256 0 0 0 518 450" strokeWidth="1" />
+        </g>
+      )
+    case "TENNIS":
+      return (
+        <g stroke={s} fill={fill}>
+          {/* Doubles court boundary (horizontal — long axis runs left-to-right) */}
+          <rect x="40" y="80" width="440" height="360" strokeWidth="1.5" />
+          {/* Net (vertical, down the middle) */}
+          <line x1="260" y1="60" x2="260" y2="460" strokeWidth="1.5" />
+          {/* Singles sidelines (horizontal, inset from top/bottom doubles edges) */}
+          <line x1="40" y1="140" x2="480" y2="140" strokeWidth="1" />
+          <line x1="40" y1="380" x2="480" y2="380" strokeWidth="1" />
+          {/* Service lines (vertical, one each side of net) */}
+          <line x1="120" y1="140" x2="120" y2="380" strokeWidth="1" />
+          <line x1="400" y1="140" x2="400" y2="380" strokeWidth="1" />
+          {/* Center service line (horizontal) */}
+          <line x1="120" y1="260" x2="400" y2="260" strokeWidth="1" />
+          {/* Baseline center marks */}
+          <line x1="36" y1="255" x2="36" y2="265" strokeWidth="2" />
+          <line x1="484" y1="255" x2="484" y2="265" strokeWidth="2" />
+        </g>
+      )
+    case "RUNNING":
+      return (
+        <g stroke={s} fill={fill}>
+          <rect x="40" y="120" width="440" height="280" rx="140" ry="140" strokeWidth="1.5" />
+          <rect x="60" y="140" width="400" height="240" rx="120" ry="120" strokeWidth="1" />
+          <rect x="80" y="160" width="360" height="200" rx="100" ry="100" strokeWidth="1" />
+          <rect x="100" y="180" width="320" height="160" rx="80" ry="80" strokeWidth="1" />
+          <rect x="120" y="200" width="280" height="120" rx="60" ry="60" strokeWidth="1" />
+          <line x1="160" y1="120" x2="160" y2="200" strokeWidth="1.5" />
+        </g>
+      )
+    case "CYCLING":
+      return (
+        <g stroke={s} fill={fill}>
+          {/* Chainring */}
+          <circle cx="260" cy="260" r="200" strokeWidth="1.5" />
+          <circle cx="260" cy="260" r="184" strokeWidth="1" strokeDasharray="3 5" />
+          <circle cx="260" cy="260" r="62" strokeWidth="1" />
+          <circle cx="260" cy="260" r="14" strokeWidth="1.5" />
+          {/* Arms */}
+          <line x1="260" y1="76" x2="260" y2="444" strokeWidth="1" />
+          <line x1="100" y1="156" x2="420" y2="364" strokeWidth="1" />
+          <line x1="100" y1="364" x2="420" y2="156" strokeWidth="1" />
+          <line x1="76" y1="260" x2="444" y2="260" strokeWidth="1" />
+        </g>
+      )
+    case "BOXING":
+      return (
+        <g stroke={s} fill={fill}>
+          <rect x="20" y="20" width="480" height="480" strokeWidth="1.5" />
+          <rect x="60" y="60" width="400" height="400" strokeWidth="1" />
+          <rect x="92" y="92" width="336" height="336" strokeWidth="1" />
+          <circle cx="60" cy="60" r="10" strokeWidth="1.5" />
+          <circle cx="460" cy="60" r="10" strokeWidth="1.5" />
+          <circle cx="60" cy="460" r="10" strokeWidth="1.5" />
+          <circle cx="460" cy="460" r="10" strokeWidth="1.5" />
+          <circle cx="260" cy="260" r="22" strokeWidth="1" />
+          <line x1="260" y1="60" x2="260" y2="92" strokeWidth="1" />
+          <line x1="260" y1="428" x2="260" y2="460" strokeWidth="1" />
+          <line x1="60" y1="260" x2="92" y2="260" strokeWidth="1" />
+          <line x1="428" y1="260" x2="460" y2="260" strokeWidth="1" />
+        </g>
+      )
+    case "PADEL":
+      return (
+        <g stroke={s} fill={fill}>
+          {/* Glass walls (horizontal — long axis runs left-to-right) */}
+          <rect x="20" y="80" width="480" height="360" strokeWidth="1" strokeDasharray="6 4" />
+          {/* Court */}
+          <rect x="60" y="120" width="400" height="280" strokeWidth="1.5" />
+          {/* Net (vertical, down the middle) */}
+          <line x1="260" y1="100" x2="260" y2="420" strokeWidth="1.5" />
+          {/* Service lines (vertical, one each side of net) */}
+          <line x1="140" y1="120" x2="140" y2="400" strokeWidth="1" />
+          <line x1="380" y1="120" x2="380" y2="400" strokeWidth="1" />
+          {/* Center service line (horizontal) */}
+          <line x1="140" y1="260" x2="380" y2="260" strokeWidth="1" />
+          {/* Net posts */}
+          <circle cx="260" cy="100" r="3" strokeWidth="2" />
+          <circle cx="260" cy="420" r="3" strokeWidth="2" />
+        </g>
+      )
+    case "CRICKET":
+      return (
+        <g stroke={s} fill={fill}>
+          {/* Boundary (horizontal oval) */}
+          <ellipse cx="260" cy="260" rx="246" ry="208" strokeWidth="1.5" />
+          {/* 30-yard circle */}
+          <ellipse cx="260" cy="260" rx="124" ry="104" strokeWidth="1" strokeDasharray="4 5" />
+          {/* Pitch (horizontal — runs left-to-right) */}
+          <rect x="180" y="232" width="160" height="56" strokeWidth="1" />
+          {/* Creases (vertical, perpendicular to pitch) */}
+          <line x1="200" y1="218" x2="200" y2="302" strokeWidth="1.5" />
+          <line x1="320" y1="218" x2="320" y2="302" strokeWidth="1.5" />
+          {/* Stumps */}
+          <line x1="194" y1="248" x2="206" y2="248" strokeWidth="1.5" />
+          <line x1="194" y1="260" x2="206" y2="260" strokeWidth="1.5" />
+          <line x1="194" y1="272" x2="206" y2="272" strokeWidth="1.5" />
+          <line x1="314" y1="248" x2="326" y2="248" strokeWidth="1.5" />
+          <line x1="314" y1="260" x2="326" y2="260" strokeWidth="1.5" />
+          <line x1="314" y1="272" x2="326" y2="272" strokeWidth="1.5" />
+        </g>
+      )
+    default:
+      return null
+  }
+}
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -195,6 +335,12 @@ function AuthPageContent() {
   const [suLoading, setSuLoading] = useState(false)
   const [suError, setSuError] = useState("")
   const [countdown, setCountdown] = useState(0)
+  const [sportIdx, setSportIdx] = useState(0)
+
+  useEffect(() => {
+    const id = setInterval(() => setSportIdx((i) => (i + 1) % SPORTS_ROTATION.length), 6500)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     const s = localStorage.getItem(REMEMBER_KEY)
@@ -362,56 +508,194 @@ function AuthPageContent() {
   const suStrength = pwStrength(suPw)
   const hideSignupBackButton = step === "terms" && requestedStep === "terms"
 
-  /* ── shared class strings ── */
-  const inputCls = "w-full h-11 bg-paper/5 border border-paper/15 text-paper placeholder:text-paper/25 text-sm px-4 focus:outline-none focus:border-brand-pitch transition-all"
-  const primaryBtn = "w-full h-11 bg-brand-pitch hover:bg-brand-pitch-hover disabled:opacity-40 text-paper t-mono-lg transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+  const inputCls = "w-full h-10 bg-paper/5 border border-paper/15 text-paper placeholder:text-paper/25 text-sm px-3.5 focus:outline-none focus:border-brand-pitch transition-all"
+  const primaryBtn = "w-full h-10 bg-brand-pitch hover:bg-brand-pitch-hover disabled:opacity-40 text-paper t-mono-lg transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed"
 
   return (
-    <div className="min-h-screen flex bg-ink">
+    <div className="h-screen overflow-hidden flex bg-ink">
 
       {/* ══════════════════════════════════════
-          LEFT — auth panel
+          LEFT — brand + rotating sport hero
       ══════════════════════════════════════ */}
-      <div className="w-full md:w-[460px] lg:w-[500px] flex-shrink-0 flex flex-col bg-ink px-5 sm:px-8 py-6 sm:py-10 relative overflow-hidden border-r border-paper/8">
+      <div className="hidden md:flex md:w-[54%] lg:w-[58%] flex-shrink-0 flex-col bg-ink border-r border-paper/8 relative overflow-hidden">
 
         {/* Ambient pitch-green glow */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-40 left-0 right-0 h-80 opacity-60"
-          style={{ background: "radial-gradient(ellipse 90% 60% at 50% 0%, oklch(0.55 0.14 158 / 0.18) 0%, transparent 70%)" }}
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(ellipse 70% 55% at 30% 50%, oklch(0.55 0.14 158 / 0.08) 0%, transparent 65%)" }}
         />
 
-        {/* Logo + back nav */}
-        <div className="relative mb-8 sm:mb-12 flex items-center justify-between">
-          <Link href="/" className="hover:opacity-75 transition-opacity">
-            <Image src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120}
-              className="h-10 sm:h-14 w-auto object-contain -my-2 [filter:brightness(0)_invert(1)]" />
+        {/* Sport-specific decorative artwork — vertically centered backdrop, crossfades on rotation */}
+        {SPORTS_ROTATION.map((sport, i) => (
+          <svg
+            key={sport.name}
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 -right-44 -translate-y-1/2"
+            width="1020" height="1020" viewBox="0 0 520 520" fill="none"
+            style={{
+              opacity: i === sportIdx ? 0.13 : 0,
+              transition: "opacity 1100ms cubic-bezier(0.22, 1, 0.36, 1)",
+              willChange: "opacity",
+            }}
+          >
+            <SportArtwork name={sport.name} />
+          </svg>
+        ))}
+
+        {/* Top — logo */}
+        <div className="relative px-10 pt-8 pb-0 flex-shrink-0">
+          <Link href="/" className="hover:opacity-70 transition-opacity inline-block">
+            <Image
+              src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120}
+              className="h-9 w-auto object-contain [filter:brightness(0)_invert(1)]"
+            />
+          </Link>
+        </div>
+
+        {/* Middle — rotating sport hero */}
+        <div className="relative flex-1 flex flex-col justify-center px-10">
+
+          {/* Counter / eyebrow row */}
+          <div className="flex items-center justify-between mb-5">
+            <span className="t-eyebrow text-paper/30 tracking-widest">TONIGHT&apos;S GAME</span>
+            <span className="t-mono text-paper/30 text-xs">
+              {String(sportIdx + 1).padStart(2, "0")} <span className="text-paper/15">/ {String(SPORTS_ROTATION.length).padStart(2, "0")}</span>
+            </span>
+          </div>
+
+          {/* Massive rotating sport name — wipe direction varies per cycle */}
+          {(() => {
+            const dirs = ["right", "left", "bottom", "top"] as const
+            const dir = dirs[sportIdx % dirs.length]
+
+            const isHorizontal = dir === "right" || dir === "left"
+            const curtainOrigin =
+              dir === "right"  ? "right" :
+              dir === "left"   ? "left"  :
+              dir === "bottom" ? "bottom" : "top"
+
+            const curtainAnim = isHorizontal
+              ? "pf-curtain-x 850ms cubic-bezier(0.65, 0, 0.35, 1) forwards"
+              : "pf-curtain-y 850ms cubic-bezier(0.65, 0, 0.35, 1) forwards"
+
+            const fmtAnim =
+              dir === "right"  ? "pf-fmt-from-right  700ms cubic-bezier(0.22, 1, 0.36, 1) 950ms both" :
+              dir === "left"   ? "pf-fmt-from-left   700ms cubic-bezier(0.22, 1, 0.36, 1) 950ms both" :
+              dir === "bottom" ? "pf-fmt-from-bottom 700ms cubic-bezier(0.22, 1, 0.36, 1) 950ms both" :
+                                 "pf-fmt-from-top    700ms cubic-bezier(0.22, 1, 0.36, 1) 950ms both"
+
+            const lineOrigin = dir === "left" || dir === "top" ? "right" : "left"
+
+            return (
+              <>
+                <div className="relative inline-block leading-none" key={sportIdx}>
+                  <h2
+                    className="block text-paper select-none will-change-[filter,opacity]"
+                    style={{
+                      fontFamily: "var(--font-anton), system-ui, sans-serif",
+                      fontWeight: 400,
+                      fontSize: "clamp(72px, 9.5vw, 140px)",
+                      lineHeight: 0.92,
+                      letterSpacing: "0.015em",
+                      textTransform: "uppercase",
+                      animation: "pf-sport-clear 700ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both",
+                    }}
+                  >
+                    {SPORTS_ROTATION[sportIdx].name}
+                  </h2>
+                  <span
+                    aria-hidden
+                    className="absolute inset-0 bg-brand-pitch will-change-transform"
+                    style={{
+                      transformOrigin: curtainOrigin,
+                      animation: curtainAnim,
+                    }}
+                  />
+                </div>
+
+                <div
+                  key={`line-${sportIdx}`}
+                  aria-hidden
+                  className="h-px bg-brand-pitch mt-5"
+                  style={{
+                    transformOrigin: lineOrigin,
+                    animation: "pf-line-draw 600ms cubic-bezier(0.22, 1, 0.36, 1) 800ms backwards",
+                    willChange: "transform",
+                  }}
+                />
+
+                <p
+                  key={`fmt-${sportIdx}`}
+                  className="t-mono text-paper/55 mt-5 tracking-wider will-change-transform"
+                  style={{ animation: fmtAnim }}
+                >
+                  {SPORTS_ROTATION[sportIdx].formats}
+                </p>
+              </>
+            )
+          })()}
+
+          {/* Tagline */}
+          <p className="t-body text-paper/35 mt-8 max-w-md leading-relaxed">
+            Pick your sport. Post your slot. Find your people.
+            <br />
+            <span className="text-paper/55">Free to join, free to post.</span>
+          </p>
+        </div>
+
+        {/* Bottom — stats (edge-to-edge ribbon to match wide courts) */}
+        <div className="relative pb-8 flex-shrink-0">
+          <div className="flex items-center border-y border-paper/10 divide-x divide-paper/10">
+            {[
+              { n: "342", label: "GAMES THIS MONTH" },
+              { n: "18",  label: "CITIES" },
+              { n: "15+", label: "SPORTS" },
+            ].map(({ n, label }) => (
+              <div key={label} className="flex-1 text-center py-4 px-2">
+                <p className="t-display-sm text-paper leading-none">{n}</p>
+                <p className="t-mono text-paper/30 text-xs mt-2">{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════
+          RIGHT — form panel
+      ══════════════════════════════════════ */}
+      <div className="flex-1 flex flex-col h-screen overflow-y-auto bg-ink">
+
+        {/* Mobile logo + back (hidden on md+) */}
+        <div className="md:hidden flex items-center justify-between px-5 pt-6 pb-2 flex-shrink-0">
+          <Link href="/" className="hover:opacity-70 transition-opacity">
+            <Image
+              src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120}
+              className="h-8 w-auto object-contain [filter:brightness(0)_invert(1)]"
+            />
           </Link>
           <Link href="/" className="t-eyebrow text-paper/30 hover:text-paper/60 transition-colors flex items-center gap-1">
             <ChevronLeft className="w-3.5 h-3.5" />BACK
           </Link>
         </div>
 
-        {/* Hero headline */}
-        <div className="relative mb-7 sm:mb-10">
-          <h1 className="t-display-lg text-paper mb-3 sm:mb-4">
-            The game<br />
-            <span className="text-brand-pitch">starts here.</span>
-          </h1>
-          <p className="t-body text-paper/50 max-w-xs">
-            Post a game. Find players. Show up. Free to join, free to post.
-          </p>
-        </div>
+        {/* Form — vertically centered */}
+        <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 lg:px-14 py-6">
 
-        {/* Auth form */}
-        <div className="relative flex-1 flex flex-col min-h-0">
+          {/* Desktop back */}
+          <div className="hidden md:flex items-center justify-end mb-5">
+            <Link href="/" className="t-eyebrow text-paper/30 hover:text-paper/60 transition-colors flex items-center gap-1">
+              <ChevronLeft className="w-3.5 h-3.5" />BACK TO HOME
+            </Link>
+          </div>
 
-          {/* Tab switcher */}
-          <div className="flex flex-wrap items-end border-b border-paper/10 mb-6 sm:mb-8">
+          {/* Tab switcher + progress */}
+          <div className="flex flex-wrap items-end border-b border-paper/10 mb-5">
             {(["signin", "signup"] as const).map((tab) => (
-              <button key={tab}
+              <button
+                key={tab}
                 onClick={() => { setActive(tab); setSuError(""); setSiError("") }}
-                className={`pb-3 mr-6 t-eyebrow border-b-2 -mb-px transition-all ${
+                className={`pb-2.5 mr-5 t-eyebrow border-b-2 -mb-px transition-all ${
                   active === tab
                     ? "text-paper border-brand-pitch"
                     : "text-paper/30 border-transparent hover:text-paper/55"
@@ -420,12 +704,13 @@ function AuthPageContent() {
                 {tab === "signin" ? "SIGN IN" : "CREATE ACCOUNT"}
               </button>
             ))}
-            {/* Progress dots */}
             {active === "signup" && (
-              <div className="ml-auto pb-3 flex items-center gap-1.5">
+              <div className="ml-auto pb-2.5 flex items-center gap-1.5">
                 {step !== "email" && !hideSignupBackButton && (
-                  <button onClick={() => { setStep(PREV_STEP[step]); setSuError("") }}
-                    className="flex items-center gap-0.5 t-eyebrow text-paper/35 hover:text-paper/65 transition-colors mr-2">
+                  <button
+                    onClick={() => { setStep(PREV_STEP[step]); setSuError("") }}
+                    className="flex items-center gap-0.5 t-eyebrow text-paper/35 hover:text-paper/65 transition-colors mr-2"
+                  >
                     <ChevronLeft className="w-3.5 h-3.5" />BACK
                   </button>
                 )}
@@ -440,10 +725,9 @@ function AuthPageContent() {
 
           {/* ────────── SIGN IN ────────── */}
           {active === "signin" && (
-            <form onSubmit={handleSignIn} className="space-y-4 min-h-[420px]">
-              {/* Google */}
+            <form onSubmit={handleSignIn} className="space-y-3.5">
               <button type="button" onClick={handleGoogle}
-                className="w-full h-11 flex items-center justify-center gap-3 bg-paper/5 hover:bg-paper/10 border border-paper/15 text-paper/85 t-body transition-all">
+                className="w-full h-10 flex items-center justify-center gap-3 bg-paper/5 hover:bg-paper/10 border border-paper/15 text-paper/85 t-body transition-all">
                 <GoogleIcon />Continue with Google
               </button>
 
@@ -453,7 +737,6 @@ function AuthPageContent() {
                 <div className="flex-1 h-px bg-paper/10" />
               </div>
 
-              {/* Email */}
               <div>
                 <label className="t-eyebrow text-paper/40 mb-1.5 block">Email</label>
                 <div className="relative">
@@ -464,7 +747,6 @@ function AuthPageContent() {
                 </div>
               </div>
 
-              {/* Password */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="t-eyebrow text-paper/40">Password</label>
@@ -484,7 +766,6 @@ function AuthPageContent() {
                 </div>
               </div>
 
-              {/* Remember me */}
               <div className="flex items-center gap-2">
                 <Checkbox id="rem" checked={rememberMe} onCheckedChange={(c) => setRememberMe(!!c)}
                   className="border-paper/20 data-[state=checked]:bg-brand-pitch data-[state=checked]:border-brand-pitch" />
@@ -503,13 +784,13 @@ function AuthPageContent() {
 
           {/* ────────── SIGN UP (stepped) ────────── */}
           {active === "signup" && (
-            <div className="min-h-[420px] flex flex-col">
+            <div className="flex flex-col">
 
               {/* ── Step: email ── */}
               {step === "email" && (
-                <div className="space-y-4 flex-1">
+                <div className="space-y-3.5">
                   <button type="button" onClick={handleGoogle}
-                    className="w-full h-11 flex items-center justify-center gap-3 bg-paper/5 hover:bg-paper/10 border border-paper/15 text-paper/85 t-body transition-all">
+                    className="w-full h-10 flex items-center justify-center gap-3 bg-paper/5 hover:bg-paper/10 border border-paper/15 text-paper/85 t-body transition-all">
                     <GoogleIcon />Continue with Google
                   </button>
 
@@ -542,7 +823,6 @@ function AuthPageContent() {
                         {showSuPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {/* Strength bar */}
                     <div className="mt-2 h-5">
                       {suPw && (
                         <div className="flex items-center gap-2">
@@ -569,10 +849,10 @@ function AuthPageContent() {
 
               {/* ── Step: verify-email ── */}
               {step === "verify-email" && (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <div className="text-center">
-                    <div className="w-14 h-14 bg-brand-pitch/15 border border-brand-pitch/30 flex items-center justify-center mx-auto mb-3">
-                      <Mail className="w-6 h-6 text-brand-pitch" />
+                    <div className="w-12 h-12 bg-brand-pitch/15 border border-brand-pitch/30 flex items-center justify-center mx-auto mb-3">
+                      <Mail className="w-5 h-5 text-brand-pitch" />
                     </div>
                     <p className="t-body text-paper/45">We sent a 6-digit code to</p>
                     <p className="t-mono text-paper mt-1">{suEmail}</p>
@@ -636,7 +916,7 @@ function AuthPageContent() {
 
               {/* ── Step: dob ── */}
               {step === "dob" && (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   <p className="t-body text-paper/45">What&apos;s your date of birth?</p>
 
                   <div className="grid grid-cols-3 gap-3">
@@ -687,7 +967,7 @@ function AuthPageContent() {
                     <label className="t-eyebrow text-paper/40 mb-1.5 block">Phone number</label>
                     <div className="flex gap-2">
                       <select value={cc} onChange={(e) => setCc(e.target.value)}
-                        className="h-11 px-2.5 t-body bg-paper/5 border border-paper/15 text-paper shrink-0 focus:outline-none focus:border-brand-pitch">
+                        className="h-10 px-2.5 t-body bg-paper/5 border border-paper/15 text-paper shrink-0 focus:outline-none focus:border-brand-pitch">
                         {COUNTRY_CODES.map((c) => (
                           <option key={c.label} value={c.code} className="bg-stone-900 text-paper">{c.label}</option>
                         ))}
@@ -714,67 +994,17 @@ function AuthPageContent() {
                   </button>
                 </div>
               )}
-
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <p className="relative t-meta text-paper/25 mt-8 leading-relaxed">
+        <p className="px-6 sm:px-10 lg:px-14 pb-5 flex-shrink-0 t-meta text-paper/25 leading-relaxed">
           By continuing you agree to our{" "}
           <Link href="/terms" className="text-paper/40 hover:text-paper/60 underline">Terms</Link>
           {" "}&amp;{" "}
           <Link href="/privacy" className="text-paper/40 hover:text-paper/60 underline">Privacy Policy</Link>
         </p>
-      </div>
-
-      {/* ══════════════════════════════════════
-          RIGHT — sport imagery + editorial features
-      ══════════════════════════════════════ */}
-      <div className="hidden md:flex flex-1 flex-col bg-ink relative overflow-hidden">
-
-        {/* Sport image mosaic */}
-        <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-1.5 p-6 pb-0">
-            {SPORT_TILES.map(({ img, label }) => (
-              <div key={label} className="relative overflow-hidden group">
-                <Image src={img} alt={label} fill className="object-cover transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/10 to-transparent" />
-                <span className="absolute bottom-3 left-3.5 t-eyebrow text-paper/80">{label.toUpperCase()}</span>
-              </div>
-            ))}
-          </div>
-          {/* Fade to section below */}
-          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-ink to-transparent pointer-events-none" />
-        </div>
-
-        {/* Features + testimonial */}
-        <div className="px-10 pb-10 pt-2 flex-shrink-0 border-t border-paper/8">
-
-          <div className="space-y-5 mb-8 mt-6">
-            {[
-              { n: "01", icon: <MapPin className="w-4 h-4" />, title: "Local pickup games", desc: "Browse activities near you and join with a single tap." },
-              { n: "02", icon: <Users className="w-4 h-4" />, title: "Connect with players", desc: "Meet people at your level, for your sport, right in your area." },
-              { n: "03", icon: <Zap className="w-4 h-4" />, title: "Build the habit", desc: "Stay consistent with a community that keeps you accountable." },
-            ].map(({ n, title, desc }) => (
-              <div key={n} className="flex items-start gap-4">
-                <span className="t-mono text-brand-pitch pt-0.5 shrink-0">{n}</span>
-                <div>
-                  <p className="t-display-sm text-paper">{title}</p>
-                  <p className="t-body text-paper/50 mt-1">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Testimonial */}
-          <blockquote className="border-l-2 border-brand-pitch pl-4">
-            <p className="t-sub text-paper/70 leading-snug">
-              &ldquo;Found a 5-a-side team in my area within a week. Now we play every Thursday without fail.&rdquo;
-            </p>
-            <span className="t-mono text-paper/40 mt-3 block">— JAMES K. · LONDON · FOOTBALL</span>
-          </blockquote>
-        </div>
       </div>
 
     </div>
