@@ -33,7 +33,12 @@ const HERO_LINE_2 = "a game is starting."
 
 const HERO_STINGER_LEAD_OUT_MS = 2700
 
-const SPORTS_PRIMARY = ["FOOTBALL.", "BASKETBALL.", "TENNIS.", "RUNNING."] as const
+const SPORTS_WITH_FORMATS: { name: string; tags: string }[] = [
+  { name: "FOOTBALL.",   tags: "5-A-SIDE · 7-A-SIDE · 11-A-SIDE" },
+  { name: "BASKETBALL.", tags: "3-ON-3 · PICKUP · LEAGUE" },
+  { name: "TENNIS.",     tags: "SINGLES · DOUBLES · MIXED" },
+  { name: "RUNNING.",    tags: "5K · 10K · TRAIL · MARATHON" },
+]
 const SPORTS_SECONDARY = "VOLLEYBALL / YOGA / BOXING / CYCLING / SWIMMING / RUGBY / PADEL / GYM"
 
 const MARQUEE_LIVE = [
@@ -135,7 +140,7 @@ function useBeatReveal<T extends HTMLElement>(
   return ref
 }
 
-/* ── Beat 2 — fragments slide in alternating, brand line punches ────── */
+/* ── Beat 2 — quotes wipe in left-to-right via clip-path, punch rises ── */
 function useBeatProblem() {
   return useBeatReveal<HTMLDivElement>(
     (el) => {
@@ -146,16 +151,15 @@ function useBeatProblem() {
       if (eyebrow) { eyebrow.style.opacity = "1"; eyebrow.style.transform = "translateY(0)" }
       frags.forEach((frag, i) => {
         window.setTimeout(() => {
-          frag.style.opacity = frag.dataset.targetOpacity || "1"
-          frag.style.transform = "translateX(0)"
-          frag.style.filter = "blur(0)"
-        }, 200 + i * 480)
+          frag.style.clipPath = "inset(0 0% 0 0)"
+        }, 200 + i * 380)
       })
       window.setTimeout(() => {
         if (!punch) return
         punch.style.opacity = "1"
-        punch.style.transform = "scale(1)"
-      }, 200 + frags.length * 480 + 220)
+        punch.style.transform = "translateY(0) scale(1)"
+        punch.style.filter = "blur(0)"
+      }, 200 + frags.length * 380 + 180)
     },
     (el) => {
       const eyebrow = el.querySelector<HTMLElement>("[data-eyebrow]")
@@ -167,56 +171,56 @@ function useBeatProblem() {
         eyebrow.style.transform = "translateY(-12px)"
         eyebrow.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)"
       }
-      frags.forEach((frag, i) => {
-        frag.style.opacity = "0"
-        frag.style.transform = `translateX(${i % 2 === 0 ? -32 : 32}px)`
-        frag.style.filter = "blur(8px)"
-        frag.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.22,1,.36,1), filter 0.7s ease"
+      frags.forEach((frag) => {
+        frag.style.opacity = frag.dataset.targetOpacity || "1"
+        frag.style.clipPath = "inset(0 100% 0 0)"
+        frag.style.transition = "clip-path 1s cubic-bezier(.16,1,.3,1)"
       })
       if (punch) {
         punch.style.opacity = "0"
-        punch.style.transform = "scale(0.94)"
-        punch.style.transition = "opacity 0.8s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.34,1.56,.64,1)"
+        punch.style.transform = "translateY(24px) scale(0.94)"
+        punch.style.filter = "blur(6px)"
+        punch.style.transition = "opacity 0.9s cubic-bezier(.22,1,.36,1), transform 0.9s cubic-bezier(.22,1,.36,1), filter 0.9s ease"
       }
     },
   )
 }
 
-/* ── Beat 3 — sport names cascade in from left ──────────────────────── */
+/* ── Beat 3 — scoreboard flip: names rise up via clip-path ──────────── */
 function useBeatSports() {
   return useBeatReveal<HTMLDivElement>(
     (el) => {
       el.querySelectorAll<HTMLElement>("[data-sport]").forEach((item, i) => {
         window.setTimeout(() => {
-          item.style.opacity = "1"
-          item.style.transform = "translateX(0)"
-        }, 150 + i * 120)
+          item.style.clipPath = "inset(0 0 0 0)"
+          item.style.transform = "translateY(0)"
+        }, 100 + i * 160)
       })
       const sub = el.querySelector<HTMLElement>("[data-sub]")
       if (sub) {
         window.setTimeout(() => {
           sub.style.opacity = "1"
           sub.style.transform = "translateY(0)"
-        }, 150 + 4 * 120 + 120)
+        }, 100 + 4 * 160 + 100)
       }
     },
     (el) => {
       el.querySelectorAll<HTMLElement>("[data-sport]").forEach((item) => {
-        item.style.opacity = "0"
-        item.style.transform = "translateX(-50px)"
-        item.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.34,1.56,.64,1)"
+        item.style.clipPath = "inset(100% 0 0 0)"
+        item.style.transform = "translateY(10px)"
+        item.style.transition = "clip-path 0.65s cubic-bezier(.16,1,.3,1), transform 0.65s cubic-bezier(.16,1,.3,1)"
       })
       const sub = el.querySelector<HTMLElement>("[data-sub]")
       if (sub) {
         sub.style.opacity = "0"
-        sub.style.transform = "translateY(18px)"
-        sub.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)"
+        sub.style.transform = "translateY(14px)"
+        sub.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)"
       }
     },
   )
 }
 
-/* ── Beat 4 — each step ratchets in: number, verb slams, line ───────── */
+/* ── Beat 4 — three axes: num ← left, verb ↓ from above, line → right ── */
 function useBeatHow() {
   return useBeatReveal<HTMLOListElement>(
     (el) => {
@@ -224,30 +228,30 @@ function useBeatHow() {
         const num = row.querySelector<HTMLElement>("[data-num]")
         const verb = row.querySelector<HTMLElement>("[data-verb]")
         const line = row.querySelector<HTMLElement>("[data-line]")
-        const base = 100 + i * 320
-        window.setTimeout(() => { if (num)  { num.style.opacity = "1";  num.style.transform = "translateY(0)" } }, base)
-        window.setTimeout(() => { if (verb) { verb.style.opacity = "1"; verb.style.transform = "translateY(0)" } }, base + 100)
-        window.setTimeout(() => { if (line) { line.style.opacity = "1"; line.style.transform = "translateY(0)" } }, base + 220)
+        const base = 80 + i * 300
+        window.setTimeout(() => { if (num)  { num.style.opacity = "1";  num.style.transform = "translateX(0)" } }, base)
+        window.setTimeout(() => { if (verb) { verb.style.opacity = "1"; verb.style.transform = "translateY(0)" } }, base + 80)
+        window.setTimeout(() => { if (line) { line.style.opacity = "1"; line.style.transform = "translateX(0)" } }, base + 200)
       })
     },
     (el) => {
       el.querySelectorAll<HTMLElement>("[data-num]").forEach((n) => {
-        n.style.opacity = "0"; n.style.transform = "translateY(8px)"
-        n.style.transition = "opacity 0.45s ease-out, transform 0.45s cubic-bezier(.22,1,.36,1)"
+        n.style.opacity = "0"; n.style.transform = "translateX(-20px)"
+        n.style.transition = "opacity 0.4s ease-out, transform 0.5s cubic-bezier(.22,1,.36,1)"
       })
       el.querySelectorAll<HTMLElement>("[data-verb]").forEach((v) => {
-        v.style.opacity = "0"; v.style.transform = "translateY(40px)"
-        v.style.transition = "opacity 0.65s ease-out, transform 0.7s cubic-bezier(.22,1,.36,1)"
+        v.style.opacity = "0"; v.style.transform = "translateY(-44px)"
+        v.style.transition = "opacity 0.6s ease-out, transform 0.65s cubic-bezier(.22,1,.36,1)"
       })
       el.querySelectorAll<HTMLElement>("[data-line]").forEach((l) => {
-        l.style.opacity = "0"; l.style.transform = "translateY(14px)"
-        l.style.transition = "opacity 0.6s ease-out, transform 0.6s cubic-bezier(.22,1,.36,1)"
+        l.style.opacity = "0"; l.style.transform = "translateX(24px)"
+        l.style.transition = "opacity 0.55s ease-out, transform 0.6s cubic-bezier(.22,1,.36,1)"
       })
     },
   )
 }
 
-/* ── Beat 5 — features list, each row fades up + tiny scale settle ──── */
+/* ── Beat 5 — head rises, feature rows sweep in from right ──────────── */
 function useBeatFeatures() {
   return useBeatReveal<HTMLDivElement>(
     (el) => {
@@ -256,8 +260,8 @@ function useBeatFeatures() {
       el.querySelectorAll<HTMLElement>("[data-feature]").forEach((row, i) => {
         window.setTimeout(() => {
           row.style.opacity = "1"
-          row.style.transform = "translateY(0) scale(1)"
-        }, 280 + i * 130)
+          row.style.transform = "translateX(0)"
+        }, 240 + i * 110)
       })
     },
     (el) => {
@@ -269,38 +273,54 @@ function useBeatFeatures() {
       }
       el.querySelectorAll<HTMLElement>("[data-feature]").forEach((row) => {
         row.style.opacity = "0"
-        row.style.transform = "translateY(36px) scale(1.04)"
-        row.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.85s cubic-bezier(.22,1,.36,1)"
+        row.style.transform = "translateX(48px)"
+        row.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)"
       })
     },
   )
 }
 
-/* ── Beat 6 — headline rises, quotes drift in from sides ────────────── */
+/* ── Beat 6 — headline clips in, quotes drop from above ─────────────── */
 function useBeatCommunity() {
   return useBeatReveal<HTMLDivElement>(
     (el) => {
       const head = el.querySelector<HTMLElement>("[data-head]")
-      if (head) { head.style.opacity = "1"; head.style.transform = "translateY(0)" }
+      if (head) {
+        head.style.clipPath = "inset(0 0% 0 0)"
+        head.style.opacity = "1"
+      }
       el.querySelectorAll<HTMLElement>("[data-quote]").forEach((q, i) => {
         window.setTimeout(() => {
           q.style.opacity = "1"
-          q.style.transform = "translate(0, 0) rotate(0)"
-        }, 350 + i * 220)
+          q.style.transform = "translateY(0)"
+        }, 400 + i * 200)
       })
+      const stats = el.querySelector<HTMLElement>("[data-stats]")
+      if (stats) {
+        window.setTimeout(() => {
+          stats.style.opacity = "1"
+          stats.style.transform = "translateY(0)"
+        }, 400 + 2 * 200 + 150)
+      }
     },
     (el) => {
       const head = el.querySelector<HTMLElement>("[data-head]")
       if (head) {
-        head.style.opacity = "0"; head.style.transform = "translateY(24px)"
-        head.style.transition = "opacity 0.8s cubic-bezier(.22,1,.36,1), transform 0.9s cubic-bezier(.22,1,.36,1)"
+        head.style.opacity = "1"
+        head.style.clipPath = "inset(0 100% 0 0)"
+        head.style.transition = "clip-path 1.1s cubic-bezier(.16,1,.3,1)"
       }
-      el.querySelectorAll<HTMLElement>("[data-quote]").forEach((q, i) => {
-        const fromLeft = i % 2 === 0
+      el.querySelectorAll<HTMLElement>("[data-quote]").forEach((q) => {
         q.style.opacity = "0"
-        q.style.transform = `translate(${fromLeft ? -44 : 44}px, 14px) rotate(${fromLeft ? -1.2 : 1.2}deg)`
-        q.style.transition = "opacity 0.85s cubic-bezier(.22,1,.36,1), transform 0.95s cubic-bezier(.22,1,.36,1)"
+        q.style.transform = "translateY(-48px)"
+        q.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.22,1,.36,1)"
       })
+      const stats = el.querySelector<HTMLElement>("[data-stats]")
+      if (stats) {
+        stats.style.opacity = "0"
+        stats.style.transform = "translateY(16px)"
+        stats.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)"
+      }
     },
   )
 }
@@ -429,7 +449,7 @@ export default function HomePage() {
                     : undefined,
                 }}
               >
-                PeerFit connects you with players nearby — for any sport, at any level. Find a game, join, show up.
+                Post a game. Find players. Show up. No WhatsApp groups, no waitlists — just local sport, tonight.
               </p>
 
               <div
@@ -468,7 +488,7 @@ export default function HomePage() {
                   SCROLL
                   <span className="inline-block w-px h-3 bg-paper/40" />
                 </span>
-                <span className="t-mono text-paper/40 hidden sm:block">01 / 07</span>
+                <span className="t-mono text-paper/40">01 / 07</span>
               </footer>
             </div>
           </section>
@@ -478,6 +498,10 @@ export default function HomePage() {
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-ink flex flex-col items-center px-5 py-8 sm:py-12 overflow-hidden isolate">
             <BeatWatermark n="02" position="bottom-2 -right-4 sm:-bottom-16 sm:-right-8" tone="dark" />
+            {/* Decorative oversized quote mark */}
+            <div aria-hidden className="absolute -top-4 -left-2 sm:left-4 leading-none pointer-events-none select-none text-paper/[0.04]" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "clamp(180px, 40vw, 440px)" }}>
+              &ldquo;
+            </div>
             <div ref={beatProblemRef} className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl">
               <span data-eyebrow className="t-eyebrow text-paper/40 mb-6 sm:mb-9">02 / WHY THIS EXISTS</span>
 
@@ -524,11 +548,14 @@ export default function HomePage() {
             </div>
 
             <div ref={beatSportsRef} className="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full">
-              {SPORTS_PRIMARY.map((s) => (
-                <p key={s} data-sport className="t-display-lg text-ink leading-[0.95]">{s}</p>
+              {SPORTS_WITH_FORMATS.map(({ name, tags }) => (
+                <div key={name} data-sport className="flex items-baseline justify-between gap-4 sm:gap-8">
+                  <p className="t-display-lg text-ink leading-[0.95]">{name}</p>
+                  <span className="t-eyebrow text-ink/35 shrink-0 hidden sm:block">{tags}</span>
+                </div>
               ))}
               <p data-sub className="t-sub text-ink/60 mt-5 sm:mt-7 max-w-md">
-                Every sport gets its own moment here. Per-sport cinematic takeovers land in the next pass.
+                Pick your sport. Post your slot. Find your people.
               </p>
             </div>
 
@@ -553,7 +580,7 @@ export default function HomePage() {
                 <li key={n} data-row className="grid grid-cols-12 gap-4 items-baseline">
                   <span data-num  className="t-mono text-brand-pitch col-span-2 sm:col-span-1">{n}</span>
                   <span data-verb className="t-display-md text-ink col-span-10 sm:col-span-4">{verb}.</span>
-                  <span data-line className="t-sub text-ink/60 col-span-12 sm:col-start-6 sm:col-span-7">{line}</span>
+                  <span data-line className="t-sub text-ink/60 col-span-12 mt-1 sm:mt-0 sm:col-start-6 sm:col-span-7">{line}</span>
                 </li>
               ))}
             </ol>
@@ -576,9 +603,8 @@ export default function HomePage() {
 
             <div ref={beatFeaturesRef} className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 max-w-6xl mx-auto w-full content-center py-4">
               <div className="lg:col-span-5 lg:pt-2">
-                <p className="t-eyebrow text-brand-pitch mb-3">CORE FEATURES</p>
                 <h2 data-head className="t-display-md text-ink">
-                  Everything you need <span className="text-brand-pitch">to move</span>.
+                  Everything you need <span className="text-brand-pitch">to play</span>.
                 </h2>
               </div>
               <ul className="lg:col-span-7 flex flex-col divide-y divide-ink/15 border-t border-b border-ink/15">
@@ -626,6 +652,15 @@ export default function HomePage() {
                   </blockquote>
                 ))}
               </div>
+
+              <div data-stats className="mt-8 sm:mt-10 flex gap-8 sm:gap-14 border-t border-ink/10 pt-6 sm:pt-8">
+                {([["342", "PLAYERS NEARBY"], ["18", "GAMES TONIGHT"], ["15+", "SPORTS"]] as const).map(([n, label]) => (
+                  <div key={label}>
+                    <p className="t-display-sm text-brand-pitch leading-none">{n}</p>
+                    <p className="t-eyebrow text-ink/40 mt-2">{label}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="-mx-5">
@@ -670,7 +705,7 @@ export default function HomePage() {
                   href="/login?mode=signup"
                   className="inline-flex items-center gap-3 px-7 py-3.5 bg-brand-pitch text-paper t-mono-lg hover:bg-brand-pitch-hover transition-colors"
                 >
-                  CREATE FREE ACCOUNT &gt;
+                  FIND A GAME TONIGHT &gt;
                 </Link>
               </div>
               <p data-signin className="t-meta text-paper/40 mt-4">
