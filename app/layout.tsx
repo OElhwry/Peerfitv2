@@ -25,7 +25,7 @@
     subsets: ["latin"],
     display: "swap",
     variable: "--font-jetbrains",
-    weight: ["500", "600"],
+    weight: ["500", "600", "700", "800"],
   })
 
   // ── Legacy fonts (kept until non-revamped surfaces are migrated in V2) ───────

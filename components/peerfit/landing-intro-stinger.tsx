@@ -135,15 +135,15 @@ export function LandingIntroStinger() {
           <span
             className="block text-paper select-none"
             style={{
-              fontFamily: "var(--font-big-shoulders), system-ui, sans-serif",
-              fontWeight: 900,
-              fontSize: "clamp(72px, 16vw, 220px)",
-              lineHeight: 0.9,
-              letterSpacing: "-0.03em",
-              textTransform: "lowercase",
+              fontFamily: "var(--font-jetbrains), ui-monospace, monospace",
+              fontWeight: 800,
+              fontSize: "clamp(48px, 11vw, 168px)",
+              lineHeight: 0.95,
+              letterSpacing: "-0.02em",
+              textTransform: "uppercase",
             }}
           >
-            peerfit
+            PEERFIT
           </span>
           <span
             aria-hidden

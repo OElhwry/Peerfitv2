@@ -1,612 +1,889 @@
 "use client"
 
-import { ArrowRight, CheckCircle, ChevronDown } from "lucide-react"
+import { BellRing, MapPin, MessageSquare, ShieldCheck, Trophy, type LucideIcon } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import { LandingIntroStinger } from "@/components/peerfit/landing-intro-stinger"
 
-/* ── Sport image data ── */
-const HERO_SPORTS = [
-  { src: "/images/sports/football.jpg", label: "Football" },
-  { src: "/images/sports/tennis.jpg", label: "Tennis" },
-  { src: "/images/sports/running.jpg", label: "Running" },
-  { src: "/images/sports/basketball.jpg", label: "Basketball" },
+/**
+ * PeerFit landing — seven-beat snap deck.
+ *
+ *   01  Cold open      — kinetic H1 + ambient drifting collage + live ticker
+ *   02  The problem    — text-fragment slide-in, brand line punches
+ *   03  Every sport    — sport names cascade in
+ *   04  How it works   — POST / MATCH / PLAY ratchet reveal
+ *   05  Core features  — feature list reveal (each row fades up + slight scale)
+ *   06  Community      — quote slide-in from sides
+ *   07  Full time      — letter rise on CTA
+ *
+ * Motion is ambient-only: photos drift on their own, ken-burns scales gently,
+ * hover micro-interactions on links/CTAs. No cursor-following.
+ *
+ * Hero entrance is gated on the IntroStinger so the headline reveal lands as
+ * a discrete moment after the stinger has lifted.
+ */
+
+/* ──────────────────────────────────────────────────────────────────────
+   Data
+   ────────────────────────────────────────────────────────────────────── */
+
+const HERO_LINE_1 = "Somewhere in your city,"
+const HERO_LINE_2 = "a game is starting."
+
+const HERO_STINGER_LEAD_OUT_MS = 2700
+
+const SPORTS_PRIMARY = ["FOOTBALL.", "BASKETBALL.", "TENNIS.", "RUNNING."] as const
+const SPORTS_SECONDARY = "VOLLEYBALL / YOGA / BOXING / CYCLING / SWIMMING / RUGBY / PADEL / GYM"
+
+const MARQUEE_LIVE = [
+  "LIVE / 18 GAMES TONIGHT",
+  "FOOTBALL — 5-A-SIDE",
+  "342 PLAYERS NEARBY",
+  "PADEL — MIXED DOUBLES",
+  "FREE TO JOIN — FREE TO POST",
+  "TENNIS — DOUBLES",
+  "BASKETBALL — PICKUP",
+  "YOGA — OUTDOOR",
+  "RUGBY — TOUCH",
+  "RUNNING — CASUAL",
+  "CYCLING — GROUP RIDE",
+  "BOXING — SPARRING",
+] as const
+
+const MARQUEE_VOICES = [
+  "TWO WEEKS IN I KNEW EVERYONE — SAM, FOOTBALL",
+  "KNEW THE REGULARS BY WEEK THREE — DAN, BASKETBALL",
+  "MOVED CITIES, FOUND MY CREW IN A WEEK — LEAH, RUNNING",
+  "POSTED A YOGA SESSION, EIGHT JOINED — AMINA, YOGA",
+  "FIRST PADEL HIT — NOW A WEEKLY THING — RIA, PADEL",
+  "SPARRING PARTNER TWICE A WEEK — KARL, BOXING",
+  "FOUND A 6-A-SIDE LEAGUE FIVE MINUTES AWAY — TOM, FOOTBALL",
+  "CASUAL TENNIS TURNED INTO A FOURBALL — MAX, TENNIS",
+] as const
+
+const STEPS = [
+  { n: "01", verb: "POST",  line: "Pick a sport. Pick a time. Set how many you need." },
+  { n: "02", verb: "MATCH", line: "Nearby players see it and request to join." },
+  { n: "03", verb: "PLAY",  line: "Show up. Meet your teammates. Build the habit." },
+] as const
+
+const FEATURES: { n: string; icon: LucideIcon; title: string; desc: string }[] = [
+  { n: "01", icon: MapPin,         title: "Local pickup games", desc: "Discover or post nearby games. Live capacity, instant join, status updates." },
+  { n: "02", icon: MessageSquare,  title: "Built-in event chat", desc: "A channel per game. Plan, coordinate, share details, without sharing numbers." },
+  { n: "03", icon: BellRing,       title: "Smart reminders",     desc: "Auto-pings before kickoff so the squad turns up on time, every time." },
+  { n: "04", icon: ShieldCheck,    title: "Reliability ratings", desc: "Sportsmanship and turnout scores build trust between players over time." },
+  { n: "05", icon: Trophy,         title: "Achievements",        desc: "Unlock milestones for consistency, variety, and showing up. Stay motivated." },
 ]
 
-const SPORT_CHIPS = [
-  { src: "/images/sports/football.jpg", label: "Football" },
-  { src: "/images/sports/tennis.jpg", label: "Tennis" },
-  { src: "/images/sports/running.jpg", label: "Running" },
-  { src: "/images/sports/basketball.jpg", label: "Basketball" },
-  { src: "/images/sports/boxing.jpg", label: "Boxing" },
-  { src: "/images/sports/swimming.jpg", label: "Swimming" },
-  { src: "/images/sports/cycling.jpg", label: "Cycling" },
-  { src: "/images/sports/gym.jpg", label: "Gym" },
-  { src: "/images/sports/rugby.jpg", label: "Rugby" },
-  { src: "/images/sports/volleyball.jpg", label: "Volleyball" },
-  { src: "/images/sports/padel.jpg", label: "Padel" },
-  { src: "/images/sports/yoga.jpg", label: "Yoga" },
-]
+const QUOTES = [
+  {
+    text: "Found a Sunday five-a-side league three streets from my flat. Two weeks in I knew everyone.",
+    by: "SAM, FOOTBALL",
+  },
+  {
+    text: "Posted a pickup basketball game three blocks from work. Knew the regulars by week three.",
+    by: "DAN, BASKETBALL",
+  },
+] as const
 
-const COMMUNITY_STATS = [
-  { value: "15+", label: "Sports supported", desc: "From football to yoga, padel to boxing" },
-  { value: "Free", label: "No subscription", desc: "Join activities and create your own at no cost" },
-  { value: "Local", label: "Your neighbourhood", desc: "Find games near you at any skill level" },
-]
+/* ──────────────────────────────────────────────────────────────────────
+   Hero entrance state — coordinates with the IntroStinger
+   ────────────────────────────────────────────────────────────────────── */
 
-const MARQUEE_ITEMS = [
-  "LIVE TONIGHT",
-  "342 PLAYERS",
-  "18 GAMES OPEN",
-  "FOOTBALL · 5-A-SIDE",
-  "TENNIS DOUBLES",
-  "FREE TO JOIN",
-  "BASKETBALL PICKUP",
-  "PADEL · BEGINNERS",
-  "YOGA · OUTDOOR",
-  "RUGBY · TOUCH",
-]
+type HeroState = { ready: boolean; delay: number; reduce: boolean }
 
-const HERO_HEADLINE = ["Find", "your", "game.", "Play", "more."]
-
-/* ── Reveal-on-scroll ── */
-function useReveal(delay = 0) {
-  const ref = useRef<HTMLDivElement>(null)
+function useHeroEntrance(): HeroState {
+  const [hs, setHs] = useState<HeroState>({ ready: false, delay: 0, reduce: false })
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    el.style.opacity = "0"
-    el.style.transform = "translateY(28px)"
-    el.style.transition = `opacity 0.7s cubic-bezier(.22,1,.36,1) ${delay}ms, transform 0.7s cubic-bezier(.22,1,.36,1) ${delay}ms`
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          el.style.opacity = "1"
-          el.style.transform = "translateY(0)"
-          observer.disconnect()
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    let delay = 0
+    if (!reduce) {
+      try {
+        if (sessionStorage.getItem("peerfit_landing_intro_seen") !== "1") {
+          delay = HERO_STINGER_LEAD_OUT_MS
         }
-      },
-      { threshold: 0.08 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [delay])
-  return ref
+      } catch {
+        delay = HERO_STINGER_LEAD_OUT_MS
+      }
+    }
+    setHs({ ready: true, delay, reduce })
+  }, [])
+  return hs
 }
 
-/* ── Per-child stagger reveal — toggles a class on every child when in view ── */
-function useStaggerReveal<T extends HTMLElement>(stepMs = 60) {
+/* ──────────────────────────────────────────────────────────────────────
+   Beat-reveal hook
+   ────────────────────────────────────────────────────────────────────── */
+
+function useBeatReveal<T extends HTMLElement>(
+  apply: (root: T) => void,
+  init?: (root: T) => void,
+  threshold = 0.4,
+) {
   const ref = useRef<T>(null)
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const children = Array.from(el.children) as HTMLElement[]
-    children.forEach((c, i) => {
-      c.style.opacity = "0"
-      c.style.transform = "translateY(18px) scale(0.96)"
-      c.style.transition = `opacity 0.55s cubic-bezier(.22,1,.36,1) ${i * stepMs}ms, transform 0.55s cubic-bezier(.22,1,.36,1) ${i * stepMs}ms`
-    })
-    const observer = new IntersectionObserver(
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    init?.(el)
+    const obs = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          children.forEach((c) => {
-            c.style.opacity = "1"
-            c.style.transform = "translateY(0) scale(1)"
-          })
-          observer.disconnect()
+          apply(el)
+          obs.disconnect()
         }
       },
-      { threshold: 0.12 }
+      { threshold },
     )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [stepMs])
+    obs.observe(el)
+    return () => obs.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   return ref
 }
 
-/* ── Letter-stagger reveal — triggers when in view ── */
-function useLetterReveal<T extends HTMLElement>(stepMs = 45, startDelay = 0) {
-  const ref = useRef<T>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const letters = el.querySelectorAll<HTMLSpanElement>("[data-letter]")
-    letters.forEach((l) => (l.style.opacity = "0"))
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          letters.forEach((l, i) => {
-            l.style.animation = `pf-letter-rise 0.7s cubic-bezier(.22,1,.36,1) ${startDelay + i * stepMs}ms both`
-          })
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.4 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [stepMs, startDelay])
-  return ref
+/* ── Beat 2 — fragments slide in alternating, brand line punches ────── */
+function useBeatProblem() {
+  return useBeatReveal<HTMLDivElement>(
+    (el) => {
+      const eyebrow = el.querySelector<HTMLElement>("[data-eyebrow]")
+      const frags = el.querySelectorAll<HTMLElement>("[data-frag]")
+      const punch = el.querySelector<HTMLElement>("[data-punch]")
+
+      if (eyebrow) { eyebrow.style.opacity = "1"; eyebrow.style.transform = "translateY(0)" }
+      frags.forEach((frag, i) => {
+        window.setTimeout(() => {
+          frag.style.opacity = frag.dataset.targetOpacity || "1"
+          frag.style.transform = "translateX(0)"
+          frag.style.filter = "blur(0)"
+        }, 200 + i * 480)
+      })
+      window.setTimeout(() => {
+        if (!punch) return
+        punch.style.opacity = "1"
+        punch.style.transform = "scale(1)"
+      }, 200 + frags.length * 480 + 220)
+    },
+    (el) => {
+      const eyebrow = el.querySelector<HTMLElement>("[data-eyebrow]")
+      const frags = el.querySelectorAll<HTMLElement>("[data-frag]")
+      const punch = el.querySelector<HTMLElement>("[data-punch]")
+
+      if (eyebrow) {
+        eyebrow.style.opacity = "0"
+        eyebrow.style.transform = "translateY(-12px)"
+        eyebrow.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)"
+      }
+      frags.forEach((frag, i) => {
+        frag.style.opacity = "0"
+        frag.style.transform = `translateX(${i % 2 === 0 ? -32 : 32}px)`
+        frag.style.filter = "blur(8px)"
+        frag.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.22,1,.36,1), filter 0.7s ease"
+      })
+      if (punch) {
+        punch.style.opacity = "0"
+        punch.style.transform = "scale(0.94)"
+        punch.style.transition = "opacity 0.8s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.34,1.56,.64,1)"
+      }
+    },
+  )
 }
 
-/* ── Magnetic cursor pull on a button-like element ── */
-function useMagnetic<T extends HTMLElement>(strength = 0.25) {
-  const ref = useRef<T>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (reduced) return
-
-    function onMove(e: MouseEvent) {
-      if (!el) return
-      const rect = el.getBoundingClientRect()
-      const dx = e.clientX - (rect.left + rect.width / 2)
-      const dy = e.clientY - (rect.top + rect.height / 2)
-      el.style.transform = `translate(${dx * strength}px, ${dy * strength}px)`
-    }
-    function onLeave() {
-      if (!el) return
-      el.style.transform = "translate(0, 0)"
-    }
-
-    const parent = el.parentElement
-    parent?.addEventListener("mousemove", onMove)
-    parent?.addEventListener("mouseleave", onLeave)
-    el.style.transition = "transform 0.25s cubic-bezier(.22,1,.36,1)"
-    return () => {
-      parent?.removeEventListener("mousemove", onMove)
-      parent?.removeEventListener("mouseleave", onLeave)
-    }
-  }, [strength])
-  return ref
+/* ── Beat 3 — sport names cascade in from left ──────────────────────── */
+function useBeatSports() {
+  return useBeatReveal<HTMLDivElement>(
+    (el) => {
+      el.querySelectorAll<HTMLElement>("[data-sport]").forEach((item, i) => {
+        window.setTimeout(() => {
+          item.style.opacity = "1"
+          item.style.transform = "translateX(0)"
+        }, 150 + i * 120)
+      })
+      const sub = el.querySelector<HTMLElement>("[data-sub]")
+      if (sub) {
+        window.setTimeout(() => {
+          sub.style.opacity = "1"
+          sub.style.transform = "translateY(0)"
+        }, 150 + 4 * 120 + 120)
+      }
+    },
+    (el) => {
+      el.querySelectorAll<HTMLElement>("[data-sport]").forEach((item) => {
+        item.style.opacity = "0"
+        item.style.transform = "translateX(-50px)"
+        item.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.8s cubic-bezier(.34,1.56,.64,1)"
+      })
+      const sub = el.querySelector<HTMLElement>("[data-sub]")
+      if (sub) {
+        sub.style.opacity = "0"
+        sub.style.transform = "translateY(18px)"
+        sub.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)"
+      }
+    },
+  )
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
+/* ── Beat 4 — each step ratchets in: number, verb slams, line ───────── */
+function useBeatHow() {
+  return useBeatReveal<HTMLOListElement>(
+    (el) => {
+      el.querySelectorAll<HTMLElement>("[data-row]").forEach((row, i) => {
+        const num = row.querySelector<HTMLElement>("[data-num]")
+        const verb = row.querySelector<HTMLElement>("[data-verb]")
+        const line = row.querySelector<HTMLElement>("[data-line]")
+        const base = 100 + i * 320
+        window.setTimeout(() => { if (num)  { num.style.opacity = "1";  num.style.transform = "translateY(0)" } }, base)
+        window.setTimeout(() => { if (verb) { verb.style.opacity = "1"; verb.style.transform = "translateY(0)" } }, base + 100)
+        window.setTimeout(() => { if (line) { line.style.opacity = "1"; line.style.transform = "translateY(0)" } }, base + 220)
+      })
+    },
+    (el) => {
+      el.querySelectorAll<HTMLElement>("[data-num]").forEach((n) => {
+        n.style.opacity = "0"; n.style.transform = "translateY(8px)"
+        n.style.transition = "opacity 0.45s ease-out, transform 0.45s cubic-bezier(.22,1,.36,1)"
+      })
+      el.querySelectorAll<HTMLElement>("[data-verb]").forEach((v) => {
+        v.style.opacity = "0"; v.style.transform = "translateY(40px)"
+        v.style.transition = "opacity 0.65s ease-out, transform 0.7s cubic-bezier(.22,1,.36,1)"
+      })
+      el.querySelectorAll<HTMLElement>("[data-line]").forEach((l) => {
+        l.style.opacity = "0"; l.style.transform = "translateY(14px)"
+        l.style.transition = "opacity 0.6s ease-out, transform 0.6s cubic-bezier(.22,1,.36,1)"
+      })
+    },
+  )
+}
+
+/* ── Beat 5 — features list, each row fades up + tiny scale settle ──── */
+function useBeatFeatures() {
+  return useBeatReveal<HTMLDivElement>(
+    (el) => {
+      const head = el.querySelector<HTMLElement>("[data-head]")
+      if (head) { head.style.opacity = "1"; head.style.transform = "translateY(0)" }
+      el.querySelectorAll<HTMLElement>("[data-feature]").forEach((row, i) => {
+        window.setTimeout(() => {
+          row.style.opacity = "1"
+          row.style.transform = "translateY(0) scale(1)"
+        }, 280 + i * 130)
+      })
+    },
+    (el) => {
+      const head = el.querySelector<HTMLElement>("[data-head]")
+      if (head) {
+        head.style.opacity = "0"
+        head.style.transform = "translateY(20px)"
+        head.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)"
+      }
+      el.querySelectorAll<HTMLElement>("[data-feature]").forEach((row) => {
+        row.style.opacity = "0"
+        row.style.transform = "translateY(36px) scale(1.04)"
+        row.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.85s cubic-bezier(.22,1,.36,1)"
+      })
+    },
+  )
+}
+
+/* ── Beat 6 — headline rises, quotes drift in from sides ────────────── */
+function useBeatCommunity() {
+  return useBeatReveal<HTMLDivElement>(
+    (el) => {
+      const head = el.querySelector<HTMLElement>("[data-head]")
+      if (head) { head.style.opacity = "1"; head.style.transform = "translateY(0)" }
+      el.querySelectorAll<HTMLElement>("[data-quote]").forEach((q, i) => {
+        window.setTimeout(() => {
+          q.style.opacity = "1"
+          q.style.transform = "translate(0, 0) rotate(0)"
+        }, 350 + i * 220)
+      })
+    },
+    (el) => {
+      const head = el.querySelector<HTMLElement>("[data-head]")
+      if (head) {
+        head.style.opacity = "0"; head.style.transform = "translateY(24px)"
+        head.style.transition = "opacity 0.8s cubic-bezier(.22,1,.36,1), transform 0.9s cubic-bezier(.22,1,.36,1)"
+      }
+      el.querySelectorAll<HTMLElement>("[data-quote]").forEach((q, i) => {
+        const fromLeft = i % 2 === 0
+        q.style.opacity = "0"
+        q.style.transform = `translate(${fromLeft ? -44 : 44}px, 14px) rotate(${fromLeft ? -1.2 : 1.2}deg)`
+        q.style.transition = "opacity 0.85s cubic-bezier(.22,1,.36,1), transform 0.95s cubic-bezier(.22,1,.36,1)"
+      })
+    },
+  )
+}
+
+/* ── Beat 7 — eyebrow → letter rise → CTA scales in ─────────────────── */
+function useBeatFullTime() {
+  return useBeatReveal<HTMLDivElement>(
+    (el) => {
+      const eyebrow = el.querySelector<HTMLElement>("[data-eyebrow]")
+      const sub = el.querySelector<HTMLElement>("[data-sub]")
+      const cta = el.querySelector<HTMLElement>("[data-cta]")
+      const signin = el.querySelector<HTMLElement>("[data-signin]")
+      if (eyebrow) { eyebrow.style.opacity = "1"; eyebrow.style.transform = "translateY(0)" }
+      const letters = el.querySelectorAll<HTMLElement>("[data-letter]")
+      letters.forEach((l, i) => {
+        l.style.animation = `pf-letter-rise 0.85s cubic-bezier(.22,1,.36,1) ${250 + i * 50}ms both`
+      })
+      const tail = 250 + letters.length * 50
+      window.setTimeout(() => { if (sub)    { sub.style.opacity = "1";    sub.style.transform = "translateY(0)" } }, tail + 200)
+      window.setTimeout(() => { if (cta)    { cta.style.opacity = "1";    cta.style.transform = "scale(1)" } },     tail + 380)
+      window.setTimeout(() => { if (signin) { signin.style.opacity = "1" } },                                       tail + 600)
+    },
+    (el) => {
+      const eyebrow = el.querySelector<HTMLElement>("[data-eyebrow]")
+      const sub = el.querySelector<HTMLElement>("[data-sub]")
+      const cta = el.querySelector<HTMLElement>("[data-cta]")
+      const signin = el.querySelector<HTMLElement>("[data-signin]")
+      if (eyebrow) {
+        eyebrow.style.opacity = "0"; eyebrow.style.transform = "translateY(-10px)"
+        eyebrow.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1), transform 0.6s cubic-bezier(.22,1,.36,1)"
+      }
+      el.querySelectorAll<HTMLElement>("[data-letter]").forEach((l) => { l.style.opacity = "0" })
+      if (sub) {
+        sub.style.opacity = "0"; sub.style.transform = "translateY(12px)"
+        sub.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.22,1,.36,1)"
+      }
+      if (cta) {
+        cta.style.opacity = "0"; cta.style.transform = "scale(0.94)"
+        cta.style.transition = "opacity 0.7s cubic-bezier(.22,1,.36,1), transform 0.7s cubic-bezier(.34,1.56,.64,1)"
+      }
+      if (signin) {
+        signin.style.opacity = "0"
+        signin.style.transition = "opacity 0.6s cubic-bezier(.22,1,.36,1)"
+      }
+    },
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   Page
+   ────────────────────────────────────────────────────────────────────── */
 
 export default function HomePage() {
-  const heroLeft = useReveal(0)
-  const heroRight = useReveal(160)
-  const howTitle = useReveal(0)
-  const stepGrid = useStaggerReveal<HTMLDivElement>(140)
-  const sportsTitle = useReveal(0)
-  const sportsGrid = useStaggerReveal<HTMLDivElement>(45)
-  const commTitle = useReveal(0)
-  const commCards = useStaggerReveal<HTMLDivElement>(120)
-  const ctaContent = useReveal(0)
-  const ctaHeading = useLetterReveal<HTMLHeadingElement>(40, 100)
-  const magneticBtn = useMagnetic<HTMLAnchorElement>(0.18)
+  const hero = useHeroEntrance()
+  const beatProblemRef   = useBeatProblem()
+  const beatSportsRef    = useBeatSports()
+  const beatHowRef       = useBeatHow()
+  const beatFeaturesRef  = useBeatFeatures()
+  const beatCommunityRef = useBeatCommunity()
+  const beatFullTimeRef  = useBeatFullTime()
 
   return (
-    <div className="h-screen overflow-hidden">
+    <>
+      <LandingIntroStinger />
 
-      {/* ══════════════════════════════════════════
-          FIXED NAV
-      ══════════════════════════════════════════ */}
-      <header className="fixed top-0 left-0 right-0 z-50 h-14 sm:h-16 bg-white/98 border-b border-slate-100 backdrop-blur">
-        <div className="max-w-6xl mx-auto px-3 sm:px-5 h-full flex items-center justify-between">
-          <Link href="/" className="flex items-center group opacity-90 hover:opacity-100 transition-opacity">
-            <Image src="/images/peerfit-logo.png" alt="PeerFit" width={180} height={120} className="h-12 sm:h-16 w-auto object-contain -my-2 sm:-my-3" />
-          </Link>
+      <div className="h-screen overflow-hidden bg-ink">
+        <div
+          className="h-screen overflow-y-scroll snap-y snap-mandatory [overscroll-behavior-y:contain]"
+          aria-label="PeerFit landing"
+        >
 
-          <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-500">
-            <a href="#how-it-works" className="hover:text-slate-900 transition-colors">How it works</a>
-            <a href="#sports" className="hover:text-slate-900 transition-colors">Sports</a>
-            <a href="#community" className="hover:text-slate-900 transition-colors">Community</a>
-          </nav>
+          {/* ════════════════════════════════════════════
+              01 / COLD OPEN
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start flex flex-col justify-between overflow-hidden bg-ink text-paper">
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link href="/login"
-              className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors px-2 sm:px-3 py-1.5">
-              Log in
-            </Link>
-            <Link href="/login?mode=signup"
-              className="flex items-center gap-1 sm:gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors shadow-sm">
-              Get started
-              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+            {/* Ambient backdrop — pitch-green radial breath */}
+            <div aria-hidden className="absolute inset-0 pointer-events-none overflow-hidden">
+              <div
+                className="pf-hero-breath absolute inset-0"
+                style={{
+                  background:
+                    "radial-gradient(ellipse 80% 60% at 50% 50%, oklch(0.55 0.14 158 / 0.18) 0%, transparent 65%)",
+                  animation: "pf-hero-breath 10s ease-in-out infinite",
+                }}
+              />
+            </div>
 
-      {/* ══════════════════════════════════════════
-          SNAP SCROLL CONTAINER
-      ══════════════════════════════════════════ */}
-      <div className="h-screen overflow-y-scroll snap-y snap-mandatory [overscroll-behavior-y:contain] scroll-pt-14 sm:scroll-pt-16">
+            {/* Top bar */}
+            <header className="relative z-10 flex items-center justify-between px-5 sm:px-10 pt-5 sm:pt-7">
+              <span className="t-eyebrow text-paper/60">PEERFIT</span>
+              <nav className="flex items-center gap-3 sm:gap-4">
+                <Link href="/login" className="t-eyebrow text-paper/70 hover:text-paper transition-colors">
+                  LOG IN
+                </Link>
+                <Link
+                  href="/login?mode=signup"
+                  className="t-eyebrow text-ink bg-paper px-3 py-2 hover:bg-brand-pitch hover:text-paper transition-colors"
+                >
+                  JOIN &gt;
+                </Link>
+              </nav>
+            </header>
 
-        {/* ── 1. HERO ── */}
-        <section className="h-screen snap-start bg-white flex flex-col [will-change:transform] relative overflow-hidden">
-          {/* Tiny live pill, top-right, hovering above content */}
-          <div className="absolute top-20 sm:top-24 right-5 sm:right-8 z-20 hidden sm:flex items-center gap-2 bg-white/90 backdrop-blur border border-slate-200 px-3 py-1.5 rounded-full shadow-sm">
-            <span className="relative flex w-2 h-2">
-              <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-500 pf-glow-pulse" />
-              <span className="relative inline-flex w-2 h-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="text-[11px] font-bold text-slate-700 tracking-wide">LIVE · 18 GAMES TONIGHT</span>
-          </div>
+            {/* Centre content */}
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 text-center">
+              <p className="t-eyebrow text-brand-pitch mb-5 sm:mb-7">
+                <span className="inline-flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-pitch pf-glow-pulse" />
+                  LIVE / 18 GAMES TONIGHT
+                </span>
+              </p>
 
-          <div className="flex-1 max-w-6xl mx-auto w-full px-5 pt-20 sm:pt-24 pb-4 grid lg:grid-cols-2 gap-8 lg:gap-12 items-center overflow-hidden">
-
-            {/* Left — copy */}
-            <div ref={heroLeft}>
-              <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-[11px] sm:text-xs font-semibold px-3 py-1.5 rounded-full mb-5 sm:mb-7 border border-emerald-100">
-                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                Free to join · 15+ sports · Local games
-              </div>
-
-              <h1 className="text-[2.25rem] sm:text-5xl lg:text-[64px] font-black leading-[1.03] tracking-tight text-slate-900 mb-4 sm:mb-6 font-heading">
-                {HERO_HEADLINE.map((word, i) => (
-                  <span
-                    key={i}
-                    className={`inline-block overflow-hidden align-bottom mr-3 ${i === 3 ? "block sm:inline-block" : ""}`}
-                  >
-                    <span
-                      className={`inline-block ${i >= 3 ? "text-emerald-600" : ""}`}
-                      style={{
-                        animation: `pf-letter-rise 0.8s cubic-bezier(.22,1,.36,1) ${i * 90}ms both`,
-                      }}
-                    >
-                      {word}
-                    </span>
-                  </span>
-                ))}
+              <h1 className="t-display-lg text-paper max-w-[20ch]">
+                <KineticLine text={HERO_LINE_1} accentChar="," startMs={400} stepMs={70} hero={hero} />
+                <br />
+                <KineticLine text={HERO_LINE_2} accentChar="." startMs={800} stepMs={70} hero={hero} />
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-500 leading-relaxed mb-6 sm:mb-8 max-w-md">
-                PeerFit connects you with local players for any sport. Browse activities near you or post your own — and never play alone again.
-              </p>
-
-              <Link href="/login?mode=signup"
-                className="group inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm sm:text-base px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-100 hover:shadow-emerald-200 hover:-translate-y-0.5 relative overflow-hidden">
-                <span className="relative z-10">Get started — it&apos;s free</span>
-                <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
-                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-gradient-to-r from-emerald-500 to-emerald-400 transition-transform duration-500" />
-              </Link>
-
-              <p className="mt-4 text-sm text-slate-400">
-                Already have an account?{" "}
-                <Link href="/login" className="text-emerald-600 hover:underline font-medium">Sign in</Link>
-              </p>
-
-              <div className="flex flex-wrap gap-2 sm:gap-3 mt-6 sm:mt-8">
-                {["No subscription fee", "Any skill level", "Your neighbourhood"].map((t) => (
-                  <span key={t}
-                    className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-slate-600 bg-slate-50 border border-slate-100 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full">
-                    <CheckCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500 shrink-0" />
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — stacked sport images, ken-burns */}
-            <div ref={heroRight} className="hidden lg:flex flex-col gap-3 h-full max-h-[520px]">
-              <div className="flex gap-3 flex-[3]">
-                {HERO_SPORTS.slice(0, 2).map(({ src, label }, i) => (
-                  <div
-                    key={label}
-                    className="group relative flex-1 overflow-hidden rounded-2xl shadow-lg shadow-slate-200 hover:shadow-xl hover:shadow-emerald-100 transition-shadow duration-500"
-                  >
-                    <div
-                      className="absolute inset-0 pf-ken-burns"
-                      style={{ animationDelay: `${i * -2.5}s` }}
-                    >
-                      <Image src={src} alt={label} fill className="object-cover" />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                    <span className="absolute bottom-3 left-4 text-white text-xs font-black tracking-widest uppercase translate-y-1 group-hover:translate-y-0 transition-transform">
-                      {label}
-                    </span>
-                    <span className="absolute top-3 right-3 px-2 py-0.5 bg-white/15 backdrop-blur text-white text-[10px] font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity rounded">
-                      LIVE TONIGHT
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-3 flex-[2]">
-                {HERO_SPORTS.slice(2).map(({ src, label }, i) => (
-                  <div
-                    key={label}
-                    className="group relative flex-1 overflow-hidden rounded-2xl shadow-lg shadow-slate-200 hover:shadow-xl hover:shadow-emerald-100 transition-shadow duration-500"
-                  >
-                    <div
-                      className="absolute inset-0 pf-ken-burns"
-                      style={{ animationDelay: `${(i + 2) * -2.5}s` }}
-                    >
-                      <Image src={src} alt={label} fill className="object-cover" />
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-                    <span className="absolute bottom-3 left-4 text-white text-xs font-black tracking-widest uppercase translate-y-1 group-hover:translate-y-0 transition-transform">
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Marquee strip — sits at the bottom of the hero */}
-          <MarqueeStrip />
-
-          {/* Scroll hint */}
-          <div className="h-10 flex items-center justify-center gap-2 text-slate-300">
-            <span className="text-[11px] font-semibold tracking-widest uppercase">Scroll to explore</span>
-            <ChevronDown className="w-4 h-4 animate-bounce" />
-          </div>
-        </section>
-
-        {/* ── 2. HOW IT WORKS ── */}
-        <section id="how-it-works" className="min-h-screen snap-start bg-emerald-950 flex flex-col justify-center px-5 py-20 sm:py-16 relative overflow-hidden [will-change:transform]">
-          {/* Logo watermark with slow drift */}
-          <Image
-            src="/images/peerfit-logo.png"
-            alt=""
-            width={340}
-            height={227}
-            aria-hidden
-            className="absolute -bottom-10 -right-10 w-[340px] h-auto object-contain pointer-events-none select-none opacity-[0.06] [filter:brightness(0)_invert(1)] pf-drift-x"
-          />
-
-          <div className="max-w-6xl mx-auto w-full relative z-10">
-            <div ref={howTitle} className="text-center mb-10 sm:mb-14">
-              <span className="text-emerald-500/70 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase block mb-3">
-                How it works
-              </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight font-heading">
-                Up and running<br />in minutes
-              </h2>
-            </div>
-
-            <div ref={stepGrid} className="grid md:grid-cols-3 gap-4 sm:gap-6">
-              {[
-                { n: "01", title: "Post an activity", desc: "Choose a sport, pick a time and location, set how many players you need. Done in under a minute." },
-                { n: "02", title: "Players join you", desc: "Nearby players browse the feed and request to join. You approve and chat in the activity thread." },
-                { n: "03", title: "Show up & play", desc: "Meet your new teammates, enjoy the game, and build the habit with people who keep you accountable." },
-              ].map(({ n, title, desc }) => (
-                <div key={n}
-                  className="group relative bg-white/[0.06] border border-white/10 rounded-3xl p-5 sm:p-8 overflow-hidden hover:bg-white/[0.10] hover:border-emerald-500/30 hover:-translate-y-1 transition-all duration-500">
-                  {/* Watermark number */}
-                  <span className="absolute -top-6 -left-1 text-[140px] font-black leading-none select-none pointer-events-none text-white/[0.035] font-heading group-hover:text-emerald-500/[0.08] group-hover:scale-110 transition-all duration-700 origin-top-left">
-                    {n}
-                  </span>
-                  {/* Hover glow */}
-                  <span aria-hidden className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent pointer-events-none" />
-                  <div className="relative z-10">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 bg-emerald-500 rounded-xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
-                      <span className="text-white text-xs font-black font-heading">{n}</span>
-                    </div>
-                    <h3 className="text-white font-bold text-lg sm:text-xl mb-2 sm:mb-3 font-heading">{title}</h3>
-                    <p className="text-emerald-200/60 text-sm leading-relaxed">{desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── 3. SPORTS ── */}
-        <section id="sports" className="min-h-screen snap-start bg-slate-900 flex flex-col justify-center px-5 py-20 sm:py-16 relative overflow-hidden [will-change:transform]">
-          <Image
-            src="/images/peerfit-logo.png"
-            alt=""
-            width={320}
-            height={213}
-            aria-hidden
-            className="absolute -top-8 -left-8 w-[320px] h-auto object-contain pointer-events-none select-none opacity-[0.06] [filter:brightness(0)_invert(1)] pf-drift-x"
-            style={{ animationDirection: "reverse" }}
-          />
-
-          <div className="max-w-6xl mx-auto w-full relative z-10">
-            <div ref={sportsTitle} className="text-center mb-8 sm:mb-10">
-              <span className="text-emerald-500 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase mb-3 sm:mb-4 block">Sports</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight font-heading">
-                Every sport. Your area.
-              </h2>
-              <p className="text-slate-400 mt-3 text-sm sm:text-base">From 5-a-side to yoga — find your activity or create one.</p>
-            </div>
-
-            <div ref={sportsGrid} className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-              {SPORT_CHIPS.map(({ src, label }) => (
-                <div
-                  key={label}
-                  className="group relative aspect-square rounded-2xl overflow-hidden cursor-pointer"
-                >
-                  <div className="absolute inset-0 group-hover:scale-110 transition-transform duration-700 ease-out">
-                    <Image src={src} alt={label} fill className="object-cover" />
-                  </div>
-                  {/* Default dim overlay */}
-                  <div className="absolute inset-0 bg-black/55 group-hover:bg-black/20 transition-colors duration-500" />
-                  {/* Emerald wash on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-emerald-600/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  {/* Default centered label */}
-                  <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-black tracking-widest uppercase group-hover:opacity-0 group-hover:-translate-y-2 transition-all duration-300">
-                    {label}
-                  </span>
-                  {/* Hover label — drops up from bottom */}
-                  <span className="absolute bottom-3 left-3 right-3 flex flex-col gap-1 opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
-                    <span className="text-white text-[11px] font-black tracking-widest uppercase leading-none">{label}</span>
-                    <span className="text-white/80 text-[9px] font-medium tracking-wider">FIND GAMES →</span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── 4. WHY PEERFIT ── */}
-        <section id="community" className="min-h-screen snap-start bg-slate-50 flex flex-col justify-center px-5 py-20 sm:py-16 relative overflow-hidden [will-change:transform]">
-          <Image
-            src="/images/peerfit-logo.png"
-            alt=""
-            width={300}
-            height={200}
-            aria-hidden
-            className="absolute -bottom-6 -right-6 w-[300px] h-auto object-contain pointer-events-none select-none opacity-[0.07] [filter:brightness(0)] pf-drift-x"
-          />
-
-          <div className="max-w-6xl mx-auto w-full relative z-10">
-            <div ref={commTitle} className="text-center mb-10 sm:mb-14">
-              <span className="text-emerald-600 text-[11px] sm:text-xs font-bold tracking-[.18em] uppercase mb-3 sm:mb-4 block">Why PeerFit</span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight font-heading">
-                Built for players,<br />not algorithms.
-              </h2>
-              <p className="text-slate-500 mt-3 text-sm sm:text-base max-w-lg mx-auto">
-                No feed, no followers, no ads. Just you, your sport, and people nearby who want to play.
-              </p>
-            </div>
-
-            <div ref={commCards} className="grid md:grid-cols-3 gap-4 sm:gap-6">
-              {COMMUNITY_STATS.map(({ value, label, desc }) => (
-                <div key={label}
-                  className="group bg-white border border-slate-100 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-xl hover:shadow-emerald-100 hover:-translate-y-1 transition-all duration-500 text-center">
-                  <p className="text-5xl sm:text-6xl font-black text-emerald-600 mb-2 font-heading group-hover:scale-110 transition-transform duration-500 inline-block">
-                    {value}
-                  </p>
-                  <p className="text-base font-bold text-slate-800 mb-2">{label}</p>
-                  <p className="text-sm text-slate-500 leading-relaxed">{desc}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 sm:mt-10 grid sm:grid-cols-2 gap-4">
-              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 sm:p-6 hover:border-emerald-300 transition-colors">
-                <p className="text-base font-bold text-slate-800 mb-1">Open to everyone</p>
-                <p className="text-sm text-slate-500">Any skill level, any sport. Whether you&apos;re a beginner looking for a casual kick-about or a competitive player searching for a serious match.</p>
-              </div>
-              <div className="bg-slate-900 rounded-2xl p-5 sm:p-6 hover:bg-slate-800 transition-colors">
-                <p className="text-base font-bold text-white mb-1">Private or public activities</p>
-                <p className="text-sm text-slate-400">Create open sessions anyone can join, or private invite-only games where you approve every player yourself.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 5. FINAL CTA + embedded footer ── */}
-        <section className="min-h-screen snap-start bg-emerald-950 flex flex-col relative overflow-hidden [will-change:transform]">
-          {/* Logo watermark — large, centred, drifting */}
-          <Image
-            src="/images/peerfit-logo.png"
-            alt=""
-            width={480}
-            height={320}
-            aria-hidden
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-auto object-contain pointer-events-none select-none opacity-[0.06] [filter:brightness(0)_invert(1)] pf-drift-x"
-          />
-          {/* Decorative glows */}
-          <div className="absolute top-1/4 -left-20 w-[500px] h-72 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-1/3 right-0 w-80 h-80 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* CTA body */}
-          <div className="flex-1 flex flex-col justify-center items-center px-5 py-20 sm:py-16 relative z-10">
-            <div ref={ctaContent} className="max-w-2xl text-center">
-              <div className="flex justify-center mb-6 sm:mb-8">
-                <Image src="/images/peerfit-logo.png" alt="PeerFit" width={160} height={107} className="h-12 sm:h-16 w-auto object-contain opacity-80" />
-              </div>
-              <h2
-                ref={ctaHeading}
-                className="text-5xl sm:text-6xl lg:text-[88px] font-black text-white leading-[0.92] tracking-tight mb-5 sm:mb-7 font-heading"
+              <p
+                className="t-sub text-paper/65 mt-5 sm:mt-7 max-w-md"
+                style={{
+                  opacity: hero.reduce ? 1 : 0,
+                  animation: hero.ready && !hero.reduce
+                    ? `pf-stinger-tagline 700ms cubic-bezier(.22,1,.36,1) ${hero.delay + 1450}ms forwards`
+                    : undefined,
+                }}
               >
-                <LetterSplit text="Ready" />
-                <br />
-                <LetterSplit text="to play?" highlightFrom={3} />
-              </h2>
-              <p className="text-emerald-300/75 text-base sm:text-lg mb-7 sm:mb-10 leading-relaxed max-w-sm mx-auto">
-                Join PeerFit for free and find local games in your sport today.
+                PeerFit connects you with players nearby — for any sport, at any level. Find a game, join, show up.
               </p>
-              {/* Magnetic button — wrapping div listens to mouse, inner anchor moves */}
-              <div className="inline-block relative px-8 py-3">
+
+              <div
+                className="mt-7 sm:mt-9 inline-block"
+                style={{
+                  opacity: hero.reduce ? 1 : 0,
+                  animation: hero.ready && !hero.reduce
+                    ? `pf-stinger-tagline 700ms cubic-bezier(.22,1,.36,1) ${hero.delay + 1750}ms forwards`
+                    : undefined,
+                }}
+              >
                 <Link
-                  ref={magneticBtn}
                   href="/login?mode=signup"
-                  className="group inline-flex items-center gap-2 sm:gap-2.5 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-base sm:text-lg px-6 sm:px-9 py-3 sm:py-4 rounded-2xl shadow-2xl shadow-emerald-900/60 hover:scale-[1.03] relative overflow-hidden"
+                  className="group inline-flex items-baseline gap-3 t-mono-lg text-brand-pitch border-b border-brand-pitch pb-1 hover:text-paper hover:border-paper transition-colors"
                 >
-                  <span className="relative z-10">Create your free account</span>
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 group-hover:translate-x-1 transition-transform" />
-                  {/* Sweeping shine */}
-                  <span aria-hidden className="absolute inset-y-0 -left-1/2 w-1/2 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:translate-x-[300%] transition-transform duration-700" />
+                  FIND TONIGHT&apos;S GAME
+                  <span className="inline-block group-hover:translate-x-1 transition-transform">&gt;</span>
                 </Link>
               </div>
-              <p className="mt-5 sm:mt-6 text-sm text-emerald-800">
-                Have an account?{" "}
-                <Link href="/login" className="text-emerald-500 hover:text-emerald-300 transition-colors underline">Sign in</Link>
+            </div>
+
+            {/* Bottom block — marquee + meta strip */}
+            <div
+              className="relative z-10"
+              style={{
+                opacity: hero.reduce ? 1 : 0,
+                animation: hero.ready && !hero.reduce
+                  ? `pf-stinger-tagline 700ms cubic-bezier(.22,1,.36,1) ${hero.delay + 2050}ms forwards`
+                  : undefined,
+              }}
+            >
+              <EditorialMarquee items={MARQUEE_LIVE} tone="dark" />
+              <footer className="flex items-end justify-between px-5 sm:px-10 pt-4 sm:pt-5 pb-5 sm:pb-7">
+                <span className="t-mono text-paper/40">FREE TO JOIN</span>
+                <span className="t-eyebrow text-paper/40 inline-flex items-center gap-2">
+                  SCROLL
+                  <span className="inline-block w-px h-3 bg-paper/40" />
+                </span>
+                <span className="t-mono text-paper/40 hidden sm:block">01 / 07</span>
+              </footer>
+            </div>
+          </section>
+
+          {/* ════════════════════════════════════════════
+              02 / THE PROBLEM
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start bg-ink flex flex-col items-center px-5 py-8 sm:py-12 overflow-hidden isolate">
+            <BeatWatermark n="02" position="-bottom-16 -right-4 sm:-right-8" tone="dark" />
+            <div ref={beatProblemRef} className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl">
+              <span data-eyebrow className="t-eyebrow text-paper/40 mb-6 sm:mb-9">02 / WHY THIS EXISTS</span>
+
+              <p
+                data-frag data-target-opacity="0.35"
+                className="t-display-sm text-paper/35 text-center max-w-[20ch]"
+                style={{ fontSize: "clamp(32px, 5.2vw, 60px)", lineHeight: "1.05" }}
+              >
+                &ldquo;one more for football tonight?&rdquo;
+              </p>
+              <p
+                data-frag data-target-opacity="0.55"
+                className="t-display-sm text-paper/55 text-center max-w-[20ch] mt-4 sm:mt-5"
+                style={{ fontSize: "clamp(32px, 5.2vw, 60px)", lineHeight: "1.05" }}
+              >
+                &ldquo;need a 4th for padel.&rdquo;
+              </p>
+              <p
+                data-frag data-target-opacity="0.85"
+                className="t-display-sm text-paper/85 text-center max-w-[20ch] mt-4 sm:mt-5"
+                style={{ fontSize: "clamp(32px, 5.2vw, 60px)", lineHeight: "1.05" }}
+              >
+                &ldquo;anyone free sunday?&rdquo;
+              </p>
+
+              <p
+                data-punch
+                className="t-display-lg text-brand-pitch text-center mt-9 sm:mt-10 max-w-[14ch]"
+                style={{ fontSize: "clamp(100px, 7vw, 88px)", lineHeight: "0.96" }}
+              >
+                You&apos;ve waited<br />long enough.
               </p>
             </div>
-          </div>
+          </section>
 
-          {/* Embedded footer strip */}
-          <div className="relative z-10 px-4 sm:px-5 py-4 sm:py-5 border-t border-white/[0.07]">
-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <Image src="/images/peerfit-logo.png" alt="PeerFit" width={64} height={43} className="h-6 w-auto object-contain opacity-50" />
-                <span className="text-emerald-900/50 text-xs">&copy; {new Date().getFullYear()}</span>
+          {/* ════════════════════════════════════════════
+              03 / EVERY SPORT
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start bg-brand-pitch text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
+            <BeatWatermark n="03" position="-top-12 -left-4 sm:-left-8" tone="pitch" />
+            <div className="flex items-baseline justify-between">
+              <span className="t-eyebrow text-ink/60">03 / EVERY SPORT</span>
+              <span className="t-mono text-ink/60 hidden sm:block">15+ SPORTS / NEAR YOU</span>
+            </div>
+
+            <div ref={beatSportsRef} className="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full">
+              {SPORTS_PRIMARY.map((s) => (
+                <p key={s} data-sport className="t-display-lg text-ink leading-[0.95]">{s}</p>
+              ))}
+              <p data-sub className="t-sub text-ink/60 mt-5 sm:mt-7 max-w-md">
+                Every sport gets its own moment here. Per-sport cinematic takeovers land in the next pass.
+              </p>
+            </div>
+
+            <div className="flex items-end justify-between gap-4">
+              <span className="t-mono text-ink/60 max-w-[70%] leading-relaxed">{SPORTS_SECONDARY}</span>
+              <span className="t-eyebrow text-ink/60 shrink-0">+ MORE</span>
+            </div>
+          </section>
+
+          {/* ════════════════════════════════════════════
+              04 / HOW IT WORKS
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start bg-paper text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
+            <BeatWatermark n="04" position="-bottom-16 -right-4 sm:-right-8" tone="light" />
+            <div className="flex items-baseline justify-between">
+              <span className="t-eyebrow text-ink/50">04 / HOW IT WORKS</span>
+              <span className="t-mono text-ink/50 hidden sm:block">UNDER A MINUTE</span>
+            </div>
+
+            <ol ref={beatHowRef} className="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full space-y-8 sm:space-y-12">
+              {STEPS.map(({ n, verb, line }) => (
+                <li key={n} data-row className="grid grid-cols-12 gap-4 items-baseline">
+                  <span data-num  className="t-mono text-brand-pitch col-span-2 sm:col-span-1">{n}</span>
+                  <span data-verb className="t-display-md text-ink col-span-10 sm:col-span-4">{verb}.</span>
+                  <span data-line className="t-sub text-ink/60 col-start-3 sm:col-start-6 col-span-10 sm:col-span-7">{line}</span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="flex items-end justify-between">
+              <span className="t-mono text-ink/40">FREE TO JOIN / FREE TO POST</span>
+              <span className="t-eyebrow text-ink/40">04 / 07</span>
+            </div>
+          </section>
+
+          {/* ════════════════════════════════════════════
+              05 / CORE FEATURES
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start bg-stone-200 text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
+            <BeatWatermark n="05" position="-top-12 -left-4 sm:-left-8" tone="light" />
+            <div className="flex items-baseline justify-between">
+              <span className="t-eyebrow text-ink/50">05 / CORE FEATURES</span>
+              <span className="t-mono text-ink/50 hidden sm:block">WHAT YOU GET</span>
+            </div>
+
+            <div ref={beatFeaturesRef} className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 max-w-6xl mx-auto w-full content-center py-4">
+              <div className="lg:col-span-5 lg:pt-2">
+                <p className="t-eyebrow text-brand-pitch mb-3">CORE FEATURES</p>
+                <h2 data-head className="t-display-md text-ink">
+                  Everything you need <span className="text-brand-pitch">to move</span>.
+                </h2>
               </div>
-              <nav className="flex flex-wrap justify-center gap-3 sm:gap-5 text-[11px] sm:text-xs text-emerald-800">
+              <ul className="lg:col-span-7 flex flex-col divide-y divide-ink/15 border-t border-b border-ink/15">
+                {FEATURES.map(({ n, icon: Icon, title, desc }) => (
+                  <li key={n} data-feature className="grid grid-cols-12 gap-3 py-2.5 sm:py-3.5">
+                    <span className="t-mono text-brand-pitch col-span-2 sm:col-span-1 pt-2">{n}</span>
+                    <div className="col-span-10 sm:col-span-11">
+                      <h3 className="t-display-sm text-ink flex items-center gap-3 leading-none">
+                        <Icon className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 text-brand-pitch" strokeWidth={1.75} />
+                        <span>{title}</span>
+                      </h3>
+                      <p className="t-body text-ink/65 mt-1.5 leading-snug">{desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="flex items-end justify-between">
+              <span className="t-mono text-ink/40">DESIGNED FOR PLAYERS</span>
+              <span className="t-eyebrow text-ink/40">05 / 07</span>
+            </div>
+          </section>
+
+          {/* ════════════════════════════════════════════
+              06 / COMMUNITY
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start bg-paper text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
+            <BeatWatermark n="06" position="-bottom-16 -right-4 sm:-right-8" tone="light" />
+            <div className="flex items-baseline justify-between">
+              <span className="t-eyebrow text-ink/50">06 / COMMUNITY</span>
+              <span className="t-mono text-ink/50 hidden sm:block">NOT A FEED</span>
+            </div>
+
+            <div ref={beatCommunityRef} className="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full">
+              <p data-head className="t-display-md text-ink max-w-[18ch]">
+                A noticeboard for players, not algorithms.
+              </p>
+
+              <div className="mt-6 sm:mt-9 grid sm:grid-cols-2 gap-5 sm:gap-6 max-w-3xl">
+                {QUOTES.map(({ text, by }) => (
+                  <blockquote key={by} data-quote className="border-l-2 border-brand-pitch pl-4">
+                    <p className="t-sub text-ink leading-snug">&ldquo;{text}&rdquo;</p>
+                    <span className="t-mono text-ink/50 mt-3 block">— {by}</span>
+                  </blockquote>
+                ))}
+              </div>
+            </div>
+
+            <div className="-mx-5">
+              <EditorialMarquee items={MARQUEE_VOICES} tone="light" />
+              <div className="flex items-end justify-between px-5 pt-4 sm:pt-5">
+                <span className="t-mono text-ink/40">FREE / OPEN / LOCAL</span>
+                <span className="t-eyebrow text-ink/40">06 / 07</span>
+              </div>
+            </div>
+          </section>
+
+          {/* ════════════════════════════════════════════
+              07 / FULL TIME
+              ════════════════════════════════════════════ */}
+          <section className="relative h-screen snap-start bg-ink text-paper flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
+            <BeatWatermark n="07" position="-bottom-16 -left-4 sm:-left-8" tone="dark" />
+            <Image
+              src="/images/peerfit-logo.png"
+              alt=""
+              width={480}
+              height={320}
+              aria-hidden
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vmin] h-auto object-contain pointer-events-none select-none opacity-[0.05] [filter:brightness(0)_invert(1)] pf-drift-x -z-10"
+            />
+            <div className="flex items-baseline justify-between">
+              <span className="t-eyebrow text-paper/50">07 / FULL TIME</span>
+              <span className="t-mono text-paper/50 hidden sm:block">FREE TO JOIN</span>
+            </div>
+
+            <div ref={beatFullTimeRef} className="flex-1 flex flex-col items-center justify-center text-center">
+              <p data-eyebrow className="t-eyebrow text-brand-pitch mb-5 sm:mb-7">FULL TIME WHISTLE</p>
+              <h2 className="t-display-lg text-paper">
+                <LetterRise text="Ready" />
+                <br />
+                <LetterRise text="to play?" startIndex={5} />
+              </h2>
+              <p data-sub className="t-sub text-paper/65 mt-5 sm:mt-7 max-w-sm">
+                Join PeerFit free. Find a game in your area tonight.
+              </p>
+              <div data-cta className="mt-7 sm:mt-10">
+                <Link
+                  href="/login?mode=signup"
+                  className="inline-flex items-center gap-3 px-7 py-3.5 bg-brand-pitch text-paper t-mono-lg hover:bg-brand-pitch-hover transition-colors"
+                >
+                  CREATE FREE ACCOUNT &gt;
+                </Link>
+              </div>
+              <p data-signin className="t-meta text-paper/40 mt-4">
+                Have an account?{" "}
+                <Link href="/login" className="underline hover:text-paper transition-colors">
+                  Sign in
+                </Link>
+              </p>
+            </div>
+
+            <footer className="flex flex-wrap items-end justify-between gap-3">
+              <span className="t-mono text-paper/40">&copy; {new Date().getFullYear()} PEERFIT</span>
+              <nav className="flex flex-wrap gap-4">
                 {[
-                  { label: "Privacy Policy", href: "/privacy" },
-                  { label: "Terms of Service", href: "/terms" },
-                  { label: "Consumer Terms", href: "/consumer-terms" },
-                  { label: "Contact", href: "/contact" },
+                  { label: "PRIVACY", href: "/privacy" },
+                  { label: "TERMS", href: "/terms" },
+                  { label: "CONTACT", href: "/contact" },
                 ].map(({ label, href }) => (
-                  <Link key={label} href={href} className="hover:text-emerald-500 transition-colors">{label}</Link>
+                  <Link key={label} href={href} className="t-mono text-paper/40 hover:text-paper transition-colors">
+                    {label}
+                  </Link>
                 ))}
               </nav>
-            </div>
-          </div>
-        </section>
+            </footer>
+          </section>
 
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
-/* ── Marquee strip — black band of fast-rotating live items ── */
-function MarqueeStrip() {
-  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS]
+/* ──────────────────────────────────────────────────────────────────────
+   BeatWatermark — giant editorial page-number bleed. Sits behind
+   in-flow content via -z-10; the parent section needs `isolate` to
+   contain the negative z-index in its own stacking context.
+   ────────────────────────────────────────────────────────────────────── */
+
+function BeatWatermark({
+  n,
+  position,
+  tone,
+}: {
+  n: string
+  position: string
+  tone: "dark" | "light" | "pitch"
+}) {
+  const colorClass =
+    tone === "dark" ? "text-paper/5" :
+    tone === "pitch" ? "text-ink/10" :
+    "text-ink/5"
   return (
-    <div className="relative bg-slate-900 text-white py-3 overflow-hidden border-y border-slate-800 group">
-      {/* Edge fades */}
-      <div aria-hidden className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-slate-900 to-transparent z-10 pointer-events-none" />
-      <div aria-hidden className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-slate-900 to-transparent z-10 pointer-events-none" />
-      <div className="flex gap-10 whitespace-nowrap pf-ticker-track">
-        {items.map((item, i) => (
-          <span
-            key={`${item}-${i}`}
-            className="inline-flex items-center gap-3 text-[11px] sm:text-xs font-black tracking-[.22em] uppercase shrink-0"
-          >
-            <span aria-hidden className="w-1.5 h-1.5 bg-emerald-500 rounded-full pf-glow-pulse" />
-            {item}
-          </span>
-        ))}
+    <span
+      aria-hidden
+      className={`absolute -z-10 pointer-events-none select-none leading-[0.8] ${position} ${colorClass}`}
+      style={{
+        fontFamily: "var(--font-big-shoulders), system-ui, sans-serif",
+        fontWeight: 900,
+        fontSize: "clamp(280px, 38vw, 560px)",
+        letterSpacing: "-0.04em",
+      }}
+    >
+      {n}
+    </span>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   EditorialMarquee — slow ticker, mono caps, hairline separators.
+   Two tones: "dark" (ink bg, paper text) for cold-open live signals,
+   "light" (paper bg, ink text) for community voices on beat 06.
+   Pulsing pitch dot only on items that start with "LIVE".
+   ────────────────────────────────────────────────────────────────────── */
+
+function EditorialMarquee({
+  items,
+  tone = "dark",
+}: {
+  items: readonly string[]
+  tone?: "dark" | "light"
+}) {
+  const doubled = [...items, ...items]
+  const dark = tone === "dark"
+  return (
+    <div className={`relative overflow-hidden border-y ${dark ? "border-paper/10" : "border-ink/10"}`}>
+      <div
+        aria-hidden
+        className={`absolute inset-y-0 left-0 w-24 z-10 pointer-events-none ${
+          dark ? "bg-gradient-to-r from-ink to-transparent" : "bg-gradient-to-r from-paper to-transparent"
+        }`}
+      />
+      <div
+        aria-hidden
+        className={`absolute inset-y-0 right-0 w-24 z-10 pointer-events-none ${
+          dark ? "bg-gradient-to-l from-ink to-transparent" : "bg-gradient-to-l from-paper to-transparent"
+        }`}
+      />
+      <div className="flex items-center whitespace-nowrap pf-ticker-track py-3">
+        {doubled.map((item, i) => {
+          const isLive = item.startsWith("LIVE")
+          return (
+            <span key={i} className="inline-flex items-center shrink-0">
+              <span className={`inline-flex items-center gap-2 t-eyebrow px-7 ${dark ? "text-paper/65" : "text-ink/65"}`}>
+                {isLive && (
+                  <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-brand-pitch pf-glow-pulse" />
+                )}
+                {item}
+              </span>
+              <span aria-hidden className={`w-px h-3 ${dark ? "bg-paper/15" : "bg-ink/15"}`} />
+            </span>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-/* ── Letter split — wraps each character in a span with a stagger animation ── */
-function LetterSplit({ text, highlightFrom }: { text: string; highlightFrom?: number }) {
-  let charIndex = -1
+/* ──────────────────────────────────────────────────────────────────────
+   KineticLine — per-word stagger, gated on hero entrance state.
+   ────────────────────────────────────────────────────────────────────── */
+
+function KineticLine({
+  text,
+  accentChar,
+  startMs = 0,
+  stepMs = 70,
+  hero,
+}: {
+  text: string
+  accentChar?: string
+  startMs?: number
+  stepMs?: number
+  hero: HeroState
+}) {
+  const hasAccent = !!accentChar && text.endsWith(accentChar)
+  const body = hasAccent ? text.slice(0, -accentChar!.length) : text
+  const words = body.split(" ")
+
+  const animationFor = (i: number) =>
+    hero.ready && !hero.reduce
+      ? `pf-letter-rise 0.85s cubic-bezier(.22,1,.36,1) ${hero.delay + startMs + i * stepMs}ms both`
+      : undefined
+
   return (
     <span className="inline-block">
-      {text.split("").map((ch, i) => {
-        if (ch !== " ") charIndex++
-        const animateThis = ch !== " "
-        const delay = animateThis ? charIndex * 50 : 0
-        const isHighlighted = highlightFrom !== undefined && i >= highlightFrom
-        return (
+      {words.map((word, i) => (
+        <span key={i} className="inline-block overflow-hidden align-bottom mr-[0.25em]">
           <span
-            key={i}
-            data-letter
-            className={`inline-block ${isHighlighted ? "text-emerald-400" : ""}`}
-            style={
-              animateThis
-                ? { animation: `pf-letter-rise 0.8s cubic-bezier(.22,1,.36,1) ${delay}ms both` }
-                : undefined
-            }
+            className="inline-block"
+            style={{
+              opacity: hero.reduce ? 1 : 0,
+              animation: animationFor(i),
+            }}
           >
-            {ch === " " ? " " : ch}
+            {word}
+            {i === words.length - 1 && hasAccent && (
+              <span
+                className="text-brand-pitch"
+                style={{
+                  opacity: hero.reduce ? 1 : 0,
+                  animation: animationFor(i + 1),
+                  display: "inline-block",
+                }}
+              >
+                {accentChar}
+              </span>
+            )}
           </span>
-        )
-      })}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   LetterRise — emits each char as data-letter; spaces are rendered as
+   bare text nodes between word groups so they don't collapse inside an
+   inline-block (which is what was producing "toplay" instead of
+   "to play").
+   ────────────────────────────────────────────────────────────────────── */
+
+function LetterRise({ text, startIndex = 0 }: { text: string; startIndex?: number }) {
+  const words = text.split(" ")
+  let charIdx = -1
+  return (
+    <span className="inline-block">
+      {words.map((word, wIdx) => (
+        <span key={wIdx}>
+          {[...word].map((ch) => {
+            charIdx++
+            return (
+              <span
+                key={charIdx}
+                data-letter
+                data-letter-index={startIndex + charIdx}
+                className="inline-block"
+                style={{ opacity: 0 }}
+              >
+                {ch}
+              </span>
+            )
+          })}
+          {wIdx < words.length - 1 ? " " : null}
+        </span>
+      ))}
     </span>
   )
 }

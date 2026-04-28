@@ -476,4 +476,22 @@
       animation: none !important;
     }
   }
+
+  /* ── Landing-v2 Beat 1 ambient backdrop ──────────────────────────── */
+
+  /* Soft pitch-green radial breath behind the hero text */
+  @keyframes pf-hero-breath {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 0.9; }
+  }
+
+  /* Horizontal field line — draws across once on hero entry */
+  @keyframes pf-hero-line {
+    0%   { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pf-hero-breath { animation: none !important; opacity: 0.7; }
+  }
 }
