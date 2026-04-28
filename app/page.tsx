@@ -477,7 +477,7 @@ export default function HomePage() {
               02 / THE PROBLEM
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-ink flex flex-col items-center px-5 py-8 sm:py-12 overflow-hidden isolate">
-            <BeatWatermark n="02" position="-bottom-16 -right-4 sm:-right-8" tone="dark" />
+            <BeatWatermark n="02" position="bottom-2 -right-4 sm:-bottom-16 sm:-right-8" tone="dark" />
             <div ref={beatProblemRef} className="flex-1 flex flex-col items-center justify-center w-full max-w-3xl">
               <span data-eyebrow className="t-eyebrow text-paper/40 mb-6 sm:mb-9">02 / WHY THIS EXISTS</span>
 
@@ -517,7 +517,7 @@ export default function HomePage() {
               03 / EVERY SPORT
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-brand-pitch text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
-            <BeatWatermark n="03" position="-top-12 -left-4 sm:-left-8" tone="pitch" />
+            <BeatWatermark n="03" position="top-2 -left-4 sm:-top-12 sm:-left-8" tone="pitch" />
             <div className="flex items-baseline justify-between">
               <span className="t-eyebrow text-ink/60">03 / EVERY SPORT</span>
               <span className="t-mono text-ink/60 hidden sm:block">15+ SPORTS / NEAR YOU</span>
@@ -542,7 +542,7 @@ export default function HomePage() {
               04 / HOW IT WORKS
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-paper text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
-            <BeatWatermark n="04" position="-bottom-16 -right-4 sm:-right-8" tone="light" />
+            <BeatWatermark n="04" position="bottom-2 -right-4 sm:-bottom-16 sm:-right-8" tone="light" />
             <div className="flex items-baseline justify-between">
               <span className="t-eyebrow text-ink/50">04 / HOW IT WORKS</span>
               <span className="t-mono text-ink/50 hidden sm:block">UNDER A MINUTE</span>
@@ -568,7 +568,7 @@ export default function HomePage() {
               05 / CORE FEATURES
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-stone-200 text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
-            <BeatWatermark n="05" position="-top-12 -left-4 sm:-left-8" tone="light" />
+            <BeatWatermark n="05" position="top-2 -left-4 sm:-top-12 sm:-left-8" tone="light" />
             <div className="flex items-baseline justify-between">
               <span className="t-eyebrow text-ink/50">05 / CORE FEATURES</span>
               <span className="t-mono text-ink/50 hidden sm:block">WHAT YOU GET</span>
@@ -607,7 +607,7 @@ export default function HomePage() {
               06 / COMMUNITY
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-paper text-ink flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
-            <BeatWatermark n="06" position="-bottom-16 -right-4 sm:-right-8" tone="light" />
+            <BeatWatermark n="06" position="bottom-2 -right-4 sm:-bottom-16 sm:-right-8" tone="light" />
             <div className="flex items-baseline justify-between">
               <span className="t-eyebrow text-ink/50">06 / COMMUNITY</span>
               <span className="t-mono text-ink/50 hidden sm:block">NOT A FEED</span>
@@ -641,7 +641,7 @@ export default function HomePage() {
               07 / FULL TIME
               ════════════════════════════════════════════ */}
           <section className="relative h-screen snap-start bg-ink text-paper flex flex-col justify-between px-5 py-6 sm:py-10 overflow-hidden isolate">
-            <BeatWatermark n="07" position="-bottom-16 -left-4 sm:-left-8" tone="dark" />
+            <BeatWatermark n="07" position="bottom-2 -left-4 sm:-bottom-16 sm:-left-8" tone="dark" />
             <Image
               src="/images/peerfit-logo.png"
               alt=""
@@ -729,7 +729,7 @@ function BeatWatermark({
       style={{
         fontFamily: "var(--font-big-shoulders), system-ui, sans-serif",
         fontWeight: 900,
-        fontSize: "clamp(160px, 38vw, 560px)",
+        fontSize: "clamp(260px, 38vw, 560px)",
         letterSpacing: "-0.04em",
       }}
     >
