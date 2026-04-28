@@ -5,45 +5,28 @@
  *
  *   0.0s   "FIND • JOIN • PLAY" — verbs stagger in (fade-up + blur clear)
  *   1.1s   verbs lift out
- *   1.3s   wordmark "peerfit" appears, hidden behind a pitch-green block
+ *   1.3s   wordmark "PEERFIT" appears, hidden behind a pitch-green block
  *   1.5s   block recedes right-to-left (curtain wipe), wordmark revealed
  *   2.05s  tagline fades in
  *   2.4s   whole stinger lifts up + fades, page revealed beneath
  *   3.0s   done
  *
- * Discipline (matches the existing IntroStinger pattern):
- *   - sessionStorage-scoped (own key — does not collide with fixture stinger)
- *   - skippable on click / keypress
- *   - prefers-reduced-motion: skipped, marked seen
- *   - locks body scroll while playing
- *
- * Keyframes live in globals.css under "pf-stinger-*".
+ * Plays on every page load/refresh (no sessionStorage gate).
+ * Skippable on click / keypress.
+ * Respects prefers-reduced-motion.
  */
 
 import { useEffect, useState } from "react"
 
-const STORAGE_KEY = "peerfit_landing_intro_seen"
 const TOTAL_MS = 3000
 
-type Phase = "checking" | "playing" | "done"
+type Phase = "playing" | "done"
 
 export function LandingIntroStinger() {
-  const [phase, setPhase] = useState<Phase>("checking")
+  const [phase, setPhase] = useState<Phase | null>(null)
 
   useEffect(() => {
-    if (typeof window === "undefined") return
-
-    try {
-      if (sessionStorage.getItem(STORAGE_KEY) === "1") {
-        setPhase("done")
-        return
-      }
-    } catch {
-      // private mode — play once anyway
-    }
-
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      try { sessionStorage.setItem(STORAGE_KEY, "1") } catch {}
       setPhase("done")
       return
     }
@@ -53,7 +36,6 @@ export function LandingIntroStinger() {
     document.body.style.overflow = "hidden"
 
     const timeout = window.setTimeout(() => {
-      try { sessionStorage.setItem(STORAGE_KEY, "1") } catch {}
       setPhase("done")
       document.body.style.overflow = previousOverflow
     }, TOTAL_MS)
@@ -66,7 +48,6 @@ export function LandingIntroStinger() {
 
   const handleSkip = () => {
     if (phase !== "playing") return
-    try { sessionStorage.setItem(STORAGE_KEY, "1") } catch {}
     setPhase("done")
     document.body.style.overflow = ""
   }
@@ -93,8 +74,8 @@ export function LandingIntroStinger() {
       }}
     >
       {/* ── Phase A — verb chain ─────────────────────────────────────── */}
-      <div className="absolute inset-0 flex items-center justify-center px-6">
-        <div className="flex items-baseline gap-3 sm:gap-5">
+      <div className="absolute inset-0 flex items-center justify-center px-4">
+        <div className="flex items-baseline gap-2 sm:gap-5">
           {verbs.map((v, i) => {
             const isBullet = v === "•"
             return (
@@ -105,8 +86,8 @@ export function LandingIntroStinger() {
                   fontFamily: "var(--font-big-shoulders), system-ui, sans-serif",
                   fontWeight: 900,
                   fontSize: isBullet
-                    ? "clamp(36px, 7vw, 88px)"
-                    : "clamp(48px, 10vw, 128px)",
+                    ? "clamp(24px, 6vw, 88px)"
+                    : "clamp(30px, 8vw, 128px)",
                   lineHeight: 0.92,
                   letterSpacing: "-0.02em",
                   display: "inline-block",
@@ -124,7 +105,7 @@ export function LandingIntroStinger() {
       </div>
 
       {/* ── Phase B — wordmark with wipe reveal ──────────────────────── */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+      <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
         <div
           className="relative inline-block leading-none"
           style={{
@@ -135,11 +116,11 @@ export function LandingIntroStinger() {
           <span
             className="block text-paper select-none"
             style={{
-              fontFamily: "var(--font-jetbrains), ui-monospace, monospace",
-              fontWeight: 800,
-              fontSize: "clamp(48px, 11vw, 168px)",
+              fontFamily: "var(--font-anton), system-ui, sans-serif",
+              fontWeight: 400,
+              fontSize: "clamp(52px, 14vw, 168px)",
               lineHeight: 0.95,
-              letterSpacing: "-0.02em",
+              letterSpacing: "0.04em",
               textTransform: "uppercase",
             }}
           >

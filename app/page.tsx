@@ -97,16 +97,8 @@ function useHeroEntrance(): HeroState {
   const [hs, setHs] = useState<HeroState>({ ready: false, delay: 0, reduce: false })
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    let delay = 0
-    if (!reduce) {
-      try {
-        if (sessionStorage.getItem("peerfit_landing_intro_seen") !== "1") {
-          delay = HERO_STINGER_LEAD_OUT_MS
-        }
-      } catch {
-        delay = HERO_STINGER_LEAD_OUT_MS
-      }
-    }
+    // Stinger always plays on every load, so always wait for it to finish.
+    const delay = reduce ? 0 : HERO_STINGER_LEAD_OUT_MS
     setHs({ ready: true, delay, reduce })
   }, [])
   return hs
@@ -514,7 +506,7 @@ export default function HomePage() {
               <p
                 data-punch
                 className="t-display-lg text-brand-pitch text-center mt-9 sm:mt-10 max-w-[14ch]"
-                style={{ fontSize: "clamp(100px, 7vw, 88px)", lineHeight: "0.96" }}
+                style={{ fontSize: "clamp(40px, 7vw, 88px)", lineHeight: "0.96" }}
               >
                 You&apos;ve waited<br />long enough.
               </p>
@@ -561,7 +553,7 @@ export default function HomePage() {
                 <li key={n} data-row className="grid grid-cols-12 gap-4 items-baseline">
                   <span data-num  className="t-mono text-brand-pitch col-span-2 sm:col-span-1">{n}</span>
                   <span data-verb className="t-display-md text-ink col-span-10 sm:col-span-4">{verb}.</span>
-                  <span data-line className="t-sub text-ink/60 col-start-3 sm:col-start-6 col-span-10 sm:col-span-7">{line}</span>
+                  <span data-line className="t-sub text-ink/60 col-span-12 sm:col-start-6 sm:col-span-7">{line}</span>
                 </li>
               ))}
             </ol>
@@ -737,7 +729,7 @@ function BeatWatermark({
       style={{
         fontFamily: "var(--font-big-shoulders), system-ui, sans-serif",
         fontWeight: 900,
-        fontSize: "clamp(280px, 38vw, 560px)",
+        fontSize: "clamp(160px, 38vw, 560px)",
         letterSpacing: "-0.04em",
       }}
     >

@@ -2,12 +2,19 @@
   import { GeistSans } from "geist/font/sans"
   import type { Metadata } from "next"
   import { ThemeProvider } from "next-themes"
-  import { Big_Shoulders_Display, DM_Sans, Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google"
+  import { Anton, Big_Shoulders_Display, DM_Sans, Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google"
   import type React from "react"
   import { Analytics } from "@vercel/analytics/next"
   import "./globals.css"
 
   // ── PeerFit editorial system fonts ────────────────────────────────────────────
+  const anton = Anton({
+    subsets: ["latin"],
+    display: "swap",
+    variable: "--font-anton",
+    weight: "400",
+  })
+
   const bigShoulders = Big_Shoulders_Display({
     subsets: ["latin"],
     display: "swap",
@@ -67,7 +74,7 @@
       <html
         lang="en"
         suppressHydrationWarning
-        className={ `${bigShoulders.variable} ${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} ${dmSans.variable}` }
+        className={ `${anton.variable} ${bigShoulders.variable} ${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} ${dmSans.variable}` }
       >
         <head>
           <style>{ `
@@ -77,6 +84,7 @@ html {
   --font-mono: ${GeistMono.variable};
   --font-space-grotesk: ${spaceGrotesk.variable};
   --font-dm-sans: ${dmSans.variable};
+  --font-anton: ${anton.variable};
   --font-big-shoulders: ${bigShoulders.variable};
   --font-inter: ${inter.variable};
   --font-jetbrains: ${jetbrainsMono.variable};
