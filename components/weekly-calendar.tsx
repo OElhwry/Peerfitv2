@@ -1,8 +1,6 @@
   "use client"
 
-  import { Button } from "@/components/ui/button"
-  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-  import { Calendar, ChevronLeft, ChevronRight } from "lucide-react"
+  import { ChevronLeft, ChevronRight } from "lucide-react"
   import { useEffect, useState } from "react"
 
   interface WeeklyCalendarProps {
@@ -11,19 +9,17 @@
   }
 
   export default function WeeklyCalendar({ activeDates = [] }: WeeklyCalendarProps) {
-    // Keep dates in state to avoid SSR/client mismatch
     const [weekStart, setWeekStart] = useState<Date | null>(null)
     const [todayStr, setTodayStr] = useState<string>("")
 
     useEffect(() => {
       const today = new Date()
       const day = today.getDay()
-      // Start week on Monday
       const monday = new Date(today)
       monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
       monday.setHours(0, 0, 0, 0)
       setWeekStart(monday)
-      setTodayStr(today.toLocaleDateString("en-CA")) // YYYY-MM-DD
+      setTodayStr(today.toLocaleDateString("en-CA"))
     }, [])
 
     const navigateWeek = (dir: "prev" | "next") => {
@@ -33,14 +29,11 @@
       setWeekStart(next)
     }
 
-    // Don't render until client has determined the date
     if (!weekStart) {
       return (
-        <Card className="bg-background/60 backdrop-blur-xl border-border/50 shadow-lg">
-          <CardContent className="h-24 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </CardContent>
-        </Card>
+        <div className="bg-paper/5 border border-paper/10 h-24 flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-brand-pitch border-t-transparent rounded-full animate-spin" />
+        </div>
       )
     }
 
@@ -56,61 +49,50 @@
       const sm = weekStart.toLocaleDateString("en-US", { month: "short" })
       const em = endDate.toLocaleDateString("en-US", { month: "short" })
       if (sm === em)
-        return `${sm} ${weekStart.getDate()}–${endDate.getDate()}, ${weekStart.getFullYear()}`
-      return `${sm} ${weekStart.getDate()} – ${em} ${endDate.getDate()}, ${weekStart.getFullYear()}`
+        return `${sm.toUpperCase()} ${weekStart.getDate()}–${endDate.getDate()}`
+      return `${sm.toUpperCase()} ${weekStart.getDate()} – ${em.toUpperCase()} ${endDate.getDate()}`
     })()
 
     return (
-      <Card className="bg-background/60 backdrop-blur-xl border-border/50 shadow-lg">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="w-7 h-7 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
-                <Calendar className="w-3.5 h-3.5 text-primary" />
-              </div>
-              Weekly Schedule
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" onClick={ () => navigateWeek("prev") } className="w-7 h-7 hover:bg-primary/10">
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={ () => navigateWeek("next") } className="w-7 h-7 hover:bg-primary/10">
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+      <div className="bg-paper/5 border border-paper/10">
+        <div className="px-4 pt-4 pb-3 flex items-center justify-between">
+          <div>
+            <p className="t-eyebrow text-paper/40">THIS WEEK</p>
+            <p className="t-mono text-paper/60 text-xs mt-1">{ rangeLabel }</p>
           </div>
-          <p className="text-xs text-muted-foreground">{ rangeLabel }</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-            { days.map((day, i) => {
-              const dateStr = day.toLocaleDateString("en-CA")
-              const isToday = dateStr === todayStr
-              const hasActivity = activeDates.includes(dateStr)
-              const dayName = day.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 3)
+          <div className="flex items-center">
+            <button onClick={ () => navigateWeek("prev") } className="w-7 h-7 flex items-center justify-center text-paper/40 hover:text-paper transition-colors">
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={ () => navigateWeek("next") } className="w-7 h-7 flex items-center justify-center text-paper/40 hover:text-paper transition-colors">
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        <div className="px-3 pb-4 grid grid-cols-7 gap-0.5">
+          { days.map((day, i) => {
+            const dateStr = day.toLocaleDateString("en-CA")
+            const isToday = dateStr === todayStr
+            const hasActivity = activeDates.includes(dateStr)
+            const dayName = day.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 1)
 
-              return (
-                <div
-                  key={ i }
-                  className={ `flex flex-col items-center py-1.5 sm:py-2 px-0.5 sm:px-1 rounded-lg transition-all ${isToday
-                      ? "bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30"
-                      : "hover:bg-muted/30"
-                    }` }
-                >
-                  <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">{ dayName }</span>
-                  <span className={ `text-sm font-bold mt-0.5 ${isToday ? "text-primary" : "text-foreground"}` }>
-                    { day.getDate() }
-                  </span>
-                  { hasActivity ? (
-                    <div className="w-1.5 h-1.5 bg-gradient-to-r from-primary to-accent rounded-full mt-1" />
-                  ) : (
-                    <div className="w-1.5 h-1.5 mt-1" />
-                  ) }
-                </div>
-              )
-            }) }
-          </div>
-        </CardContent>
-      </Card>
+            return (
+              <div
+                key={ i }
+                className={ `flex flex-col items-center py-2 transition-colors ${isToday
+                    ? "bg-brand-pitch/15 border border-brand-pitch/40"
+                    : "border border-transparent hover:bg-paper/5"
+                  }` }
+              >
+                <span className="t-mono text-paper/30 text-[10px]">{ dayName }</span>
+                <span className={ `t-display-sm leading-none mt-0.5 ${isToday ? "text-brand-pitch" : "text-paper"}` } style={ { fontSize: "16px" } }>
+                  { day.getDate() }
+                </span>
+                <div className={ `w-1 h-1 mt-1.5 ${hasActivity ? "bg-brand-pitch" : "bg-transparent"}` } />
+              </div>
+            )
+          }) }
+        </div>
+      </div>
     )
   }

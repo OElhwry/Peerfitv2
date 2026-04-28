@@ -387,6 +387,30 @@ export default function HomePage() {
       <LandingIntroStinger />
 
       <div className="h-screen overflow-hidden bg-ink">
+
+        {/* Subtle gradient fade so header content stays legible against any beat */}
+        <div
+          aria-hidden
+          className="fixed top-0 left-0 right-0 h-24 z-[79] pointer-events-none"
+          style={{ background: "linear-gradient(to bottom, oklch(0.18 0.005 60 / 0.55) 0%, oklch(0.18 0.005 60 / 0.15) 60%, transparent 100%)" }}
+        />
+
+        {/* Persistent header — visible across every beat */}
+        <header className="fixed top-0 left-0 right-0 z-[80] flex items-center justify-between px-5 sm:px-10 py-4 sm:py-5 pointer-events-none">
+          <Link href="/" className="t-eyebrow text-paper/80 hover:text-paper transition-colors pointer-events-auto">PEERFIT</Link>
+          <nav className="flex items-center gap-3 sm:gap-4 pointer-events-auto">
+            <Link href="/login" className="t-eyebrow text-paper/70 hover:text-paper transition-colors">
+              LOG IN
+            </Link>
+            <Link
+              href="/login?mode=signup"
+              className="t-eyebrow text-paper border border-paper/45 px-3 py-2 hover:bg-paper hover:text-ink hover:border-paper transition-colors"
+            >
+              JOIN &gt;
+            </Link>
+          </nav>
+        </header>
+
         <div
           className="h-screen overflow-y-scroll snap-y snap-mandatory [overscroll-behavior-y:contain]"
           aria-label="PeerFit landing"
@@ -408,22 +432,6 @@ export default function HomePage() {
                 }}
               />
             </div>
-
-            {/* Top bar */}
-            <header className="relative z-10 flex items-center justify-between px-5 sm:px-10 pt-5 sm:pt-7">
-              <span className="t-eyebrow text-paper/60">PEERFIT</span>
-              <nav className="flex items-center gap-3 sm:gap-4">
-                <Link href="/login" className="t-eyebrow text-paper/70 hover:text-paper transition-colors">
-                  LOG IN
-                </Link>
-                <Link
-                  href="/login?mode=signup"
-                  className="t-eyebrow text-ink bg-paper px-3 py-2 hover:bg-brand-pitch hover:text-paper transition-colors"
-                >
-                  JOIN &gt;
-                </Link>
-              </nav>
-            </header>
 
             {/* Centre content */}
             <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-5 text-center">
@@ -449,7 +457,7 @@ export default function HomePage() {
                     : undefined,
                 }}
               >
-                Post a game. Find players. Show up. No WhatsApp groups, no waitlists — just local sport, tonight.
+                Post a game. Find players. Show up. No WhatsApp groups, no waitlists - just local sport, tonight.
               </p>
 
               <div
