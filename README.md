@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="public/og-image.svg" width="800" alt="PeerFit">
+  <img src="public/og.png" width="800" alt="PeerFit">
   <br>
   PeerFit
 </h1>
