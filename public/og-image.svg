@@ -1,0 +1,91 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#1e1b16"/>
+
+  <!-- Subtle pitch grid -->
+  <g stroke="#f7f4f0" stroke-width="0.5" opacity="0.032">
+    <line x1="200" y1="0" x2="200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="600" y1="0" x2="600" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="1000" y1="0" x2="1000" y2="630"/>
+    <line x1="0" y1="157" x2="1200" y2="157"/>
+    <line x1="0" y1="315" x2="1200" y2="315"/>
+    <line x1="0" y1="473" x2="1200" y2="473"/>
+  </g>
+
+  <!-- Centre circle pitch motif -->
+  <circle cx="600" cy="315" r="210" fill="none" stroke="#f7f4f0" stroke-width="0.6" opacity="0.038"/>
+  <circle cx="600" cy="315" r="9"   fill="none" stroke="#f7f4f0" stroke-width="0.6" opacity="0.038"/>
+
+  <!-- Ambient sport word texture -->
+  <g fill="#f7f4f0" opacity="0.038"
+     font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+     font-weight="700" letter-spacing="-0.03em">
+    <text x="-48" y="195" font-size="195">FOOTBALL</text>
+    <text x="520"  y="510" font-size="165">TENNIS</text>
+  </g>
+
+  <!-- Top pitch green bar -->
+  <rect width="1200" height="3" fill="#2a8a54"/>
+
+  <!-- Beat label -->
+  <text x="48" y="56"
+        fill="#2a8a54"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="600" letter-spacing="0.2em">01 / COLD OPEN</text>
+
+  <!-- Live indicator -->
+  <circle cx="1106" cy="50" r="4" fill="#2a8a54"/>
+  <text x="1120" y="55"
+        fill="#2a8a54"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="600" letter-spacing="0.18em">LIVE</text>
+
+  <!-- Platform label -->
+  <text x="600" y="214" text-anchor="middle"
+        fill="#2a8a54"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="12" font-weight="600" letter-spacing="0.28em">A SOCIAL SPORTS PLATFORM</text>
+
+  <!-- Main wordmark -->
+  <text x="600" y="362" text-anchor="middle"
+        fill="#f7f4f0"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="152" font-weight="700" letter-spacing="-0.04em">PEERFIT</text>
+
+  <!-- Green accent line -->
+  <rect x="48" y="386" width="1104" height="1.5" fill="#2a8a54" opacity="0.65"/>
+
+  <!-- Hero tagline -->
+  <text x="600" y="426" text-anchor="middle"
+        fill="#f7f4f0" opacity="0.5"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="17" font-weight="400" letter-spacing="0.08em">Somewhere in your city, a game is starting.</text>
+
+  <!-- Sport ticker -->
+  <text x="600" y="498" text-anchor="middle"
+        fill="#f7f4f0" opacity="0.22"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="600" letter-spacing="0.22em">FOOTBALL · BASKETBALL · TENNIS · RUNNING · PADEL · VOLLEYBALL · BOXING · CYCLING · RUGBY · YOGA</text>
+
+  <!-- Lower separator -->
+  <rect x="48" y="536" width="1104" height="0.5" fill="#f7f4f0" opacity="0.1"/>
+
+  <!-- Bottom left label -->
+  <text x="48" y="577"
+        fill="#f7f4f0" opacity="0.32"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="11" font-weight="600" letter-spacing="0.25em">POST · MATCH · PLAY</text>
+
+  <!-- Bottom right URL -->
+  <text x="1152" y="577" text-anchor="end"
+        fill="#2a8a54"
+        font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+        font-size="13" font-weight="600" letter-spacing="0.1em">peerfit.co.uk</text>
+
+  <!-- Bottom pitch green bar -->
+  <rect y="627" width="1200" height="3" fill="#2a8a54"/>
+
+</svg>

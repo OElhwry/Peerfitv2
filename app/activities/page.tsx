@@ -2,6 +2,7 @@
 
   import AppNav from "@/components/app-nav"
   import { createClient } from "@/lib/supabase/client"
+  import { getSportImage } from "@/lib/sport-image"
   import {
     Activity,
     Calendar,
@@ -17,27 +18,6 @@
   import Link from "next/link"
   import { useRouter } from "next/navigation"
   import { useEffect, useState } from "react"
-
-  function getSportImage(sportName: string | null | undefined): string {
-    const n = sportName?.toLowerCase() ?? ""
-    if (n.includes("football") || n.includes("soccer"))     return "/images/sports/football.jpg"
-    if (n.includes("basketball"))                           return "/images/sports/basketball.jpg"
-    if (n.includes("badminton"))                            return "/images/sports/badminton.jpg"
-    if (n.includes("tennis") || n.includes("squash"))       return "/images/sports/tennis.jpg"
-    if (n.includes("swim"))                                 return "/images/sports/swimming.jpg"
-    if (n.includes("run") || n.includes("athletics") || n.includes("track")) return "/images/sports/running.jpg"
-    if (n.includes("cycl") || n.includes("bike"))           return "/images/sports/cycling.jpg"
-    if (n.includes("yoga"))                                 return "/images/sports/yoga.jpg"
-    if (n.includes("gym") || n.includes("fitness") || n.includes("weight") || n.includes("crossfit")) return "/images/sports/gym.jpg"
-    if (n.includes("rugby") || n.includes("american football")) return "/images/sports/rugby.jpg"
-    if (n.includes("volleyball") || n.includes("beach"))    return "/images/sports/volleyball.jpg"
-    if (n.includes("hockey") || n.includes("ice"))          return "/images/sports/hockey.jpg"
-    if (n.includes("cricket"))                              return "/images/sports/cricket.jpg"
-    if (n.includes("golf"))                                 return "/images/sports/golf.jpg"
-    if (n.includes("padel") || n.includes("pickleball"))    return "/images/sports/padel.jpg"
-    if (n.includes("box") || n.includes("muay") || n.includes("mma") || n.includes("martial")) return "/images/sports/boxing.jpg"
-    return "/images/sports/sport.jpg"
-  }
 
   type DbActivity = {
     id: string
@@ -265,7 +245,7 @@
                               return (
                                 <div key={ a.id } className="flex items-center gap-2.5 py-2 border-b border-paper/8 last:border-0">
                                   <div className="relative w-7 h-7 border border-paper/15 overflow-hidden shrink-0">
-                                    <Image src={ getSportImage(a.sports?.name) } alt="" fill sizes="28px" className="object-cover" />
+                                    <Image src={ getSportImage(a.sports?.name).src } alt="" fill sizes="28px" className="object-cover" />
                                     <div className="absolute inset-0 bg-ink/35" />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -334,7 +314,7 @@
                               <div className="p-4">
                                 <div className="flex items-start gap-3 mb-3">
                                   <div className="relative w-11 h-11 border border-paper/15 overflow-hidden shrink-0">
-                                    <Image src={ getSportImage(a.sports?.name) } alt="" fill sizes="44px" className="object-cover" />
+                                    <Image src={ getSportImage(a.sports?.name).src } alt="" fill sizes="44px" className="object-cover" />
                                     <div className="absolute inset-0 bg-ink/35" />
                                   </div>
                                   <div className="flex-1 min-w-0">
@@ -420,7 +400,7 @@
                               <div className="p-3.5">
                                 <div className="flex items-start gap-2.5 mb-2.5">
                                   <div className="relative w-10 h-10 border border-paper/15 overflow-hidden shrink-0">
-                                    <Image src={ getSportImage(a.sports?.name) } alt="" fill sizes="40px" className="object-cover" />
+                                    <Image src={ getSportImage(a.sports?.name).src } alt="" fill sizes="40px" className="object-cover" />
                                     <div className="absolute inset-0 bg-ink/35" />
                                   </div>
                                   <div className="flex-1 min-w-0">

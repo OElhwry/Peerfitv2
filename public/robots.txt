@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /feed
+Disallow: /activities
+Disallow: /requests
+Disallow: /settings
+Disallow: /profile
+Disallow: /auth/
+
+Sitemap: https://www.peerfit.app/sitemap.xml

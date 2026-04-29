@@ -22,7 +22,35 @@ import { createClient } from "@/lib/supabase/server"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import type { Metadata } from "next"
 import { JoinButton } from "./join-button"
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
+  const fixture = await fetchFixture(id)
+  if (!fixture) return { title: "Activity Not Found" }
+
+  const sport = fixture.sports?.name ?? "Sport"
+  const date = new Date(`${fixture.date}T00:00:00`).toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  })
+
+  return {
+    title: fixture.title,
+    description: `${sport} activity in ${fixture.location} on ${date}. ${fixture.activity_participants.length}/${fixture.max_participants} players — ${fixture.skill_level} level.`,
+    openGraph: {
+      title: fixture.title,
+      description: `Join this ${sport} game in ${fixture.location} on ${date}.`,
+      type: "website",
+    },
+  }
+}
 
 type FixtureRow = {
   id: string

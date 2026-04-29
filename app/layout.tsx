@@ -49,19 +49,52 @@
   })
 
   export const metadata: Metadata = {
-    title: "PeerFit - Find People. Play Sports. Stay Active.",
+    metadataBase: new URL("https://www.peerfit.app"),
+    title: {
+      default: "PeerFit - Find People. Play Sports. Stay Active.",
+      template: "%s | PeerFit",
+    },
     description:
       "Connect with teammates and partners for sports activities near you. Join a community of active people and never play alone again.",
+    keywords: [
+      "sports", "find teammates", "sports partner", "local games", "football partner",
+      "basketball pickup", "tennis partner", "sports community", "peerfit",
+    ],
+    authors: [{ name: "PeerFit" }],
+    creator: "PeerFit",
     openGraph: {
       title: "PeerFit - Find People. Play Sports. Stay Active.",
       description: "Find local games, connect with players nearby, and build lasting habits. Free to join — 15+ sports.",
       type: "website",
       siteName: "PeerFit",
+      url: "https://www.peerfit.app",
+      images: [
+        {
+          url: "/images/peerfit-og.jpg",
+          width: 1200,
+          height: 630,
+          alt: "PeerFit - Find People. Play Sports.",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: "PeerFit - Find People. Play Sports. Stay Active.",
       description: "Find local games, connect with players nearby, and build lasting habits. Free to join — 15+ sports.",
+      images: ["/images/peerfit-og.jpg"],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
+    },
+    alternates: {
+      canonical: "https://www.peerfit.app",
     },
   }
 

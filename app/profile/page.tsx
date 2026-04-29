@@ -2,6 +2,7 @@
 
 import AppNav from "@/components/app-nav"
 import { createClient } from "@/lib/supabase/client"
+import { getSportImage } from "@/lib/sport-image"
 import {
   Activity,
   ArrowRight,
@@ -81,27 +82,6 @@ function formatTime(timeStr: string): string {
 
 function activityIsCompleted(date: string, time: string, durationMinutes: number): boolean {
   return new Date() >= new Date(new Date(`${date}T${time}`).getTime() + durationMinutes * 60000)
-}
-
-function getSportImage(sportName: string | null | undefined): string {
-  const n = sportName?.toLowerCase() ?? ""
-  if (n.includes("football") || n.includes("soccer")) return "/images/sports/football.jpg"
-  if (n.includes("basketball")) return "/images/sports/basketball.jpg"
-  if (n.includes("tennis")) return "/images/sports/tennis.jpg"
-  if (n.includes("badminton")) return "/images/sports/badminton.jpg"
-  if (n.includes("swim")) return "/images/sports/swimming.jpg"
-  if (n.includes("run") || n.includes("athletics")) return "/images/sports/running.jpg"
-  if (n.includes("cycl") || n.includes("bike")) return "/images/sports/cycling.jpg"
-  if (n.includes("gym") || n.includes("fitness")) return "/images/sports/gym.jpg"
-  if (n.includes("rugby")) return "/images/sports/rugby.jpg"
-  if (n.includes("volleyball")) return "/images/sports/volleyball.jpg"
-  if (n.includes("cricket")) return "/images/sports/cricket.jpg"
-  if (n.includes("boxing")) return "/images/sports/boxing.jpg"
-  if (n.includes("padel")) return "/images/sports/padel.jpg"
-  if (n.includes("golf")) return "/images/sports/golf.jpg"
-  if (n.includes("yoga")) return "/images/sports/yoga.jpg"
-  if (n.includes("hockey")) return "/images/sports/hockey.jpg"
-  return "/images/sports/football.jpg"
 }
 
 function getBannerGradient(sportName: string | null | undefined): string {
@@ -645,7 +625,7 @@ export default function ProfilePage() {
                     <div key={s.sport_id} className="flex items-center gap-2">
                       <span className="flex-1 min-w-0 bg-paper/[0.04] border border-paper/10 pl-1.5 pr-3 py-1.5 text-sm text-paper flex items-center gap-2.5">
                         <span className="relative w-7 h-7 border border-paper/15 overflow-hidden shrink-0">
-                          <Image src={getSportImage(s.sports.name)} alt="" fill sizes="28px" className="object-cover" />
+                          <Image src={getSportImage(s.sports.name).src} alt="" fill sizes="28px" className="object-cover" />
                           <span className="absolute inset-0 bg-ink/25" />
                         </span>
                         <span className="truncate">{s.sports.name}</span>
@@ -695,7 +675,7 @@ export default function ProfilePage() {
                               }}
                               className="group relative overflow-hidden border border-paper/10 hover:border-brand-pitch/50 transition-colors aspect-[4/3]"
                             >
-                              <Image src={getSportImage(s.name)} alt="" fill sizes="(max-width: 640px) 33vw, 20vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                              <Image src={getSportImage(s.name).src} alt="" fill sizes="(max-width: 640px) 33vw, 20vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
                               <span className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/20 group-hover:from-ink group-hover:via-ink/40 transition-all" />
                               <span className="absolute inset-x-0 bottom-0 px-2 pb-1.5 t-mono text-paper/85 group-hover:text-paper text-[10px] truncate">{s.name}</span>
                               <span className="absolute top-1.5 right-1.5 w-4 h-4 border border-paper/30 group-hover:border-brand-pitch group-hover:bg-brand-pitch flex items-center justify-center transition-colors leading-none">
@@ -760,7 +740,7 @@ export default function ProfilePage() {
                     <div key={us.sport_id} className={`relative border border-paper/10 flex items-center gap-3 p-3 ${isFav ? "bg-brand-pitch/5" : "bg-paper/[0.03]"}`}>
                       {isFav && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-brand-pitch" />}
                       <div className="relative w-9 h-9 border border-paper/15 overflow-hidden shrink-0">
-                        <Image src={getSportImage(us.sports.name)} alt="" fill sizes="36px" className="object-cover" />
+                        <Image src={getSportImage(us.sports.name).src} alt="" fill sizes="36px" className="object-cover" />
                         <div className="absolute inset-0 bg-ink/30" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -819,7 +799,7 @@ export default function ProfilePage() {
                   ) : upcomingActivities.slice(0, 5).map((a) => (
                     <div key={a.id} className="flex items-center gap-3 px-4 py-3">
                       <div className="relative w-9 h-9 border border-paper/15 overflow-hidden shrink-0">
-                        <Image src={getSportImage(a.sports?.name)} alt="" fill sizes="36px" className="object-cover" />
+                        <Image src={getSportImage(a.sports?.name).src} alt="" fill sizes="36px" className="object-cover" />
                         <div className="absolute inset-0 bg-ink/30" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -891,7 +871,7 @@ export default function ProfilePage() {
                       <div key={a.id} className="bg-ink flex flex-col">
                         {/* Sport photo header */}
                         <div className="relative h-28 overflow-hidden">
-                          <Image src={getSportImage(a.sports?.name)} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
+                          <Image src={getSportImage(a.sports?.name).src} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
                           <div className="absolute inset-0 bg-ink/55" />
                           {a.sports?.name && (
                             <div className="absolute top-2 left-2">
