@@ -1,5 +1,7 @@
 <h1 align="center">
+  <a href="https://www.peerfit.co.uk/">
   <img src="public/og.png" width="800" alt="PeerFit">
+  </a>
   <br>
   PeerFit
 </h1>
