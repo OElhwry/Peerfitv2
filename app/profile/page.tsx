@@ -1,946 +1,1082 @@
-  "use client"
+"use client"
 
-  import AppNav from "@/components/app-nav"
-  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-  import { Badge } from "@/components/ui/badge"
-  import { Button } from "@/components/ui/button"
-  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-  import { Input } from "@/components/ui/input"
-  import { Label } from "@/components/ui/label"
-  import { Progress } from "@/components/ui/progress"
-  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-  import { createClient } from "@/lib/supabase/client"
-  import {
-    Activity,
-    ArrowRight,
-    Calendar,
-    Camera,
-    CheckCircle2,
-    Clock,
-    Edit,
-    Flame,
-    Loader2,
-    MapPin,
-    Palette,
-    Save,
-    Star,
-    TrendingUp, Trophy, Users,
-    X,
-    Zap,
-  } from "lucide-react"
-  import Link from "next/link"
-  import { useRouter } from "next/navigation"
-  import type React from "react"
-  import { useEffect, useRef, useState } from "react"
+import AppNav from "@/components/app-nav"
+import { createClient } from "@/lib/supabase/client"
+import {
+  Activity,
+  ArrowRight,
+  Calendar,
+  Camera,
+  CheckCircle2,
+  Clock,
+  Edit,
+  Flame,
+  Loader2,
+  MapPin,
+  Save,
+  Star,
+  TrendingUp,
+  Trophy,
+  Users,
+  X,
+  Zap,
+} from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import type React from "react"
+import { useEffect, useRef, useState } from "react"
 
-  // ── types ──────────────────────────────────────────────────────────────────────
-  interface Profile {
-    id: string
-    full_name: string | null
-    location: string | null
-    created_at: string
-    bio: string | null
-    avatar_url: string | null
-    favourite_sport: string | null
+// ── types ──────────────────────────────────────────────────────────────────────
+interface Profile {
+  id: string
+  full_name: string | null
+  location: string | null
+  created_at: string
+  bio: string | null
+  avatar_url: string | null
+  favourite_sport: string | null
+}
+
+interface UserSport {
+  sport_id: number
+  skill_level: string
+  sports: { name: string; emoji: string }
+}
+
+interface DbActivity {
+  id: string
+  title: string
+  location: string
+  date: string
+  time: string
+  duration_minutes: number
+  sports: { name: string; emoji: string } | null
+  activity_participants: { user_id: string; profiles: { full_name: string | null; avatar_url: string | null } | null }[]
+  max_participants: number
+  host_id: string
+}
+
+interface Review {
+  id: string
+  activity_id: string
+  reviewer_id: string
+  rating: number
+  comment: string | null
+  created_at: string
+  profiles: { full_name: string | null; avatar_url: string | null } | null
+}
+
+// ── helpers ────────────────────────────────────────────────────────────────────
+function getInitials(name: string | null): string {
+  if (!name) return "?"
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+}
+
+function formatTime(timeStr: string): string {
+  const [h, m] = timeStr.split(":")
+  const hour = parseInt(h)
+  return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`
+}
+
+function activityIsCompleted(date: string, time: string, durationMinutes: number): boolean {
+  return new Date() >= new Date(new Date(`${date}T${time}`).getTime() + durationMinutes * 60000)
+}
+
+function getSportImage(sportName: string | null | undefined): string {
+  const n = sportName?.toLowerCase() ?? ""
+  if (n.includes("football") || n.includes("soccer")) return "/images/sports/football.jpg"
+  if (n.includes("basketball")) return "/images/sports/basketball.jpg"
+  if (n.includes("tennis")) return "/images/sports/tennis.jpg"
+  if (n.includes("badminton")) return "/images/sports/badminton.jpg"
+  if (n.includes("swim")) return "/images/sports/swimming.jpg"
+  if (n.includes("run") || n.includes("athletics")) return "/images/sports/running.jpg"
+  if (n.includes("cycl") || n.includes("bike")) return "/images/sports/cycling.jpg"
+  if (n.includes("gym") || n.includes("fitness")) return "/images/sports/gym.jpg"
+  if (n.includes("rugby")) return "/images/sports/rugby.jpg"
+  if (n.includes("volleyball")) return "/images/sports/volleyball.jpg"
+  if (n.includes("cricket")) return "/images/sports/cricket.jpg"
+  if (n.includes("boxing")) return "/images/sports/boxing.jpg"
+  if (n.includes("padel")) return "/images/sports/padel.jpg"
+  if (n.includes("golf")) return "/images/sports/golf.jpg"
+  if (n.includes("yoga")) return "/images/sports/yoga.jpg"
+  if (n.includes("hockey")) return "/images/sports/hockey.jpg"
+  return "/images/sports/football.jpg"
+}
+
+function getBannerGradient(sportName: string | null | undefined): string {
+  const n = sportName?.toLowerCase() ?? ""
+  const base = "#141210"
+  const glow = (color: string) =>
+    `radial-gradient(ellipse at 15% 60%, ${color} 0%, transparent 65%), radial-gradient(ellipse at 85% 20%, ${color}55 0%, transparent 55%), ${base}`
+  if (n.includes("football") || n.includes("soccer")) return glow("#1a5c2a")
+  if (n.includes("basketball")) return glow("#7a3510")
+  if (n.includes("tennis") || n.includes("padel")) return glow("#5c6e10")
+  if (n.includes("badminton")) return glow("#105c7a")
+  if (n.includes("swim")) return glow("#0e4a7a")
+  if (n.includes("run") || n.includes("athletics")) return glow("#7a4a10")
+  if (n.includes("cycl") || n.includes("bike")) return glow("#4a0e7a")
+  if (n.includes("gym") || n.includes("fitness")) return glow("#7a0e35")
+  if (n.includes("rugby")) return glow("#2a5c0e")
+  if (n.includes("volleyball")) return glow("#7a5c10")
+  if (n.includes("cricket")) return glow("#2e5c0e")
+  if (n.includes("boxing")) return glow("#7a1010")
+  if (n.includes("golf")) return glow("#0e6635")
+  if (n.includes("yoga")) return glow("#5c0e7a")
+  if (n.includes("hockey")) return glow("#0e3566")
+  return glow("#2a2520")
+}
+
+function StarRating({ value, onChange, size = "md" }: { value: number; onChange?: (v: number) => void; size?: "sm" | "md" }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button key={star} type="button" onClick={() => onChange?.(star)}
+          className={`transition-all ${onChange ? "cursor-pointer hover:scale-110" : "cursor-default"}`}>
+          <Star className={`${size === "sm" ? "w-3.5 h-3.5" : "w-5 h-5"} ${star <= value ? "fill-yellow-400 text-yellow-400" : "text-paper/20"}`} />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function getVibeInfo(completed: number, sports: number, avgRating: string | null, total: number) {
+  if (avgRating && Number(avgRating) >= 4.8 && completed >= 10) return { label: "The Legend" }
+  if (completed >= 20) return { label: "The Grinder" }
+  if (sports >= 5) return { label: "The Explorer" }
+  if (avgRating && Number(avgRating) >= 4.5) return { label: "Top Rated" }
+  if (completed >= 10) return { label: "The Veteran" }
+  if (completed >= 5) return { label: "Active Player" }
+  if (sports >= 3) return { label: "Multi-Sport" }
+  if (total >= 1) return { label: "Rising Star" }
+  return { label: "New Arrival" }
+}
+
+function getSpecialty(sports: { sports: { name: string } }[]): string | null {
+  if (sports.length === 0) return null
+  const names = sports.map((s) => s.sports.name.toLowerCase())
+  const has = (...keys: string[]) => keys.some((k) => names.some((n) => n.includes(k)))
+
+  const endurance = [has("swim"), has("run"), has("cycl"), has("athletic")].filter(Boolean).length
+  if (endurance >= 3) return "TRIATHLETE"
+  if (endurance >= 2) return "ENDURANCE BUILDER"
+
+  const rackets = [has("tennis"), has("padel"), has("badminton")].filter(Boolean).length
+  if (rackets >= 2) return "RACKET MASTER"
+
+  if ((has("football") || has("soccer")) && has("basketball")) return "DUAL BALLER"
+  if ((has("football") || has("soccer")) && has("rugby")) return "FIELD WARRIOR"
+  if (has("basketball") && has("volley")) return "AIR GAME"
+  if (has("box") && (has("gym") || has("fitness"))) return "FIGHT-READY"
+  if (has("yoga") && (has("gym") || has("fitness"))) return "BALANCED BUILD"
+
+  if (sports.length === 1) {
+    if (has("football") || has("soccer")) return "STRIKER"
+    if (has("basketball")) return "BALL HANDLER"
+    if (has("tennis")) return "BASELINER"
+    if (has("padel")) return "PADEL HEAD"
+    if (has("badminton")) return "SHUTTLE PRO"
+    if (has("swim")) return "LANE SWIMMER"
+    if (has("run") || has("athletic")) return "DISTANCE RUNNER"
+    if (has("cycl") || has("bike")) return "CYCLIST"
+    if (has("gym") || has("fitness")) return "LIFTER"
+    if (has("rugby")) return "FORWARD"
+    if (has("box")) return "PUGILIST"
+    if (has("yoga")) return "FLOW SEEKER"
+    if (has("golf")) return "FAIRWAY HUNTER"
+    if (has("cricket")) return "ALL-ROUNDER"
+    if (has("hockey")) return "STICK PRO"
+    if (has("volley")) return "NET PLAYER"
+    return null
   }
 
-  interface UserSport {
-    sport_id: number
-    skill_level: string
-    sports: { name: string; emoji: string }
-  }
+  if (sports.length >= 5) return "ALL-AROUNDER"
+  if (sports.length >= 3) return "MULTI-SPORT"
+  return "DUAL ATHLETE"
+}
 
-  interface DbActivity {
-    id: string
-    title: string
-    location: string
-    date: string
-    time: string
-    duration_minutes: number
-    sports: { name: string; emoji: string } | null
-    activity_participants: { user_id: string; profiles: { full_name: string | null; avatar_url: string | null } | null }[]
-    max_participants: number
-    host_id: string
-  }
+function SkillSelector({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const opts: [string, string][] = [["Beginner", "BEG"], ["Intermediate", "INT"], ["Advanced", "ADV"]]
+  return (
+    <div className="inline-flex border border-paper/15 shrink-0">
+      {opts.map(([full, short]) => (
+        <button
+          key={full}
+          type="button"
+          onClick={() => onChange(full)}
+          className={`t-eyebrow text-[10px] px-2 py-2 transition-colors ${
+            value === full ? "bg-brand-pitch text-ink" : "bg-paper/[0.04] text-paper/50 hover:text-paper hover:bg-paper/10"
+          }`}
+        >
+          {short}
+        </button>
+      ))}
+    </div>
+  )
+}
 
-  interface Review {
-    id: string
-    activity_id: string
-    reviewer_id: string
-    rating: number
-    comment: string | null
-    created_at: string
-    profiles: { full_name: string | null; avatar_url: string | null } | null
-  }
+const inputCls = "w-full bg-paper/8 border border-paper/15 text-paper placeholder:text-paper/30 focus:outline-none focus:border-brand-pitch px-3 py-2.5 text-sm transition-colors"
+const labelCls = "t-eyebrow text-paper/40 text-[10px] block mb-1.5"
 
-  // ── helpers ────────────────────────────────────────────────────────────────────
-  function getInitials(name: string | null): string {
-    if (!name) return "?"
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-  }
+// ── component ──────────────────────────────────────────────────────────────────
+export default function ProfilePage() {
+  const router = useRouter()
+  const supabase = createClient()
 
-  function formatTime(timeStr: string): string {
-    const [h, m] = timeStr.split(":")
-    const hour = parseInt(h)
-    return `${hour % 12 || 12}:${m} ${hour >= 12 ? "PM" : "AM"}`
-  }
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [userSports, setUserSports] = useState<UserSport[]>([])
+  const [upcomingActivities, setUpcomingActivities] = useState<DbActivity[]>([])
+  const [completedActivities, setCompletedActivities] = useState<DbActivity[]>([])
+  const [totalJoined, setTotalJoined] = useState(0)
+  const [receivedReviews, setReceivedReviews] = useState<Review[]>([])
+  const [givenReviews, setGivenReviews] = useState<{ activity_id: string; reviewee_id: string }[]>([])
+  const [loading, setLoading] = useState(true)
 
-  function activityIsCompleted(date: string, time: string, durationMinutes: number): boolean {
-    return new Date() >= new Date(new Date(`${date}T${time}`).getTime() + durationMinutes * 60000)
-  }
+  const [userId, setUserId] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState("")
+  const [editForm, setEditForm] = useState({ full_name: "", location: "", bio: "" })
+  const [allSports, setAllSports] = useState<{ id: number; name: string; emoji: string }[]>([])
+  const [editingSports, setEditingSports] = useState<UserSport[]>([])
+  const [addingSport, setAddingSport] = useState(false)
 
-  function getBannerStyle(sport: string | null | undefined): string {
-    const n = sport?.toLowerCase() ?? ""
-    if (n.includes("football") || n.includes("soccer")) return "from-emerald-600 via-teal-500 to-emerald-700"
-    if (n.includes("basketball")) return "from-orange-500 via-amber-400 to-orange-600"
-    if (n.includes("tennis") || n.includes("badminton")) return "from-yellow-400 via-lime-400 to-yellow-500"
-    if (n.includes("swim")) return "from-blue-500 via-cyan-400 to-blue-600"
-    if (n.includes("run") || n.includes("athletics")) return "from-violet-600 via-purple-500 to-violet-700"
-    if (n.includes("cycl") || n.includes("bike")) return "from-teal-500 via-cyan-400 to-teal-600"
-    if (n.includes("gym") || n.includes("fitness")) return "from-red-500 via-rose-500 to-red-600"
-    if (n.includes("rugby")) return "from-amber-600 via-orange-500 to-amber-700"
-    if (n.includes("volleyball")) return "from-sky-500 via-blue-400 to-sky-600"
-    if (n.includes("cricket")) return "from-lime-500 via-green-500 to-lime-600"
-    return "from-primary via-accent/80 to-primary/60"
-  }
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [avatarError, setAvatarError] = useState("")
 
-  function getSportBadgeStyle(sport: string | null | undefined): string {
-    const n = sport?.toLowerCase() ?? ""
-    if (n.includes("football") || n.includes("soccer")) return "bg-emerald-500/15 text-emerald-600 border-emerald-400/30"
-    if (n.includes("basketball")) return "bg-orange-500/15 text-orange-600 border-orange-400/30"
-    if (n.includes("tennis") || n.includes("badminton")) return "bg-yellow-500/15 text-yellow-600 border-yellow-400/30"
-    if (n.includes("swim")) return "bg-blue-500/15 text-blue-600 border-blue-400/30"
-    if (n.includes("run") || n.includes("athletics")) return "bg-violet-500/15 text-violet-600 border-violet-400/30"
-    if (n.includes("cycl") || n.includes("bike")) return "bg-teal-500/15 text-teal-600 border-teal-400/30"
-    if (n.includes("gym") || n.includes("fitness")) return "bg-red-500/15 text-red-600 border-red-400/30"
-    return "bg-primary/15 text-primary border-primary/30"
-  }
+  const [ratingModal, setRatingModal] = useState<{ activityId: string; revieweeId: string; revieweeName: string } | null>(null)
+  const [ratingValue, setRatingValue] = useState(5)
+  const [ratingComment, setRatingComment] = useState("")
+  const [submittingReview, setSubmittingReview] = useState(false)
 
-  const SKILL_LEVELS: Record<string, { dots: number; label: string; barW: string }> = {
-    Beginner: { dots: 1, label: "Beginner", barW: "w-1/3" },
-    Intermediate: { dots: 2, label: "Intermediate", barW: "w-2/3" },
-    Advanced: { dots: 3, label: "Advanced", barW: "w-full" },
-    Any: { dots: 2, label: "Any level", barW: "w-2/3" },
-  }
+  const [profileTab, setProfileTab] = useState<"upcoming" | "completed" | "badges" | "reviews">("upcoming")
+  const [rotatingIdx, setRotatingIdx] = useState(0)
 
-  function SkillDots({ level }: { level: string }) {
-    const filled = SKILL_LEVELS[level]?.dots ?? 1
-    return (
-      <div className="flex gap-0.5">
-        { [1, 2, 3].map((i) => (
-          <span key={ i } className={ `w-1.5 h-1.5 rounded-full ${i <= filled ? "bg-current" : "bg-current opacity-20"}` } />
-        )) }
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (userSports.length <= 1) return
+    const id = setInterval(() => setRotatingIdx((i) => (i + 1) % userSports.length), 3200)
+    return () => clearInterval(id)
+  }, [userSports.length])
 
-  function StarRating({ value, onChange, size = "md" }: { value: number; onChange?: (v: number) => void; size?: "sm" | "md" }) {
-    return (
-      <div className="flex items-center gap-0.5">
-        { [1, 2, 3, 4, 5].map((star) => (
-          <button key={ star } type="button" onClick={ () => onChange?.(star) }
-            className={ `transition-all ${onChange ? "cursor-pointer hover:scale-110" : "cursor-default"}` }>
-            <Star className={ `${size === "sm" ? "w-3.5 h-3.5" : "w-6 h-6"} ${star <= value ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/20"}` } />
-          </button>
-        )) }
-      </div>
-    )
-  }
+  const [bgSlots, setBgSlots] = useState<[string, string]>([getBannerGradient(null), ""])
+  const [activeBgSlot, setActiveBgSlot] = useState<0 | 1>(0)
 
-  // ── banner presets ─────────────────────────────────────────────────────────────
-  const BANNER_PRESETS = [
-    { id: "auto", label: "My Sport", swatch: "bg-gradient-to-r from-primary via-accent/80 to-primary/60" },
-    { id: "sunset", label: "Sunset", swatch: "bg-gradient-to-r from-orange-400 via-pink-500 to-rose-600", gradient: "from-orange-400 via-pink-500 to-rose-600" },
-    { id: "ocean", label: "Ocean", swatch: "bg-gradient-to-r from-sky-500 via-cyan-400 to-teal-500", gradient: "from-sky-500 via-cyan-400 to-teal-500" },
-    { id: "forest", label: "Forest", swatch: "bg-gradient-to-r from-green-600 via-emerald-500 to-teal-600", gradient: "from-green-600 via-emerald-500 to-teal-600" },
-    { id: "night", label: "Night", swatch: "bg-gradient-to-r from-indigo-800 via-purple-700 to-violet-800", gradient: "from-indigo-800 via-purple-700 to-violet-800" },
-    { id: "fire", label: "Fire", swatch: "bg-gradient-to-r from-red-500 via-orange-400 to-yellow-500", gradient: "from-red-500 via-orange-400 to-yellow-500" },
-    { id: "aurora", label: "Aurora", swatch: "bg-gradient-to-r from-teal-500 via-purple-500 to-pink-500", gradient: "from-teal-500 via-purple-500 to-pink-500" },
-    { id: "gold", label: "Gold", swatch: "bg-gradient-to-r from-yellow-500 via-amber-400 to-orange-400", gradient: "from-yellow-500 via-amber-400 to-orange-400" },
-    { id: "rose", label: "Rose", swatch: "bg-gradient-to-r from-rose-400 via-pink-500 to-fuchsia-600", gradient: "from-rose-400 via-pink-500 to-fuchsia-600" },
-    { id: "slate", label: "Slate", swatch: "bg-gradient-to-r from-slate-600 via-gray-600 to-slate-700", gradient: "from-slate-600 via-gray-600 to-slate-700" },
-  ]
+  useEffect(() => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push("/login"); return }
+      setUserId(user.id)
 
-  // ── vibe system ────────────────────────────────────────────────────────────────
-  function getVibeInfo(completed: number, sports: number, avgRating: string | null, total: number) {
-    if (avgRating && Number(avgRating) >= 4.8 && completed >= 10)
-      return { label: "The Legend", emoji: "👑", color: "text-amber-600 bg-amber-500/10 border-amber-400/30" }
-    if (completed >= 20)
-      return { label: "The Grinder", emoji: "💪", color: "text-red-600 bg-red-500/10 border-red-400/30" }
-    if (sports >= 5)
-      return { label: "The Explorer", emoji: "🌍", color: "text-teal-600 bg-teal-500/10 border-teal-400/30" }
-    if (avgRating && Number(avgRating) >= 4.5)
-      return { label: "Top Rated", emoji: "⭐", color: "text-yellow-600 bg-yellow-500/10 border-yellow-400/30" }
-    if (completed >= 10)
-      return { label: "The Veteran", emoji: "🏆", color: "text-blue-600 bg-blue-500/10 border-blue-400/30" }
-    if (completed >= 5)
-      return { label: "Active Player", emoji: "🎯", color: "text-primary bg-primary/10 border-primary/30" }
-    if (sports >= 3)
-      return { label: "Multi-Sport", emoji: "🏅", color: "text-violet-600 bg-violet-500/10 border-violet-400/30" }
-    if (total >= 1)
-      return { label: "Rising Star", emoji: "🌟", color: "text-orange-600 bg-orange-500/10 border-orange-400/30" }
-    return { label: "New Arrival", emoji: "👋", color: "text-muted-foreground bg-muted/50 border-border/50" }
-  }
+      const today = new Date().toISOString().split("T")[0]
 
-  // ── component ──────────────────────────────────────────────────────────────────
-  export default function ProfilePage() {
-    const router = useRouter()
-    const supabase = createClient()
+      const [{ data: profileData }, { data: sportsData }, { data: joinedData }, { data: allSportsData }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+        supabase.from("user_sports").select("sport_id, skill_level, sports(name,emoji)").eq("user_id", user.id),
+        supabase.from("activity_participants").select("activity_id").eq("user_id", user.id),
+        supabase.from("sports").select("id, name, emoji").order("name"),
+      ])
 
-    const [profile, setProfile] = useState<Profile | null>(null)
-    const [userSports, setUserSports] = useState<UserSport[]>([])
-    const [upcomingActivities, setUpcomingActivities] = useState<DbActivity[]>([])
-    const [completedActivities, setCompletedActivities] = useState<DbActivity[]>([])
-    const [totalJoined, setTotalJoined] = useState(0)
-    const [receivedReviews, setReceivedReviews] = useState<Review[]>([])
-    const [givenReviews, setGivenReviews] = useState<{ activity_id: string; reviewee_id: string }[]>([])
-    const [loading, setLoading] = useState(true)
-
-    const [userId, setUserId] = useState<string | null>(null)
-    const [editing, setEditing] = useState(false)
-    const [saving, setSaving] = useState(false)
-    const [saveError, setSaveError] = useState("")
-    const [editForm, setEditForm] = useState({ full_name: "", location: "", bio: "" })
-
-    const avatarInputRef = useRef<HTMLInputElement>(null)
-    const [uploadingAvatar, setUploadingAvatar] = useState(false)
-    const [avatarError, setAvatarError] = useState("")
-
-    const [ratingModal, setRatingModal] = useState<{ activityId: string; revieweeId: string; revieweeName: string } | null>(null)
-    const [ratingValue, setRatingValue] = useState(5)
-    const [ratingComment, setRatingComment] = useState("")
-    const [submittingReview, setSubmittingReview] = useState(false)
-
-    // banner preset (localStorage)
-    const [bannerPresetId, setBannerPresetId] = useState("auto")
-
-    useEffect(() => {
-      const stored = localStorage.getItem("peerfit_banner_preset")
-      if (stored) setBannerPresetId(stored)
-    }, [])
-
-    const handleBannerPreset = (id: string) => {
-      setBannerPresetId(id)
-      localStorage.setItem("peerfit_banner_preset", id)
-    }
-
-    useEffect(() => {
-      async function init() {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) { router.push("/login"); return }
-        setUserId(user.id)
-
-        const today = new Date().toISOString().split("T")[0]
-
-        const [{ data: profileData }, { data: sportsData }, { data: joinedData }] = await Promise.all([
-          supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-          supabase.from("user_sports").select("sport_id, skill_level, sports(name,emoji)").eq("user_id", user.id),
-          supabase.from("activity_participants").select("activity_id").eq("user_id", user.id),
-        ])
-
-        if (profileData) {
-          setProfile(profileData as Profile)
-          setEditForm({ full_name: profileData.full_name ?? "", location: profileData.location ?? "", bio: profileData.bio ?? "" })
-        }
-        if (sportsData) setUserSports(sportsData as unknown as UserSport[])
-        if (joinedData) setTotalJoined(joinedData.length)
-
-        const [{ data: receivedData }, { data: givenData }] = await Promise.all([
-          supabase.from("activity_reviews")
-            .select("id, activity_id, reviewer_id, rating, comment, created_at")
-            .eq("reviewee_id", user.id).order("created_at", { ascending: false })
-            .then((r) => (r.error ? { data: null } : r)),
-          supabase.from("activity_reviews").select("activity_id, reviewee_id")
-            .eq("reviewer_id", user.id).then((r) => (r.error ? { data: null } : r)),
-        ])
-        if (receivedData) {
-          const reviewerIds = [...new Set((receivedData as { reviewer_id: string }[]).map((r) => r.reviewer_id))]
-          let profileMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {}
-
-          if (reviewerIds.length > 0) {
-            const { data: reviewerProfiles } = await supabase
-              .from("profiles")
-              .select("id, full_name, avatar_url")
-              .in("id", reviewerIds)
-
-            for (const reviewer of (reviewerProfiles ?? []) as { id: string; full_name: string | null; avatar_url: string | null }[]) {
-              profileMap[reviewer.id] = {
-                full_name: reviewer.full_name,
-                avatar_url: reviewer.avatar_url,
-              }
-            }
-          }
-
-          setReceivedReviews(
-            (receivedData as { id: string; activity_id: string; reviewer_id: string; rating: number; comment: string | null; created_at: string }[]).map((review) => ({
-              ...review,
-              profiles: profileMap[review.reviewer_id] ?? null,
-            }))
-          )
-        }
-        if (givenData) setGivenReviews(givenData as { activity_id: string; reviewee_id: string }[])
-
-        const joinedIds = joinedData?.map((j: { activity_id: string }) => j.activity_id) ?? []
-        if (joinedIds.length > 0) {
-          const { data: allActivities } = await supabase
-            .from("activities")
-            .select("id, title, location, date, time, duration_minutes, host_id, max_participants, sports(name,emoji), activity_participants(user_id, profiles:user_id(full_name,avatar_url))")
-            .in("id", joinedIds).order("date", { ascending: false })
-
-          if (allActivities) {
-            const all = allActivities as unknown as DbActivity[]
-            setUpcomingActivities(all.filter((a) => !activityIsCompleted(a.date, a.time, a.duration_minutes) && a.date >= today).reverse())
-            setCompletedActivities(all.filter((a) => activityIsCompleted(a.date, a.time, a.duration_minutes)))
-          }
-        }
-
-        setLoading(false)
+      if (profileData) {
+        setProfile(profileData as Profile)
+        setEditForm({ full_name: profileData.full_name ?? "", location: profileData.location ?? "", bio: profileData.bio ?? "" })
       }
-      init()
-    }, [router, supabase])
+      if (sportsData) setUserSports(sportsData as unknown as UserSport[])
+      if (allSportsData) setAllSports(allSportsData as { id: number; name: string; emoji: string }[])
+      if (joinedData) setTotalJoined(joinedData.length)
 
-    const handleSave = async () => {
-      if (!userId) return
-      setSaving(true); setSaveError("")
-      const { error } = await supabase.from("profiles").update({
-        full_name: editForm.full_name.trim() || null,
-        location: editForm.location.trim() || null,
-        bio: editForm.bio.trim() || null,
-      }).eq("id", userId)
-      setSaving(false)
-      if (error) { setSaveError(error.message); return }
-      setProfile((prev) => prev ? { ...prev, full_name: editForm.full_name.trim() || null, location: editForm.location.trim() || null, bio: editForm.bio.trim() || null } : prev)
-      setEditing(false)
-    }
+      const [{ data: receivedData }, { data: givenData }] = await Promise.all([
+        supabase.from("activity_reviews")
+          .select("id, activity_id, reviewer_id, rating, comment, created_at")
+          .eq("reviewee_id", user.id).order("created_at", { ascending: false })
+          .then((r) => (r.error ? { data: null } : r)),
+        supabase.from("activity_reviews").select("activity_id, reviewee_id")
+          .eq("reviewer_id", user.id).then((r) => (r.error ? { data: null } : r)),
+      ])
 
-    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0]
-      if (!file || !userId) return
-      setAvatarError(""); setUploadingAvatar(true)
-      const ext = file.name.split(".").pop()
-      const path = `${userId}_${Date.now()}.${ext}`
-      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true })
-      if (!uploadError) {
-        const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path)
-        const { error: dbError } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId)
-        if (dbError) setAvatarError(dbError.message)
-        else setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev)
-      } else {
-        setAvatarError(
-          uploadError.message.includes("Bucket not found") ? "The 'avatars' bucket doesn't exist yet."
-            : uploadError.message.includes("row-level security") ? "Storage policy is blocking uploads."
-              : uploadError.message
+      if (receivedData) {
+        const reviewerIds = [...new Set((receivedData as { reviewer_id: string }[]).map((r) => r.reviewer_id))]
+        let profileMap: Record<string, { full_name: string | null; avatar_url: string | null }> = {}
+        if (reviewerIds.length > 0) {
+          const { data: reviewerProfiles } = await supabase.from("profiles").select("id, full_name, avatar_url").in("id", reviewerIds)
+          for (const r of (reviewerProfiles ?? []) as { id: string; full_name: string | null; avatar_url: string | null }[]) {
+            profileMap[r.id] = { full_name: r.full_name, avatar_url: r.avatar_url }
+          }
+        }
+        setReceivedReviews(
+          (receivedData as { id: string; activity_id: string; reviewer_id: string; rating: number; comment: string | null; created_at: string }[]).map((rev) => ({
+            ...rev, profiles: profileMap[rev.reviewer_id] ?? null,
+          }))
         )
       }
-      setUploadingAvatar(false); e.target.value = ""
+      if (givenData) setGivenReviews(givenData as { activity_id: string; reviewee_id: string }[])
+
+      const joinedIds = joinedData?.map((j: { activity_id: string }) => j.activity_id) ?? []
+      if (joinedIds.length > 0) {
+        const { data: allActivities } = await supabase
+          .from("activities")
+          .select("id, title, location, date, time, duration_minutes, host_id, max_participants, sports(name,emoji), activity_participants(user_id, profiles:user_id(full_name,avatar_url))")
+          .in("id", joinedIds).order("date", { ascending: false })
+        if (allActivities) {
+          const all = allActivities as unknown as DbActivity[]
+          setUpcomingActivities(all.filter((a) => !activityIsCompleted(a.date, a.time, a.duration_minutes) && a.date >= today).reverse())
+          setCompletedActivities(all.filter((a) => activityIsCompleted(a.date, a.time, a.duration_minutes)))
+        }
+      }
+
+      setLoading(false)
     }
+    init()
+  }, [router, supabase])
 
-    const handleSubmitReview = async () => {
-      if (!profile || !ratingModal) return
-      setSubmittingReview(true)
-      await supabase.from("activity_reviews").insert({
-        activity_id: ratingModal.activityId, reviewer_id: profile.id,
-        reviewee_id: ratingModal.revieweeId, rating: ratingValue, comment: ratingComment || null,
-      })
-      setGivenReviews((prev) => [...prev, { activity_id: ratingModal.activityId, reviewee_id: ratingModal.revieweeId }])
-      setRatingModal(null); setRatingValue(5); setRatingComment(""); setSubmittingReview(false)
-    }
+  const handleSave = async () => {
+    if (!userId) return
+    setSaving(true); setSaveError("")
 
-    const alreadyRated = (activityId: string, revieweeId: string) =>
-      givenReviews.some((r) => r.activity_id === activityId && r.reviewee_id === revieweeId)
+    const { error } = await supabase.from("profiles").update({
+      full_name: editForm.full_name.trim() || null,
+      location: editForm.location.trim() || null,
+      bio: editForm.bio.trim() || null,
+    }).eq("id", userId)
+    if (error) { setSaveError(error.message); setSaving(false); return }
 
-    const avgRating = receivedReviews.length > 0
-      ? (receivedReviews.reduce((s, r) => s + r.rating, 0) / receivedReviews.length).toFixed(1)
-      : null
-
-    const favSport = profile?.favourite_sport
-    const favSportInfo = userSports.find((s) => s.sports.name === favSport) ?? userSports[0]
-
-    const resolvedBanner = bannerPresetId === "auto"
-      ? getBannerStyle(favSport ?? userSports[0]?.sports?.name)
-      : (BANNER_PRESETS.find((p) => p.id === bannerPresetId) as { gradient?: string })?.gradient
-      ?? getBannerStyle(favSport)
-
-    const vibe = getVibeInfo(completedActivities.length, userSports.length, avgRating, totalJoined)
-
-    if (loading) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="w-10 h-10 text-primary animate-spin" />
-        </div>
+    // sync sports: delete all then re-insert
+    await supabase.from("user_sports").delete().eq("user_id", userId)
+    if (editingSports.length > 0) {
+      await supabase.from("user_sports").insert(
+        editingSports.map((s) => ({ user_id: userId, sport_id: s.sport_id, skill_level: s.skill_level }))
       )
     }
 
-    const memberSince = profile?.created_at
-      ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
-      : ""
+    setProfile((prev) => prev ? { ...prev, full_name: editForm.full_name.trim() || null, location: editForm.location.trim() || null, bio: editForm.bio.trim() || null } : prev)
+    setUserSports(editingSports)
+    setSaving(false)
+    setEditing(false)
+  }
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !userId) return
+    setAvatarError(""); setUploadingAvatar(true)
+    const ext = file.name.split(".").pop()
+    const path = `${userId}_${Date.now()}.${ext}`
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true })
+    if (!uploadError) {
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path)
+      const { error: dbError } = await supabase.from("profiles").update({ avatar_url: publicUrl }).eq("id", userId)
+      if (dbError) setAvatarError(dbError.message)
+      else setProfile((prev) => prev ? { ...prev, avatar_url: publicUrl } : prev)
+    } else {
+      setAvatarError(
+        uploadError.message.includes("Bucket not found") ? "The 'avatars' bucket doesn't exist yet."
+          : uploadError.message.includes("row-level security") ? "Storage policy is blocking uploads."
+            : uploadError.message
+      )
+    }
+    setUploadingAvatar(false); e.target.value = ""
+  }
+
+  const handleSubmitReview = async () => {
+    if (!profile || !ratingModal) return
+    setSubmittingReview(true)
+    await supabase.from("activity_reviews").insert({
+      activity_id: ratingModal.activityId, reviewer_id: profile.id,
+      reviewee_id: ratingModal.revieweeId, rating: ratingValue, comment: ratingComment || null,
+    })
+    setGivenReviews((prev) => [...prev, { activity_id: ratingModal.activityId, reviewee_id: ratingModal.revieweeId }])
+    setRatingModal(null); setRatingValue(5); setRatingComment(""); setSubmittingReview(false)
+  }
+
+  const alreadyRated = (activityId: string, revieweeId: string) =>
+    givenReviews.some((r) => r.activity_id === activityId && r.reviewee_id === revieweeId)
+
+  const avgRating = receivedReviews.length > 0
+    ? (receivedReviews.reduce((s, r) => s + r.rating, 0) / receivedReviews.length).toFixed(1)
+    : null
+
+  const favSport = profile?.favourite_sport
+  const favSportInfo = userSports.find((s) => s.sports.name === favSport) ?? userSports[0]
+  const rotatingSport = userSports.length > 0 ? userSports[rotatingIdx % userSports.length] : null
+  const vibe = getVibeInfo(completedActivities.length, userSports.length, avgRating, totalJoined)
+  const specialty = getSpecialty(userSports)
+
+  useEffect(() => {
+    if (!rotatingSport) return
+    const newBg = getBannerGradient(rotatingSport.sports.name)
+    setActiveBgSlot((prev) => {
+      const next: 0 | 1 = prev === 0 ? 1 : 0
+      setBgSlots((slots) => {
+        const u: [string, string] = [slots[0], slots[1]]
+        u[next] = newBg
+        return u
+      })
+      return next
+    })
+  }, [rotatingSport?.sport_id])
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pb-20 md:pb-0">
-        <AppNav />
-
-        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-5 sm:py-8">
-
-          {/* Incomplete profile nudge */ }
-          { (!profile?.full_name || profile.full_name === "Your Name" || !profile?.location || !profile?.avatar_url) && !editing && (
-            <div className="mb-5 overflow-hidden rounded-[28px] border border-emerald-500/20 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_32%),linear-gradient(135deg,rgba(2,6,23,0.98),rgba(15,23,42,0.97),rgba(6,78,59,0.94))] px-4 py-4 shadow-[0_24px_70px_rgba(6,78,59,0.2)]">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
-                <Camera className="h-3.5 w-3.5" />
-                Profile boost
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-semibold tracking-tight text-white">Finish setting up your profile</p>
-                  <p className="mt-1.5 max-w-xl text-[13px] leading-5 text-white/72">
-                    { !profile?.full_name || profile.full_name === "Your Name"
-                      ? "Add your real name"
-                      : "Add your city" }
-                    { (!profile?.full_name || profile.full_name === "Your Name") && !profile?.location && " and city" }
-                    { ((!profile?.full_name || profile.full_name === "Your Name") || !profile?.location) && !profile?.avatar_url && ", plus a profile photo," }
-                    { ((!profile?.full_name || profile.full_name === "Your Name") || !profile?.location) || !profile?.avatar_url ? " " : "Add a profile photo " }
-                    so other players know who you are.
-                  </p>
-                </div>
-                <button
-                  onClick={ () => setEditing(true) }
-                  className="shrink-0 rounded-2xl border border-white/10 bg-white/6 px-4 py-2 text-xs font-semibold text-emerald-100 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    Edit profile
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </span>
-                </button>
-              </div>
-            </div>
-          ) }
-
-          {/* ── Hero card ──────────────────────────────────────────────────────── */ }
-          <div className="mb-6 rounded-3xl overflow-hidden shadow-2xl border border-border/30">
-
-            {/* Banner */ }
-            <div className={ `h-36 sm:h-52 bg-gradient-to-br ${resolvedBanner} relative overflow-hidden` }>
-              {/* light overlay */ }
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(0,0,0,0.25),transparent_55%)]" />
-
-              {/* large centred sport emoji */ }
-              { favSportInfo && (
-                <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none">
-                  <span className="text-[7rem] opacity-[0.12] drop-shadow-2xl">{ favSportInfo.sports.emoji }</span>
-                </div>
-              ) }
-
-              {/* scattered sport decorations */ }
-              <div className="absolute bottom-4 right-5 flex gap-3 select-none pointer-events-none">
-                { userSports.slice(0, 5).map((us, i) => (
-                  <span key={ us.sport_id } style={ { opacity: 0.18 + i * 0.04, fontSize: `${1.6 - i * 0.12}rem` } }>
-                    { us.sports.emoji }
-                  </span>
-                )) }
-              </div>
-
-              {/* streak badge */ }
-              { completedActivities.length >= 3 && (
-                <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 shadow-lg">
-                  <Flame className="w-3.5 h-3.5 text-orange-300" />
-                  { completedActivities.length } sessions
-                </div>
-              ) }
-
-              {/* edit / share buttons */ }
-              <div className="absolute top-4 right-4 flex gap-2">
-                { !editing && (
-                  <button
-                    onClick={ () => setEditing(true) }
-                    className="flex items-center gap-1.5 bg-black/25 backdrop-blur-md text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-white/20 shadow-lg hover:bg-black/35 transition-colors"
-                  >
-                    <Edit className="w-3.5 h-3.5" />Edit
-                  </button>
-                ) }
-              </div>
-            </div>
-
-            {/* Profile body */ }
-            <div className="bg-background/97 backdrop-blur-sm px-4 sm:px-6 pb-5 sm:pb-6">
-
-              {/* Avatar + name row */ }
-              <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 -mt-12 sm:-mt-14 mb-4 sm:mb-5">
-
-                {/* Avatar */ }
-                <div className="flex-shrink-0">
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 group">
-                    <div className={ `absolute -inset-1 rounded-full bg-gradient-to-br ${resolvedBanner} opacity-60 blur-sm` } />
-                    <Avatar className="relative w-24 h-24 sm:w-28 sm:h-28 ring-4 ring-background shadow-2xl">
-                      <AvatarImage src={ profile?.avatar_url ?? undefined } />
-                      <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-primary/20 to-accent/20 text-primary">
-                        { getInitials(profile?.full_name ?? null) }
-                      </AvatarFallback>
-                    </Avatar>
-                    <button
-                      onClick={ () => avatarInputRef.current?.click() }
-                      disabled={ uploadingAvatar }
-                      className="absolute inset-0 rounded-full flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      { uploadingAvatar ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" /> }
-                    </button>
-                    <input ref={ avatarInputRef } type="file" accept="image/*" className="hidden" onChange={ handleAvatarUpload } />
-                  </div>
-                  { avatarError && <p className="text-xs text-red-600 mt-1 max-w-[120px]">{ avatarError }</p> }
-                </div>
-
-                { !editing && (
-                  <div className="flex-1 pb-1 pt-1 sm:pt-0 min-w-0">
-                    {/* Name + badges */ }
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                      <h1 className="text-xl sm:text-2xl font-bold font-heading">
-                        { profile?.full_name ?? "Your Name" }
-                      </h1>
-                      { avgRating && (
-                        <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs gap-1 py-0.5">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{ avgRating }
-                        </Badge>
-                      ) }
-                    </div>
-
-                    {/* Vibe badge */ }
-                    <div className={ `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold mb-2 ${vibe.color}` }>
-                      <span>{ vibe.emoji }</span>{ vibe.label }
-                    </div>
-
-                    {/* Location + joined */ }
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-2">
-                      { profile?.location && (
-                        <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-primary" />{ profile.location }</span>
-                      ) }
-                      <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-primary" />Joined { memberSince }</span>
-                    </div>
-
-                    {/* Favourite sport badge */ }
-                    { favSportInfo && (
-                      <div className={ `inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-semibold ${getSportBadgeStyle(favSportInfo.sports.name)}` }>
-                        <span className="text-base">{ favSportInfo.sports.emoji }</span>
-                        { favSportInfo.sports.name }
-                        <span className="opacity-60 font-normal text-xs">· { favSportInfo.skill_level }</span>
-                      </div>
-                    ) }
-                  </div>
-                ) }
-              </div>
-
-              {/* Edit form */ }
-              { editing ? (
-                <div className="space-y-5 pt-1">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium">Full Name</Label>
-                      <Input value={ editForm.full_name } onChange={ (e) => setEditForm((f) => ({ ...f, full_name: e.target.value })) } className="mt-1" placeholder="Your name" />
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium">Location</Label>
-                      <Input value={ editForm.location } onChange={ (e) => setEditForm((f) => ({ ...f, location: e.target.value })) } className="mt-1" placeholder="City, Country" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium">Bio</Label>
-                    <textarea
-                      value={ editForm.bio }
-                      onChange={ (e) => setEditForm((f) => ({ ...f, bio: e.target.value })) }
-                      rows={ 2 }
-                      placeholder="Tell others about yourself..."
-                      className="w-full mt-1 p-2 bg-muted/30 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none text-sm"
-                    />
-                  </div>
-
-                  {/* Banner picker */ }
-                  <div>
-                    <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                      <Palette className="w-3.5 h-3.5 text-primary" />Banner theme
-                    </Label>
-                    <div className="flex flex-wrap gap-2">
-                      { BANNER_PRESETS.map((p) => (
-                        <button
-                          key={ p.id }
-                          type="button"
-                          onClick={ () => handleBannerPreset(p.id) }
-                          title={ p.label }
-                          className={ `w-8 h-8 rounded-full border-2 transition-all ${p.swatch} ${bannerPresetId === p.id ? "border-foreground scale-110 shadow-md" : "border-transparent hover:scale-105"}` }
-                        />
-                      )) }
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1.5">
-                      { BANNER_PRESETS.find((p) => p.id === bannerPresetId)?.label ?? "Auto" } — saved to this device
-                    </p>
-                  </div>
-
-                  { saveError && (
-                    <div className="rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-600">{ saveError }</div>
-                  ) }
-                  <div className="flex gap-3">
-                    <Button onClick={ handleSave } disabled={ saving }>
-                      { saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" /> }Save Changes
-                    </Button>
-                    <Button variant="outline" onClick={ () => { setEditing(false); setSaveError("") } }>
-                      <X className="w-4 h-4 mr-2" />Cancel
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  { profile?.bio && (
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-5 max-w-2xl">{ profile.bio }</p>
-                  ) }
-
-                  {/* Stats row */ }
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-                    { [
-                      { label: "Sessions", value: totalJoined, color: "text-primary", bg: "bg-primary/8 border-primary/12" },
-                      { label: "Completed", value: completedActivities.length, color: "text-yellow-600", bg: "bg-yellow-500/8 border-yellow-500/12" },
-                      { label: "Sports", value: userSports.length, color: "text-accent", bg: "bg-accent/8 border-accent/12" },
-                      { label: "Reviews", value: receivedReviews.length, color: "text-blue-600", bg: "bg-blue-500/8 border-blue-500/12" },
-                    ].map(({ label, value, color, bg }) => (
-                      <div key={ label } className={ `rounded-2xl p-3 text-center border ${bg}` }>
-                        <p className={ `text-xl sm:text-2xl font-bold ${color}` }>{ value }</p>
-                        <p className="text-[10px] font-medium mt-0.5 opacity-70">{ label }</p>
-                      </div>
-                    )) }
-                  </div>
-
-                  {/* Sports mastery cards */ }
-                  { userSports.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      { userSports.map((us) => {
-                        const style = getSportBadgeStyle(us.sports.name)
-                        const isFav = us.sports.name === favSport
-                        const skill = SKILL_LEVELS[us.skill_level] ?? SKILL_LEVELS.Beginner
-                        return (
-                          <div key={ us.sport_id }
-                            className={ `relative flex flex-col items-center gap-1.5 p-3 rounded-2xl border text-center transition-all ${style} ${isFav ? "ring-2 ring-current ring-offset-1 shadow-sm" : ""}` }
-                          >
-                            { isFav && <Zap className="absolute top-1.5 right-1.5 w-3 h-3 opacity-60" /> }
-                            <span className="text-2xl">{ us.sports.emoji }</span>
-                            <p className="text-xs font-semibold leading-tight">{ us.sports.name }</p>
-                            <div className="w-full h-1 bg-current/15 rounded-full overflow-hidden">
-                              <div className={ `h-full bg-current/60 rounded-full ${skill.barW}` } />
-                            </div>
-                            <p className="text-[9px] opacity-60">{ skill.label }</p>
-                          </div>
-                        )
-                      }) }
-                    </div>
-                  ) }
-                </>
-              ) }
-            </div>
-          </div>
-
-          {/* ── Tabs ──────────────────────────────────────────────────────────── */ }
-          <Tabs defaultValue="activities" className="space-y-5 sm:space-y-6">
-            <TabsList className="grid w-full grid-cols-4 bg-background/60 backdrop-blur-xl border border-border/50 shadow-sm h-11 rounded-2xl p-1">
-              { [
-                { value: "activities", label: "Upcoming" },
-                { value: "completed", label: `Trophies${completedActivities.length > 0 ? ` (${completedActivities.length})` : ""}` },
-                { value: "achievements", label: "Badges" },
-                { value: "reviews", label: `Reviews${receivedReviews.length > 0 ? ` (${receivedReviews.length})` : ""}` },
-              ].map((t) => (
-                <TabsTrigger key={ t.value } value={ t.value }
-                  className="text-[11px] sm:text-xs font-medium rounded-xl px-1 sm:px-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  { t.label }
-                </TabsTrigger>
-              )) }
-            </TabsList>
-
-            {/* Upcoming */ }
-            <TabsContent value="activities">
-              <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-                <Card className="bg-background/60 border-border/50 shadow-sm">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2.5 text-base">
-                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <Activity className="w-4 h-4 text-primary" />
-                      </div>
-                      Upcoming Sessions
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    { upcomingActivities.length === 0 ? (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground text-sm mb-3">No upcoming sessions.</p>
-                        <Link href="/feed"><Button size="sm" className="bg-gradient-to-r from-primary to-accent">Browse Activities</Button></Link>
-                      </div>
-                    ) : upcomingActivities.slice(0, 4).map((a) => {
-                      const style = getSportBadgeStyle(a.sports?.name)
-                      return (
-                        <div key={ a.id } className={ `flex items-center gap-3 p-3 rounded-xl border ${style}` }>
-                          <span className="text-2xl">{ a.sports?.emoji ?? "🏃" }</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{ a.title }</p>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                              <Clock className="w-3 h-3" />
-                              { new Date(a.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) } · { formatTime(a.time) }
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    }) }
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-background/60 border-border/50 shadow-sm">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2.5 text-base">
-                      <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
-                      </div>
-                      Progress
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-xs text-muted-foreground">Goal: 10 sessions</span>
-                        <span className="text-xs font-bold text-primary">{ Math.min(completedActivities.length, 10) }/10</span>
-                      </div>
-                      <Progress value={ Math.min((completedActivities.length / 10) * 100, 100) } className="h-2" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-center">
-                      { [
-                        { label: "All time", value: totalJoined, color: "text-primary" },
-                        { label: "Upcoming", value: upcomingActivities.length, color: "text-accent" },
-                        { label: "Completed", value: completedActivities.length, color: "text-yellow-600" },
-                        { label: "Sports", value: userSports.length, color: "text-blue-600" },
-                      ].map(({ label, value, color }) => (
-                        <div key={ label } className="p-2.5 bg-muted/30 rounded-xl">
-                          <p className={ `text-lg font-bold ${color}` }>{ value }</p>
-                          <p className="text-[10px] text-muted-foreground">{ label }</p>
-                        </div>
-                      )) }
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Trophy cabinet */ }
-            <TabsContent value="completed">
-              { completedActivities.length === 0 ? (
-                <Card className="bg-background/60 border-border/50">
-                  <CardContent className="py-16 text-center">
-                    <div className="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Trophy className="w-8 h-8 text-yellow-500/50" />
-                    </div>
-                    <p className="font-semibold mb-1">No trophies yet</p>
-                    <p className="text-sm text-muted-foreground">Sessions you complete will appear here.</p>
-                    <Link href="/feed" className="inline-block mt-4">
-                      <Button size="sm" className="bg-gradient-to-r from-primary to-accent">Find Activities</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Trophy className="w-5 h-5 text-yellow-500" />
-                    <h2 className="font-bold">Trophy Cabinet</h2>
-                    <Badge className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-xs">{ completedActivities.length }</Badge>
-                  </div>
-                  { completedActivities.map((a) => {
-                    const others = (a.activity_participants ?? []).filter((p) => p.user_id !== profile?.id)
-                    const style = getSportBadgeStyle(a.sports?.name)
-                    return (
-                      <div key={ a.id } className="bg-background/70 border border-border/40 rounded-2xl overflow-hidden">
-                        <div className="h-0.5 bg-gradient-to-r from-yellow-400 to-amber-500" />
-                        <div className="p-4 flex items-start gap-3">
-                          <div className={ `w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 border ${style}` }>
-                            { a.sports?.emoji ?? "🏃" }
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-semibold text-sm">{ a.title }</p>
-                              <Badge className="text-[10px] bg-yellow-500/10 text-yellow-600 border-yellow-400/20 h-4 px-1.5 gap-0.5">
-                                <Trophy className="w-2.5 h-2.5" />Done
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              { new Date(a.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" }) } · { formatTime(a.time) } · { a.location }
-                            </p>
-                            { others.length > 0 && (
-                              <div className="mt-2.5 pt-2.5 border-t border-border/40">
-                                <p className="text-[10px] font-semibold text-muted-foreground mb-1.5">Rate your players</p>
-                                <div className="flex flex-wrap gap-2">
-                                  { others.map((p) => {
-                                    const rated = alreadyRated(a.id, p.user_id)
-                                    return (
-                                      <div key={ p.user_id } className="flex items-center gap-1.5">
-                                        <Avatar className="w-5 h-5">
-                                          <AvatarImage src={ p.profiles?.avatar_url ?? undefined } />
-                                          <AvatarFallback className="text-[8px] bg-primary/10 text-primary">{ getInitials(p.profiles?.full_name ?? null) }</AvatarFallback>
-                                        </Avatar>
-                                        { rated ? (
-                                          <span className="text-[10px] text-green-600 flex items-center gap-0.5 font-medium">
-                                            <CheckCircle2 className="w-3 h-3" />Rated
-                                          </span>
-                                        ) : (
-                                          <button
-                                            onClick={ () => setRatingModal({ activityId: a.id, revieweeId: p.user_id, revieweeName: p.profiles?.full_name ?? "Player" }) }
-                                            className="text-[10px] text-primary hover:underline flex items-center gap-0.5 font-medium"
-                                          >
-                                            <Star className="w-2.5 h-2.5" />Rate { p.profiles?.full_name?.split(" ")[0] ?? "Player" }
-                                          </button>
-                                        ) }
-                                      </div>
-                                    )
-                                  }) }
-                                </div>
-                              </div>
-                            ) }
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  }) }
-                </div>
-              ) }
-            </TabsContent>
-
-            {/* Achievements */ }
-            <TabsContent value="achievements">
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-                { [
-                  { title: "First Step", desc: "Join your first activity", icon: Activity, iconBg: "bg-primary", bg: "from-primary/10 to-accent/10", threshold: 1, current: totalJoined },
-                  { title: "Active Player", desc: "Complete 5 sessions", icon: Star, iconBg: "bg-yellow-500", bg: "from-yellow-500/10 to-orange-500/10", threshold: 5, current: completedActivities.length },
-                  { title: "Dedicated Athlete", desc: "Complete 10 sessions", icon: Trophy, iconBg: "bg-blue-600", bg: "from-blue-500/10 to-purple-500/10", threshold: 10, current: completedActivities.length },
-                  { title: "Social Butterfly", desc: "Receive 3+ reviews", icon: Users, iconBg: "bg-green-600", bg: "from-green-500/10 to-emerald-500/10", threshold: 3, current: receivedReviews.length },
-                  { title: "Multi-Sport", desc: "Play 3+ sports", icon: Zap, iconBg: "bg-violet-600", bg: "from-violet-500/10 to-purple-500/10", threshold: 3, current: userSports.length },
-                  { title: "Top Rated", desc: "Achieve a 4.5+ average rating", icon: Star, iconBg: "bg-amber-500", bg: "from-amber-500/10 to-yellow-500/10", threshold: 1, current: avgRating && Number(avgRating) >= 4.5 ? 1 : 0 },
-                ].map(({ title, desc, icon: Icon, iconBg, bg, threshold, current }) => {
-                  const earned = current >= threshold
-                  const pct = Math.min(Math.round((current / threshold) * 100), 100)
-                  return (
-                    <div key={ title }
-                      className={ `rounded-2xl border p-5 text-center transition-all ${earned
-                        ? `bg-gradient-to-br ${bg} border-transparent shadow-md`
-                        : "bg-muted/10 border-border/30 opacity-60 hover:opacity-80"
-                        }` }
-                    >
-                      <div className={ `w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm ${earned ? iconBg : "bg-muted"} ${earned ? "ring-4 ring-current/10" : ""}` }>
-                        <Icon className="w-7 h-7 text-white" />
-                      </div>
-                      <h3 className="font-bold text-sm mb-1">{ title }</h3>
-                      <p className="text-xs text-muted-foreground mb-3">{ desc }</p>
-                      { earned ? (
-                        <Badge className={ `${iconBg} text-white border-transparent text-xs px-3` }>
-                          Earned ✓
-                        </Badge>
-                      ) : (
-                        <div className="space-y-1.5">
-                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-muted-foreground/40 rounded-full transition-all" style={ { width: `${pct}%` } } />
-                          </div>
-                          <p className="text-[10px] text-muted-foreground">{ Math.min(current, threshold) }/{ threshold }</p>
-                        </div>
-                      ) }
-                    </div>
-                  )
-                }) }
-              </div>
-            </TabsContent>
-
-            {/* Reviews */ }
-            <TabsContent value="reviews">
-              <Card className="bg-background/60 border-border/50">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                      <CardTitle className="text-lg">Reviews & Ratings</CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">What other players say about you</p>
-                    </div>
-                    { avgRating && (
-                      <div className="flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl px-4 py-2">
-                        <StarRating value={ Math.round(Number(avgRating)) } size="sm" />
-                        <span className="text-lg font-bold text-yellow-600">{ avgRating }</span>
-                        <span className="text-xs text-muted-foreground">({ receivedReviews.length })</span>
-                      </div>
-                    ) }
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  { receivedReviews.length === 0 ? (
-                    <div className="text-center py-10">
-                      <Users className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">No reviews yet — complete sessions to receive ratings.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      { receivedReviews.map((r) => (
-                        <div key={ r.id } className="relative p-4 bg-muted/20 rounded-2xl border border-border/40 overflow-hidden">
-                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-yellow-400 to-amber-500 rounded-l-2xl" />
-                          <div className="flex gap-3 pl-2">
-                            <Avatar className="w-9 h-9 shrink-0">
-                              <AvatarImage src={ r.profiles?.avatar_url ?? undefined } />
-                              <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">{ getInitials(r.profiles?.full_name ?? null) }</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
-                                <p className="font-semibold text-sm">{ r.profiles?.full_name ?? "Player" }</p>
-                                <StarRating value={ r.rating } size="sm" />
-                              </div>
-                              { r.comment && (
-                                <p className="text-sm text-foreground/80 leading-relaxed italic">&ldquo;{ r.comment }&rdquo;</p>
-                              ) }
-                              <p className="text-[10px] text-muted-foreground mt-1.5">
-                                { new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) }
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )) }
-                    </div>
-                  ) }
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Rating modal */ }
-        { ratingModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-sm bg-background border-border shadow-2xl">
-              <CardHeader className="pb-3 border-b border-border/50">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">Rate { ratingModal.revieweeName }</CardTitle>
-                  <Button variant="ghost" size="icon" className="w-8 h-8" onClick={ () => { setRatingModal(null); setRatingValue(5); setRatingComment("") } }>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-5 space-y-4">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-3">How was playing with them?</p>
-                  <StarRating value={ ratingValue } onChange={ setRatingValue } />
-                  <p className="text-sm font-semibold mt-2 text-yellow-600">
-                    { ["", "Poor", "Fair", "Good", "Great", "Excellent!"][ratingValue] }
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs font-medium">Comment (optional)</Label>
-                  <textarea
-                    value={ ratingComment }
-                    onChange={ (e) => setRatingComment(e.target.value) }
-                    placeholder="Share your experience..."
-                    rows={ 2 }
-                    className="w-full mt-1 p-2 text-sm bg-muted/30 border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 h-9 text-sm" onClick={ () => { setRatingModal(null); setRatingValue(5); setRatingComment("") } }>Cancel</Button>
-                  <Button className="flex-1 h-9 text-sm bg-gradient-to-r from-primary to-accent" disabled={ submittingReview } onClick={ handleSubmitReview }>
-                    { submittingReview ? <Loader2 className="w-4 h-4 animate-spin" /> : "Submit" }
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        ) }
+      <div className="min-h-screen bg-ink flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-brand-pitch border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
+
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" })
+    : ""
+
+  const profileTabs = [
+    { key: "upcoming" as const, label: "UPCOMING" },
+    { key: "completed" as const, label: completedActivities.length > 0 ? `COMPLETED (${completedActivities.length})` : "COMPLETED" },
+    { key: "badges" as const, label: "BADGES" },
+    { key: "reviews" as const, label: receivedReviews.length > 0 ? `REVIEWS (${receivedReviews.length})` : "REVIEWS" },
+  ]
+
+  const showNudge = (!profile?.full_name || profile.full_name === "Your Name" || !profile?.location || !profile?.avatar_url) && !editing
+
+  return (
+    <div className="min-h-screen bg-ink text-paper pb-24 md:pb-8">
+      <AppNav />
+
+      {/* Incomplete profile nudge */}
+      {showNudge && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-5 sm:pt-6">
+          <div className="bg-brand-pitch/10 border border-brand-pitch/25 px-4 py-4 mb-4">
+            <p className="t-eyebrow text-brand-pitch text-[10px] mb-2">PROFILE BOOST</p>
+            <div className="flex items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-paper">Finish setting up your profile</p>
+                <p className="t-mono text-paper/50 text-[10px] mt-1">
+                  {!profile?.full_name || profile.full_name === "Your Name" ? "Add your real name" : "Add your city"}
+                  {(!profile?.full_name || profile.full_name === "Your Name") && !profile?.location && " and city"}
+                  {!profile?.avatar_url && ", plus a profile photo"}
+                  {" "}so other players know who you are.
+                </p>
+              </div>
+              <button
+                onClick={() => { setEditing(true); setEditingSports(userSports); setAddingSport(false) }}
+                className="shrink-0 t-eyebrow text-[10px] border border-brand-pitch/40 text-brand-pitch hover:bg-brand-pitch hover:text-ink px-3 py-1.5 transition-colors flex items-center gap-1.5 whitespace-nowrap"
+              >
+                EDIT <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Profile card */}
+      <div className="max-w-4xl mx-auto mt-4 sm:mt-6 border border-paper/10 overflow-hidden">
+
+        {/* Banner — identity lives inside at the bottom */}
+        <div className="relative h-52 sm:h-64 overflow-hidden" style={{ backgroundColor: "#141210" }}>
+
+          {/* Two-layer cross-fading gradient — each sport gets its unique colour */}
+          <div
+            className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+            style={{ background: bgSlots[0], opacity: activeBgSlot === 0 ? 1 : 0 }}
+          />
+          <div
+            className="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+            style={{ background: bgSlots[1], opacity: activeBgSlot === 1 ? 1 : 0 }}
+          />
+
+          {/* Sport name watermark — cycles through user's sports */}
+          {rotatingSport && (
+            <div className="absolute bottom-0 right-0 pb-4 pr-4 sm:pr-6 pointer-events-none select-none overflow-hidden">
+              <span
+                key={`wm-${rotatingSport.sport_id}`}
+                className="font-['Anton'] leading-none uppercase text-paper/[0.12] block pf-letter-rise"
+                style={{ fontSize: "clamp(3rem, 10vw, 6.5rem)" }}
+              >
+                {rotatingSport.sports.name}
+              </span>
+            </div>
+          )}
+
+          {/* Top controls */}
+          <div className="absolute top-4 left-4 right-4 sm:left-6 sm:right-6 flex items-start justify-between">
+            <div>
+              {completedActivities.length >= 3 && (
+                <div className="flex items-center gap-1.5 bg-ink/70 border border-paper/15 t-eyebrow text-xs px-3 py-1.5">
+                  <Flame className="w-3.5 h-3.5 text-brand-pitch" />
+                  {completedActivities.length} SESSIONS
+                </div>
+              )}
+            </div>
+            {!editing && (
+              <button
+                onClick={() => { setEditing(true); setEditingSports(userSports); setAddingSport(false) }}
+                className="flex items-center gap-1.5 bg-ink/70 border border-paper/15 text-paper/70 hover:text-paper t-eyebrow text-xs px-3 py-1.5 transition-colors"
+              >
+                <Edit className="w-3.5 h-3.5" />EDIT
+              </button>
+            )}
+          </div>
+
+          {/* Bottom gradient scrim so text is always readable */}
+          <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-ink/80 to-transparent pointer-events-none" />
+
+          {/* Identity + stats — pinned to bottom of banner */}
+          <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 pb-4 flex items-end justify-between gap-4">
+
+            {/* Left: avatar + name */}
+            <div className="flex items-end gap-4 min-w-0">
+              <div className="shrink-0 relative">
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-paper/10 border-2 border-paper/20 overflow-hidden group">
+                  {profile?.avatar_url
+                    ? <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center t-display-sm text-paper/60" style={{ fontSize: "22px" }}>{getInitials(profile?.full_name ?? null)}</div>
+                  }
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="absolute inset-0 rounded-full flex items-center justify-center bg-ink/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    {uploadingAvatar ? <Loader2 className="w-4 h-4 text-paper animate-spin" /> : <Camera className="w-4 h-4 text-paper" />}
+                  </button>
+                  <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+                </div>
+                {avatarError && <p className="text-[10px] text-red-400 mt-1 max-w-[100px]">{avatarError}</p>}
+              </div>
+
+              {!editing && (
+                <div className="min-w-0 pb-0.5">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <h1 className="t-display-sm text-paper leading-tight" style={{ fontSize: "20px" }}>{profile?.full_name || "Your Name"}</h1>
+                    {avgRating && (
+                      <span className="t-mono text-paper/60 text-xs flex items-center gap-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />{avgRating}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                    <span className="t-eyebrow text-[10px] text-brand-pitch border border-brand-pitch/30 px-2 py-0.5">
+                      {vibe.label.toUpperCase()}
+                    </span>
+                    {specialty && (
+                      <span className="t-eyebrow text-[10px] text-paper/80 border border-paper/20 bg-paper/[0.06] px-2 py-0.5">
+                        {specialty}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 t-mono text-paper/50 text-[10px]">
+                    {profile?.location && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{profile.location}</span>}
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />Joined {memberSince}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right: rotating sport card — cycles through user's sports */}
+            {!editing && rotatingSport && (() => {
+              const lvl = rotatingSport.skill_level === "Advanced" ? 3 : rotatingSport.skill_level === "Intermediate" ? 2 : 1
+              const pos = (rotatingIdx % userSports.length) + 1
+              return (
+                <div className="hidden sm:flex flex-col items-end justify-end pb-1 shrink-0 gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-brand-pitch animate-pulse" />
+                    <p className="t-mono text-[10px] text-paper/45 tabular-nums tracking-widest">
+                      {String(pos).padStart(2, "0")}
+                      <span className="text-paper/20 mx-1">/</span>
+                      {String(userSports.length).padStart(2, "0")}
+                    </p>
+                  </div>
+                  <p
+                    key={`rot-name-${rotatingSport.sport_id}`}
+                    className="font-['Anton'] text-paper/90 uppercase leading-none pf-letter-rise"
+                    style={{ fontSize: "clamp(1.6rem, 3vw, 2.4rem)" }}
+                  >
+                    {rotatingSport.sports.name}
+                  </p>
+                  {rotatingSport.skill_level && (
+                    <div key={`rot-skill-${rotatingSport.sport_id}`} className="flex items-center gap-2 pf-letter-rise">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3].map((n) => (
+                          <span
+                            key={n}
+                            className={`block h-0.5 w-4 transition-colors duration-500 ${n <= lvl ? "bg-brand-pitch" : "bg-paper/15"}`}
+                          />
+                        ))}
+                      </div>
+                      <span className="t-eyebrow text-[9px] text-paper/40">{rotatingSport.skill_level.toUpperCase()}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+
+        {/* Profile panel — bio + edit form only */}
+        <div className="bg-paper/[0.03] border-t border-paper/10 px-4 sm:px-6 pb-5 sm:pb-6">
+          {!editing && profile?.bio && (
+            <p className="t-body text-paper/50 text-sm pt-4 leading-relaxed max-w-2xl">{profile.bio}</p>
+          )}
+
+          {/* Edit form */}
+          {editing && (
+            <div className="space-y-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>FULL NAME</label>
+                  <input value={editForm.full_name} onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))} className={inputCls} placeholder="Your name" />
+                </div>
+                <div>
+                  <label className={labelCls}>LOCATION</label>
+                  <input value={editForm.location} onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))} className={inputCls} placeholder="City, Country" />
+                </div>
+              </div>
+              <div>
+                <label className={labelCls}>BIO</label>
+                <textarea
+                  value={editForm.bio}
+                  onChange={(e) => setEditForm((f) => ({ ...f, bio: e.target.value }))}
+                  rows={2}
+                  placeholder="Tell others about yourself..."
+                  className="w-full bg-paper/8 border border-paper/15 text-paper placeholder:text-paper/30 focus:outline-none focus:border-brand-pitch px-3 py-2.5 text-sm transition-colors resize-none"
+                />
+              </div>
+              {/* Sports */}
+              <div>
+                <label className={labelCls}>YOUR SPORTS</label>
+                <div className="space-y-2 mb-2">
+                  {editingSports.map((s) => (
+                    <div key={s.sport_id} className="flex items-center gap-2">
+                      <span className="flex-1 min-w-0 bg-paper/[0.04] border border-paper/10 pl-1.5 pr-3 py-1.5 text-sm text-paper flex items-center gap-2.5">
+                        <span className="relative w-7 h-7 border border-paper/15 overflow-hidden shrink-0">
+                          <Image src={getSportImage(s.sports.name)} alt="" fill sizes="28px" className="object-cover" />
+                          <span className="absolute inset-0 bg-ink/25" />
+                        </span>
+                        <span className="truncate">{s.sports.name}</span>
+                      </span>
+                      <SkillSelector
+                        value={s.skill_level}
+                        onChange={(v) => setEditingSports((prev) => prev.map((x) => x.sport_id === s.sport_id ? { ...x, skill_level: v } : x))}
+                      />
+                      <button
+                        onClick={() => setEditingSports((prev) => prev.filter((x) => x.sport_id !== s.sport_id))}
+                        className="p-2 text-paper/40 hover:text-red-400 transition-colors shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add sport — tile picker */}
+                {addingSport ? (
+                  <div className="border border-paper/15 bg-ink/40 p-3">
+                    <div className="flex items-center justify-between mb-2.5">
+                      <p className="t-eyebrow text-paper/50 text-[10px]">PICK A SPORT TO ADD</p>
+                      <button
+                        onClick={() => setAddingSport(false)}
+                        className="text-paper/40 hover:text-paper transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {(() => {
+                      const available = allSports.filter((s) => !editingSports.find((e) => e.sport_id === s.id))
+                      if (available.length === 0) {
+                        return <p className="t-mono text-paper/40 text-[10px] text-center py-3">All sports added.</p>
+                      }
+                      return (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-1.5">
+                          {available.map((s) => (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => {
+                                setEditingSports((prev) => [
+                                  ...prev,
+                                  { sport_id: s.id, skill_level: "Beginner", sports: { name: s.name, emoji: s.emoji } },
+                                ])
+                              }}
+                              className="group flex flex-col items-start gap-1 bg-paper/[0.04] hover:bg-brand-pitch/10 border border-paper/10 hover:border-brand-pitch/40 p-2.5 text-left transition-colors"
+                            >
+                              <span className="text-base leading-none">{s.emoji}</span>
+                              <span className="t-mono text-paper/70 group-hover:text-paper text-[10px] truncate w-full">{s.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAddingSport(true)}
+                    className="t-eyebrow text-[10px] border border-paper/15 text-paper/50 hover:text-paper hover:border-paper/30 px-3 py-2 transition-colors"
+                  >+ ADD SPORT</button>
+                )}
+              </div>
+
+              {saveError && <div className="border border-red-500/30 bg-red-500/10 px-3 py-2 text-red-400 text-sm">{saveError}</div>}
+              <div className="flex gap-3">
+                <button onClick={handleSave} disabled={saving} className="t-eyebrow text-xs bg-brand-pitch text-ink hover:opacity-90 disabled:opacity-50 px-4 py-2.5 flex items-center gap-2 transition-opacity">
+                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}SAVE
+                </button>
+                <button onClick={() => { setEditing(false); setSaveError("") }} className="t-eyebrow text-xs border border-paper/20 text-paper/50 hover:text-paper px-4 py-2.5 flex items-center gap-2 transition-colors">
+                  <X className="w-3.5 h-3.5" />CANCEL
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Page content */}
+      {!editing && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-4 sm:mt-6 pb-6">
+
+          {/* Stats row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-paper/10 border border-paper/10 mb-6">
+            {[
+              { label: "SESSIONS", value: totalJoined },
+              { label: "COMPLETED", value: completedActivities.length },
+              { label: "REVIEWS", value: receivedReviews.length },
+              { label: "RATING", value: avgRating ?? "—" },
+            ].map(({ label, value }) => (
+              <div key={label} className="py-4 text-center">
+                <p className="t-display-md text-brand-pitch" style={{ fontSize: "26px" }}>{value}</p>
+                <p className="t-eyebrow text-paper/40 text-[10px] mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Sports mastery */}
+          {userSports.length > 0 && (
+            <div className="mb-6">
+              <p className="t-eyebrow text-paper/40 text-[10px] mb-3">SPORTS</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+                {userSports.map((us) => {
+                  const lvl = us.skill_level === "Advanced" ? 3 : us.skill_level === "Intermediate" ? 2 : 1
+                  const isFav = us.sports.name === favSport
+                  return (
+                    <div key={us.sport_id} className={`relative border border-paper/10 flex items-center gap-3 p-3 ${isFav ? "bg-brand-pitch/5" : "bg-paper/[0.03]"}`}>
+                      {isFav && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-brand-pitch" />}
+                      <div className="relative w-9 h-9 border border-paper/15 overflow-hidden shrink-0">
+                        <Image src={getSportImage(us.sports.name)} alt="" fill sizes="36px" className="object-cover" />
+                        <div className="absolute inset-0 bg-ink/30" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium text-paper truncate">{us.sports.name}</p>
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <div className="flex items-center gap-0.5 shrink-0">
+                            {[1, 2, 3].map((n) => (
+                              <span
+                                key={n}
+                                className={`block h-0.5 w-3 ${n <= lvl ? "bg-brand-pitch" : "bg-paper/15"}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="t-mono text-paper/30 text-[9px] shrink-0 truncate">{us.skill_level.toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tab bar */}
+          <div className="flex border-b border-paper/10 mb-6 overflow-x-auto">
+            {profileTabs.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setProfileTab(key)}
+                className={`flex-shrink-0 px-4 py-3 t-eyebrow text-xs border-b-2 -mb-px transition-colors ${
+                  profileTab === key ? "text-paper border-brand-pitch" : "text-paper/40 border-transparent hover:text-paper/70"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── Upcoming ── */}
+          {profileTab === "upcoming" && (
+            <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+              {/* Upcoming sessions */}
+              <div className="bg-paper/5 border border-paper/10">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-paper/10">
+                  <Activity className="w-3.5 h-3.5 text-brand-pitch" />
+                  <p className="t-eyebrow text-paper/60 text-xs">UPCOMING SESSIONS</p>
+                </div>
+                <div className="divide-y divide-paper/8">
+                  {upcomingActivities.length === 0 ? (
+                    <div className="px-4 py-10 text-center">
+                      <p className="t-body text-paper/40 text-sm mb-4">No upcoming sessions.</p>
+                      <Link href="/feed" className="t-eyebrow text-xs border border-brand-pitch text-brand-pitch px-4 py-2 hover:bg-brand-pitch hover:text-ink transition-colors">
+                        BROWSE ACTIVITIES
+                      </Link>
+                    </div>
+                  ) : upcomingActivities.slice(0, 5).map((a) => (
+                    <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                      <div className="relative w-9 h-9 border border-paper/15 overflow-hidden shrink-0">
+                        <Image src={getSportImage(a.sports?.name)} alt="" fill sizes="36px" className="object-cover" />
+                        <div className="absolute inset-0 bg-ink/30" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-paper truncate">{a.title}</p>
+                        <p className="t-mono text-paper/40 text-[10px] flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3" />
+                          {new Date(a.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · {formatTime(a.time)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Progress */}
+              <div className="bg-paper/5 border border-paper/10">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-paper/10">
+                  <TrendingUp className="w-3.5 h-3.5 text-brand-pitch" />
+                  <p className="t-eyebrow text-paper/60 text-xs">PROGRESS</p>
+                </div>
+                <div className="px-4 py-4 space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="t-mono text-paper/40 text-[10px]">GOAL: 10 SESSIONS</span>
+                      <span className="t-mono text-brand-pitch text-[10px]">{Math.min(completedActivities.length, 10)}/10</span>
+                    </div>
+                    <div className="h-1 bg-paper/10">
+                      <div className="h-full bg-brand-pitch transition-all" style={{ width: `${Math.min((completedActivities.length / 10) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-px bg-paper/10">
+                    {[
+                      { label: "ALL TIME", value: totalJoined },
+                      { label: "UPCOMING", value: upcomingActivities.length },
+                      { label: "COMPLETED", value: completedActivities.length },
+                      { label: "SPORTS", value: userSports.length },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="bg-ink py-3 text-center">
+                        <p className="t-display-sm text-brand-pitch" style={{ fontSize: "22px" }}>{value}</p>
+                        <p className="t-eyebrow text-paper/40 text-[9px] mt-0.5">{label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Completed — photo grid ── */}
+          {profileTab === "completed" && (
+            completedActivities.length === 0 ? (
+              <div className="bg-paper/5 border border-paper/10 py-16 text-center">
+                <Trophy className="w-8 h-8 text-paper/20 mx-auto mb-3" />
+                <p className="t-eyebrow text-paper/40 text-xs mb-1">NO TROPHIES YET</p>
+                <p className="t-body text-paper/30 text-sm">Sessions you complete will appear here.</p>
+                <Link href="/feed" className="inline-block mt-5 t-eyebrow text-xs border border-brand-pitch text-brand-pitch px-4 py-2 hover:bg-brand-pitch hover:text-ink transition-colors">
+                  FIND ACTIVITIES
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="t-mono text-paper/30 text-[10px] mb-4">
+                  {completedActivities.length} SESSION{completedActivities.length !== 1 ? "S" : ""} COMPLETED
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-px bg-paper/10">
+                  {completedActivities.map((a) => {
+                    const others = (a.activity_participants ?? []).filter((p) => p.user_id !== profile?.id)
+                    return (
+                      <div key={a.id} className="bg-ink flex flex-col">
+                        {/* Sport photo header */}
+                        <div className="relative h-28 overflow-hidden">
+                          <Image src={getSportImage(a.sports?.name)} alt="" fill sizes="(max-width: 640px) 100vw, 50vw" className="object-cover" />
+                          <div className="absolute inset-0 bg-ink/55" />
+                          {a.sports?.name && (
+                            <div className="absolute top-2 left-2">
+                              <span className="t-eyebrow text-[9px] text-paper/70 bg-ink/60 px-2 py-1">{a.sports.name.toUpperCase()}</span>
+                            </div>
+                          )}
+                          <div className="absolute bottom-2 right-2">
+                            <span className="t-eyebrow text-[9px] text-brand-pitch border border-brand-pitch/30 px-1.5 py-0.5 bg-ink/70 inline-flex items-center gap-0.5">
+                              <Trophy className="w-2.5 h-2.5" />DONE
+                            </span>
+                          </div>
+                        </div>
+                        {/* Info */}
+                        <div className="flex-1 px-4 py-3">
+                          <p className="text-sm font-semibold text-paper leading-tight mb-1">{a.title}</p>
+                          <p className="t-mono text-paper/40 text-[10px]">
+                            {new Date(a.date + "T00:00:00").toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} · {formatTime(a.time)}
+                          </p>
+                          <p className="t-mono text-paper/30 text-[10px] mt-0.5">{a.location}</p>
+                          {others.length > 0 && (
+                            <div className="mt-3 pt-2.5 border-t border-paper/8">
+                              <p className="t-eyebrow text-paper/40 text-[9px] mb-1.5">RATE PLAYERS</p>
+                              <div className="flex flex-wrap gap-2">
+                                {others.map((p) => {
+                                  const rated = alreadyRated(a.id, p.user_id)
+                                  return (
+                                    <div key={p.user_id} className="flex items-center gap-1.5">
+                                      <div className="w-5 h-5 rounded-full bg-paper/10 border border-paper/15 overflow-hidden shrink-0">
+                                        {p.profiles?.avatar_url
+                                          ? <img src={p.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                                          : <div className="w-full h-full flex items-center justify-center text-[7px] text-paper/50">{getInitials(p.profiles?.full_name ?? null)}</div>
+                                        }
+                                      </div>
+                                      {rated ? (
+                                        <span className="t-mono text-brand-pitch text-[10px] flex items-center gap-0.5">
+                                          <CheckCircle2 className="w-3 h-3" />Rated
+                                        </span>
+                                      ) : (
+                                        <button
+                                          onClick={() => setRatingModal({ activityId: a.id, revieweeId: p.user_id, revieweeName: p.profiles?.full_name ?? "Player" })}
+                                          className="t-mono text-paper/50 hover:text-brand-pitch text-[10px] flex items-center gap-0.5 transition-colors"
+                                        >
+                                          <Star className="w-2.5 h-2.5" />Rate {p.profiles?.full_name?.split(" ")[0] ?? "Player"}
+                                        </button>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )
+          )}
+
+          {/* ── Badges ── */}
+          {profileTab === "badges" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-px bg-paper/10">
+              {[
+                { title: "First Step", desc: "Join your first activity", icon: Activity, threshold: 1, current: totalJoined },
+                { title: "Active Player", desc: "Complete 5 sessions", icon: Star, threshold: 5, current: completedActivities.length },
+                { title: "Dedicated Athlete", desc: "Complete 10 sessions", icon: Trophy, threshold: 10, current: completedActivities.length },
+                { title: "Social Butterfly", desc: "Receive 3+ reviews", icon: Users, threshold: 3, current: receivedReviews.length },
+                { title: "Multi-Sport", desc: "Play 3+ sports", icon: Zap, threshold: 3, current: userSports.length },
+                { title: "Top Rated", desc: "Achieve a 4.5+ average rating", icon: Star, threshold: 1, current: avgRating && Number(avgRating) >= 4.5 ? 1 : 0 },
+              ].map(({ title, desc, icon: Icon, threshold, current }) => {
+                const earned = current >= threshold
+                const pct = Math.min(Math.round((current / threshold) * 100), 100)
+                return (
+                  <div key={title} className={`bg-ink flex flex-col items-center text-center p-5 transition-opacity ${!earned ? "opacity-45" : ""}`}>
+                    <div className={`w-12 h-12 flex items-center justify-center mb-3 border ${earned ? "border-brand-pitch/40 bg-brand-pitch/10" : "border-paper/10 bg-paper/5"}`}>
+                      <Icon className={`w-6 h-6 ${earned ? "text-brand-pitch" : "text-paper/30"}`} />
+                    </div>
+                    <p className="text-sm font-semibold text-paper mb-0.5">{title}</p>
+                    <p className="t-mono text-paper/40 text-[10px] mb-3 leading-relaxed">{desc}</p>
+                    {earned ? (
+                      <span className="t-eyebrow text-[9px] text-brand-pitch border border-brand-pitch/30 px-2 py-1">EARNED</span>
+                    ) : (
+                      <div className="w-full space-y-1.5">
+                        <div className="h-0.5 bg-paper/10 w-full">
+                          <div className="h-full bg-paper/30" style={{ width: `${pct}%` }} />
+                        </div>
+                        <p className="t-mono text-paper/30 text-[9px]">{Math.min(current, threshold)}/{threshold}</p>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* ── Reviews ── */}
+          {profileTab === "reviews" && (
+            <div className="bg-paper/5 border border-paper/10">
+              <div className="px-4 py-3 border-b border-paper/10 flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="t-eyebrow text-paper/60 text-xs">REVIEWS & RATINGS</p>
+                  <p className="t-mono text-paper/30 text-[10px] mt-0.5">What other players say about you</p>
+                </div>
+                {avgRating && (
+                  <div className="flex items-center gap-2 bg-paper/5 border border-paper/10 px-3 py-2">
+                    <StarRating value={Math.round(Number(avgRating))} size="sm" />
+                    <span className="text-sm font-bold text-yellow-400">{avgRating}</span>
+                    <span className="t-mono text-paper/40 text-[10px]">({receivedReviews.length})</span>
+                  </div>
+                )}
+              </div>
+              <div className="divide-y divide-paper/8">
+                {receivedReviews.length === 0 ? (
+                  <div className="px-4 py-10 text-center">
+                    <Users className="w-8 h-8 text-paper/20 mx-auto mb-3" />
+                    <p className="t-body text-paper/40 text-sm">No reviews yet. Complete sessions to receive ratings.</p>
+                  </div>
+                ) : receivedReviews.map((r) => (
+                  <div key={r.id} className="flex gap-3 px-4 py-4">
+                    <div className="w-9 h-9 rounded-full bg-paper/10 border border-paper/15 overflow-hidden shrink-0">
+                      {r.profiles?.avatar_url
+                        ? <img src={r.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center t-mono text-paper/50 text-[10px]">{getInitials(r.profiles?.full_name ?? null)}</div>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                        <p className="text-sm font-semibold text-paper">{r.profiles?.full_name ?? "Player"}</p>
+                        <StarRating value={r.rating} size="sm" />
+                      </div>
+                      {r.comment && (
+                        <p className="t-body text-paper/60 text-sm leading-relaxed">&ldquo;{r.comment}&rdquo;</p>
+                      )}
+                      <p className="t-mono text-paper/30 text-[10px] mt-1.5">
+                        {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Rating modal */}
+      {ratingModal && (
+        <div className="fixed inset-0 bg-ink/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-ink border border-paper/15 w-full max-w-sm">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-paper/10">
+              <div>
+                <p className="t-eyebrow text-paper/40 text-[10px] mb-0.5">RATE PLAYER</p>
+                <p className="text-sm font-semibold text-paper">{ratingModal.revieweeName}</p>
+              </div>
+              <button onClick={() => { setRatingModal(null); setRatingValue(5); setRatingComment("") }} className="text-paper/40 hover:text-paper transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-5 py-5 space-y-4">
+              <div className="text-center">
+                <p className="t-mono text-paper/40 text-xs mb-3">How was playing with them?</p>
+                <StarRating value={ratingValue} onChange={setRatingValue} />
+                <p className="t-eyebrow text-brand-pitch text-xs mt-2">
+                  {["", "POOR", "FAIR", "GOOD", "GREAT", "EXCELLENT"][ratingValue]}
+                </p>
+              </div>
+              <div>
+                <label className="t-eyebrow text-paper/40 text-[10px] block mb-1.5">COMMENT (OPTIONAL)</label>
+                <textarea
+                  value={ratingComment}
+                  onChange={(e) => setRatingComment(e.target.value)}
+                  placeholder="Share your experience..."
+                  rows={2}
+                  className="w-full bg-paper/8 border border-paper/15 text-paper placeholder:text-paper/30 focus:outline-none focus:border-brand-pitch px-3 py-2.5 text-sm transition-colors resize-none"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { setRatingModal(null); setRatingValue(5); setRatingComment("") }} className="flex-1 t-eyebrow text-xs border border-paper/20 text-paper/50 hover:text-paper py-2.5 transition-colors">
+                  CANCEL
+                </button>
+                <button onClick={handleSubmitReview} disabled={submittingReview} className="flex-1 t-eyebrow text-xs bg-brand-pitch text-ink hover:opacity-90 disabled:opacity-50 py-2.5 flex items-center justify-center gap-2 transition-opacity">
+                  {submittingReview ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "SUBMIT"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

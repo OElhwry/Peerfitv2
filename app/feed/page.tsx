@@ -1,7 +1,6 @@
   "use client"
 
   import AppNav from "@/components/app-nav"
-  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
   import WeeklyCalendar from "@/components/weekly-calendar"
   import { createClient } from "@/lib/supabase/client"
   import {
@@ -958,10 +957,12 @@
 
                             {/* Host row */ }
                             <div className="flex items-center gap-2.5 mb-3">
-                              <Avatar className="w-8 h-8 ring-1 ring-paper/15 shrink-0">
-                                <AvatarImage src={ activity.host?.avatar_url ?? undefined } />
-                                <AvatarFallback className="text-[10px] bg-brand-pitch/15 text-brand-pitch font-bold">{ getInitials(activity.host?.full_name ?? null) }</AvatarFallback>
-                              </Avatar>
+                              <div className="w-8 h-8 rounded-full ring-1 ring-paper/15 bg-brand-pitch/15 overflow-hidden flex items-center justify-center shrink-0">
+                                { activity.host?.avatar_url
+                                  ? <img src={ activity.host.avatar_url } alt="" className="w-full h-full object-cover" />
+                                  : <span className="text-[10px] font-bold text-brand-pitch">{ getInitials(activity.host?.full_name ?? null) }</span>
+                                }
+                              </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   { activity.host_id !== userId ? (
@@ -1035,10 +1036,12 @@
                             <div className="flex items-center gap-3 mb-3">
                               <div className="flex -space-x-2 shrink-0">
                                 { visibleParticipants.map((p, i) => (
-                                  <Avatar key={ i } className="w-6 h-6 ring-2 ring-ink">
-                                    <AvatarImage src={ p.profiles?.avatar_url ?? undefined } />
-                                    <AvatarFallback className="text-[9px] font-bold bg-paper/10 text-paper/70">{ getInitials(p.profiles?.full_name ?? null) }</AvatarFallback>
-                                  </Avatar>
+                                  <div key={ i } className="w-6 h-6 rounded-full ring-2 ring-ink bg-paper/10 overflow-hidden flex items-center justify-center shrink-0">
+                                    { p.profiles?.avatar_url
+                                      ? <img src={ p.profiles.avatar_url } alt="" className="w-full h-full object-cover" />
+                                      : <span className="text-[9px] font-bold text-paper/70">{ getInitials(p.profiles?.full_name ?? null) }</span>
+                                    }
+                                  </div>
                                 )) }
                                 { extraParticipants > 0 && (
                                   <div className="w-6 h-6 rounded-full ring-2 ring-ink bg-paper/10 flex items-center justify-center text-[9px] font-bold text-paper/55">+{ extraParticipants }</div>
@@ -1104,10 +1107,12 @@
                                     { (joinRequestsList[activity.id] ?? []).map((req) => (
                                       <div key={ req.id } className="flex items-center gap-2.5">
                                         <Link href={ `/profile/${req.user_id}` }>
-                                          <Avatar className="w-7 h-7 hover:ring-1 hover:ring-brand-pitch transition-all cursor-pointer">
-                                            <AvatarImage src={ req.profiles?.avatar_url ?? undefined } />
-                                            <AvatarFallback className="text-[10px] bg-brand-pitch/15 text-brand-pitch font-bold">{ getInitials(req.profiles?.full_name ?? null) }</AvatarFallback>
-                                          </Avatar>
+                                          <div className="w-7 h-7 rounded-full hover:ring-1 hover:ring-brand-pitch transition-all bg-brand-pitch/15 overflow-hidden flex items-center justify-center shrink-0">
+                                            { req.profiles?.avatar_url
+                                              ? <img src={ req.profiles.avatar_url } alt="" className="w-full h-full object-cover" />
+                                              : <span className="text-[10px] font-bold text-brand-pitch">{ getInitials(req.profiles?.full_name ?? null) }</span>
+                                            }
+                                          </div>
                                         </Link>
                                         <Link href={ `/profile/${req.user_id}` } className="flex-1 t-body text-paper hover:text-brand-pitch transition-colors">
                                           { req.profiles?.full_name ?? "User" }
@@ -1153,10 +1158,12 @@
                                         ) }
                                         { visibleMessages.map((msg) => (
                                           <div key={ msg.id } className={ `flex gap-2 ${msg.user_id === userId ? "flex-row-reverse" : ""}` }>
-                                            <Avatar className="w-6 h-6 shrink-0">
-                                              <AvatarImage src={ msg.profiles?.avatar_url ?? undefined } />
-                                              <AvatarFallback className="text-[10px] bg-paper/10 text-paper/70">{ getInitials(msg.profiles?.full_name ?? null) }</AvatarFallback>
-                                            </Avatar>
+                                            <div className="w-6 h-6 rounded-full bg-paper/10 overflow-hidden flex items-center justify-center shrink-0">
+                                              { msg.profiles?.avatar_url
+                                                ? <img src={ msg.profiles.avatar_url } alt="" className="w-full h-full object-cover" />
+                                                : <span className="text-[10px] text-paper/70">{ getInitials(msg.profiles?.full_name ?? null) }</span>
+                                              }
+                                            </div>
                                             <div className={ `max-w-xs px-3 py-1.5 ${msg.user_id === userId ? "bg-brand-pitch text-paper" : "bg-paper/5 border border-paper/10 text-paper"}` }>
                                               { msg.user_id !== userId && (
                                                 <p className="t-meta text-paper/55 mb-0.5">{ msg.profiles?.full_name ?? "User" }</p>

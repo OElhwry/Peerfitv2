@@ -1,7 +1,6 @@
   "use client"
 
   import AppNav from "@/components/app-nav"
-  import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
   import { createClient } from "@/lib/supabase/client"
   import {
     Activity,
@@ -373,12 +372,12 @@
                                   <div className="flex items-center gap-2">
                                     <div className="flex -space-x-2">
                                       { participants.map((p, i) => (
-                                        <Avatar key={ i } className="w-5 h-5 ring-2 ring-ink">
-                                          <AvatarImage src={ p.profiles?.avatar_url ?? undefined } />
-                                          <AvatarFallback className="text-[8px] font-bold bg-paper/10 text-paper/70">
-                                            { getInitials(p.profiles?.full_name ?? null) }
-                                          </AvatarFallback>
-                                        </Avatar>
+                                        <div key={ i } className="w-5 h-5 rounded-full ring-2 ring-ink bg-paper/10 overflow-hidden flex items-center justify-center shrink-0">
+                                          { p.profiles?.avatar_url
+                                            ? <img src={ p.profiles.avatar_url } alt="" className="w-full h-full object-cover" />
+                                            : <span className="text-[7px] font-bold text-paper/70">{ getInitials(p.profiles?.full_name ?? null) }</span>
+                                          }
+                                        </div>
                                       )) }
                                     </div>
                                     <span className="t-mono text-paper/55 text-[11px]">{ participantCount }/{ a.max_participants }</span>
