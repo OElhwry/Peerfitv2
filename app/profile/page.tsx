@@ -693,10 +693,14 @@ export default function ProfilePage() {
                                   { sport_id: s.id, skill_level: "Beginner", sports: { name: s.name, emoji: s.emoji } },
                                 ])
                               }}
-                              className="group flex flex-col items-start gap-1 bg-paper/[0.04] hover:bg-brand-pitch/10 border border-paper/10 hover:border-brand-pitch/40 p-2.5 text-left transition-colors"
+                              className="group relative overflow-hidden border border-paper/10 hover:border-brand-pitch/50 transition-colors aspect-[4/3]"
                             >
-                              <span className="text-base leading-none">{s.emoji}</span>
-                              <span className="t-mono text-paper/70 group-hover:text-paper text-[10px] truncate w-full">{s.name}</span>
+                              <Image src={getSportImage(s.name)} alt="" fill sizes="(max-width: 640px) 33vw, 20vw" className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                              <span className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/20 group-hover:from-ink group-hover:via-ink/40 transition-all" />
+                              <span className="absolute inset-x-0 bottom-0 px-2 pb-1.5 t-mono text-paper/85 group-hover:text-paper text-[10px] truncate">{s.name}</span>
+                              <span className="absolute top-1.5 right-1.5 w-4 h-4 border border-paper/30 group-hover:border-brand-pitch group-hover:bg-brand-pitch flex items-center justify-center transition-colors leading-none">
+                                <span className="text-paper/70 group-hover:text-ink text-[11px] leading-none -mt-px">+</span>
+                              </span>
                             </button>
                           ))}
                         </div>
