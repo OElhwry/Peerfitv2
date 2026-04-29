@@ -1,8 +1,6 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { createClient } from "@/lib/supabase/client"
 import { Bell, Calendar, ChevronDown, Home, LogOut, Menu, Plus, Settings, User, UserCheck, UserPlus, Users, X } from "lucide-react"
 import Image from "next/image"
@@ -106,20 +104,20 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
   }
 
   function getNotifIcon(type: string) {
-    if (type === "friend_request") return <UserPlus className="w-3.5 h-3.5 text-primary" />
-    if (type === "friend_accepted") return <UserCheck className="w-3.5 h-3.5 text-green-600" />
-    if (type === "join_accepted") return <UserCheck className="w-3.5 h-3.5 text-green-600" />
-    return <Bell className="w-3.5 h-3.5 text-muted-foreground" />
+    if (type === "friend_request") return <UserPlus className="w-3 h-3 text-brand-pitch" />
+    if (type === "friend_accepted") return <UserCheck className="w-3 h-3 text-green-400" />
+    if (type === "join_accepted") return <UserCheck className="w-3 h-3 text-green-400" />
+    return <Bell className="w-3 h-3 text-paper/50" />
   }
 
   function timeAgo(dateStr: string): string {
     const diff = Date.now() - new Date(dateStr).getTime()
     const mins = Math.floor(diff / 60000)
-    if (mins < 1) return "just now"
-    if (mins < 60) return `${mins}m ago`
+    if (mins < 1) return "JUST NOW"
+    if (mins < 60) return `${mins}M AGO`
     const hrs = Math.floor(mins / 60)
-    if (hrs < 24) return `${hrs}h ago`
-    return `${Math.floor(hrs / 24)}d ago`
+    if (hrs < 24) return `${hrs}H AGO`
+    return `${Math.floor(hrs / 24)}D AGO`
   }
 
   function getInitialsLocal(name: string | null): string {
@@ -128,10 +126,10 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
   }
 
   const navLinks = [
-    { href: "/feed", icon: Home, label: "Feed" },
-    { href: "/activities", icon: Calendar, label: "Activities" },
-    { href: "/requests", icon: Users, label: "Friends" },
-    { href: "/profile", icon: User, label: "Profile" },
+    { href: "/feed", icon: Home, label: "FEED" },
+    { href: "/activities", icon: Calendar, label: "ACTIVITIES" },
+    { href: "/requests", icon: Users, label: "FRIENDS" },
+    { href: "/profile", icon: User, label: "PROFILE" },
   ]
 
   const initials = profile?.full_name
@@ -140,7 +138,7 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
 
   return (
     <>
-      <header className="bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50 shadow-sm">
+      <header className="bg-ink/90 backdrop-blur-xl border-b border-paper/10 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 h-14 flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo */}
           <Link href="/feed" className="flex items-center hover:opacity-80 transition-opacity shrink-0">
@@ -148,36 +146,37 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-0.5">
-            {navLinks.map(({ href, icon: Icon, label }) => (
-              <Link key={href} href={href}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all ${pathname === href
-                    ? "text-primary bg-primary/10"
-                    : "text-muted-foreground hover:text-primary hover:bg-primary/5"
-                    }`}
+          <nav className="hidden md:flex items-center h-14">
+            {navLinks.map(({ href, icon: Icon, label }) => {
+              const active = pathname === href
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`relative h-14 px-4 flex items-center gap-2 t-eyebrow transition-colors ${
+                    active ? "text-paper" : "text-paper/40 hover:text-paper/80"
+                  }`}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-3.5 h-3.5" />
                   {label}
-                </Button>
-              </Link>
-            ))}
+                  {active && <span aria-hidden className="absolute bottom-0 left-2 right-2 h-0.5 bg-brand-pitch" />}
+                </Link>
+              )
+            })}
           </nav>
 
           {/* Right side */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center shrink-0">
             {/* Notifications bell */}
             <div className="relative" ref={notifRef}>
               <button
                 onClick={handleNotifToggle}
-                className="relative w-9 h-9 rounded-xl flex items-center justify-center hover:bg-primary/5 text-muted-foreground transition-colors"
+                className="relative w-10 h-10 flex items-center justify-center text-paper/60 hover:text-paper hover:bg-paper/5 transition-colors"
                 aria-label="Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 ring-2 ring-background text-white text-[9px] font-black flex items-center justify-center leading-none">
+                  <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 bg-brand-pitch text-paper text-[9px] font-bold flex items-center justify-center leading-none">
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </span>
                 )}
@@ -186,49 +185,49 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
               {notifOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={handleNotifClose} />
-                  <div className="absolute top-full right-0 mt-2 w-[min(20rem,calc(100vw-1.5rem))] bg-background border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-gradient-to-r from-primary/5 to-accent/5">
-                      <p className="font-semibold text-sm">Notifications</p>
+                  <div className="absolute top-full right-0 mt-1 w-[min(22rem,calc(100vw-1.5rem))] bg-ink border border-paper/15 z-50 overflow-hidden shadow-2xl">
+                    <div className="flex items-center justify-between px-4 h-11 border-b border-paper/10">
+                      <p className="t-eyebrow text-paper">NOTIFICATIONS</p>
                       {notifications.length > 0 && (
-                        <Link href="/requests" onClick={handleNotifClose} className="text-xs text-primary hover:underline">
-                          View all
+                        <Link href="/requests" onClick={handleNotifClose} className="t-eyebrow text-brand-pitch hover:text-paper transition-colors">
+                          VIEW ALL &gt;
                         </Link>
                       )}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="py-10 text-center">
-                          <Bell className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                          <p className="text-sm text-muted-foreground">No notifications yet</p>
+                        <div className="py-12 text-center px-6">
+                          <Bell className="w-7 h-7 text-paper/20 mx-auto mb-3" strokeWidth={1.5} />
+                          <p className="t-mono text-paper/40">NO NOTIFICATIONS YET</p>
                         </div>
                       ) : (
-                        <div className="divide-y divide-border/40">
+                        <div>
                           {notifications.map((n) => (
                             <Link
                               key={n.id}
                               href="/requests"
                               onClick={handleNotifClose}
-                              className={`flex items-start gap-3 px-4 py-3 hover:bg-muted/30 transition-colors ${!n.read ? "bg-primary/3" : ""}`}
+                              className={`flex items-start gap-3 px-4 py-3 hover:bg-paper/5 transition-colors border-b border-paper/8 last:border-b-0 ${!n.read ? "bg-brand-pitch/5" : ""}`}
                             >
                               <div className="relative shrink-0 mt-0.5">
-                                <Avatar className="w-8 h-8">
+                                <Avatar className="w-9 h-9">
                                   <AvatarImage src={n.from_profile?.avatar_url ?? undefined} />
-                                  <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
+                                  <AvatarFallback className="text-[11px] bg-brand-pitch/10 text-brand-pitch font-semibold">
                                     {getInitialsLocal(n.from_profile?.full_name ?? null)}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-background flex items-center justify-center ring-1 ring-border/60">
+                                <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-ink border border-paper/15 flex items-center justify-center">
                                   {getNotifIcon(n.type)}
                                 </span>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className={`text-xs leading-snug ${!n.read ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                                <p className={`text-[13px] leading-snug ${!n.read ? "text-paper" : "text-paper/55"}`}>
                                   {getNotifText(n)}
                                 </p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
+                                <p className="t-eyebrow text-paper/30 mt-1">{timeAgo(n.created_at)}</p>
                               </div>
                               {!n.read && (
-                                <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                                <span className="w-1.5 h-1.5 bg-brand-pitch mt-2 shrink-0" />
                               )}
                             </Link>
                           ))}
@@ -244,61 +243,55 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
             <div className="relative">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-1.5 hover:bg-muted/40 rounded-xl px-2 py-1.5 transition-colors"
+                className="flex items-center gap-2 hover:bg-paper/5 px-2 h-10 transition-colors"
               >
-                <Avatar className="w-7 h-7 ring-2 ring-primary/20">
+                <Avatar className="w-7 h-7">
                   <AvatarImage src={profile?.avatar_url ?? undefined} />
-                  <AvatarFallback className="text-xs bg-gradient-to-br from-primary/20 to-accent/20 text-primary font-semibold">
+                  <AvatarFallback className="text-[10px] bg-brand-pitch/10 text-brand-pitch font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium hidden sm:block max-w-24 truncate">
-                  {profile?.full_name?.split(" ")[0] ?? "Me"}
+                <span className="t-eyebrow text-paper hidden sm:block max-w-24 truncate">
+                  {profile?.full_name?.split(" ")[0]?.toUpperCase() ?? "ME"}
                 </span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+                  className={`w-3 h-3 text-paper/40 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
                 />
               </button>
 
               {dropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                  <div className="absolute top-full right-0 mt-2 w-52 bg-background border border-border/50 rounded-xl shadow-xl z-50 overflow-hidden">
-                    <div className="px-3 py-2.5 bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
-                      <p className="font-semibold text-sm truncate">{profile?.full_name ?? "User"}</p>
-                      <p className="text-xs text-muted-foreground">PeerFit member</p>
+                  <div className="absolute top-full right-0 mt-1 w-60 bg-ink border border-paper/15 z-50 shadow-2xl">
+                    <div className="px-4 py-3 border-b border-paper/10">
+                      <p className="text-[15px] font-semibold text-paper truncate leading-tight">{profile?.full_name ?? "User"}</p>
+                      <p className="t-eyebrow text-paper/40 mt-1">PEERFIT MEMBER</p>
                     </div>
-                    <div className="p-1.5 space-y-0.5">
-                      <Link href="/profile" onClick={() => setDropdownOpen(false)}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`w-full justify-start gap-2.5 rounded-lg text-sm ${pathname === "/profile" ? "text-primary bg-primary/10" : ""}`}
-                        >
-                          <User className="w-4 h-4" />
-                          Profile
-                        </Button>
+                    <div className="py-1">
+                      <Link href="/profile" onClick={() => setDropdownOpen(false)}
+                        className={`flex items-center gap-3 px-4 h-10 t-mono transition-colors ${
+                          pathname === "/profile" ? "text-brand-pitch bg-brand-pitch/5" : "text-paper/70 hover:text-paper hover:bg-paper/5"
+                        }`}
+                      >
+                        <User className="w-4 h-4" />
+                        PROFILE
                       </Link>
-                      <Link href="/settings" onClick={() => setDropdownOpen(false)}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={`w-full justify-start gap-2.5 rounded-lg text-sm ${pathname === "/settings" ? "text-primary bg-primary/10" : ""}`}
-                        >
-                          <Settings className="w-4 h-4" />
-                          Settings
-                        </Button>
+                      <Link href="/settings" onClick={() => setDropdownOpen(false)}
+                        className={`flex items-center gap-3 px-4 h-10 t-mono transition-colors ${
+                          pathname === "/settings" ? "text-brand-pitch bg-brand-pitch/5" : "text-paper/70 hover:text-paper hover:bg-paper/5"
+                        }`}
+                      >
+                        <Settings className="w-4 h-4" />
+                        SETTINGS
                       </Link>
-                      <Separator className="my-1" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
+                      <div className="h-px bg-paper/10 my-1" />
+                      <button
                         onClick={handleSignOut}
-                        className="w-full justify-start gap-2.5 rounded-lg text-sm text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="w-full flex items-center gap-3 px-4 h-10 t-mono text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        Sign Out
-                      </Button>
+                        SIGN OUT
+                      </button>
                     </div>
                   </div>
                 </>
@@ -306,15 +299,13 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
             </div>
 
             {/* Mobile hamburger toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden w-9 h-9 rounded-xl"
+            <button
+              className="md:hidden w-10 h-10 flex items-center justify-center text-paper/60 hover:text-paper hover:bg-paper/5 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            </Button>
+            </button>
           </div>
         </div>
       </header>
@@ -322,47 +313,48 @@ export default function AppNav({ onCreateActivity }: AppNavProps) {
       {/* Mobile nav drawer — fixed overlay so it doesn't push content */}
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} />
-          <nav className="fixed top-14 left-0 right-0 z-50 md:hidden border-b border-border/50 bg-background/97 backdrop-blur-xl px-4 py-3 shadow-lg flex gap-1">
-            {navLinks.map(({ href, icon: Icon, label }) => (
-              <Link key={href} href={href} onClick={() => setMobileOpen(false)} className="flex-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`w-full flex-col gap-1 h-14 rounded-xl text-xs transition-all ${pathname === href
-                    ? "text-primary bg-primary/10 font-semibold"
-                    : "text-muted-foreground hover:text-primary hover:bg-primary/5"
-                    }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  {label}
-                </Button>
-              </Link>
-            ))}
+          <div className="fixed inset-0 z-40 bg-ink/60 backdrop-blur-sm md:hidden" onClick={() => setMobileOpen(false)} />
+          <nav className="fixed top-14 left-0 right-0 z-50 md:hidden border-b border-paper/10 bg-ink/97 backdrop-blur-xl px-3 py-3 flex gap-2">
+            {navLinks.map(({ href, icon: Icon, label }) => {
+              const active = pathname === href
+              return (
+                <Link key={href} href={href} onClick={() => setMobileOpen(false)} className="flex-1">
+                  <span className={`flex flex-col items-center justify-center gap-1.5 h-16 t-eyebrow transition-colors border ${
+                    active
+                      ? "text-paper border-brand-pitch bg-brand-pitch/5"
+                      : "text-paper/40 border-paper/10 hover:text-paper/80"
+                  }`}>
+                    <Icon className="w-5 h-5" />
+                    {label}
+                  </span>
+                </Link>
+              )
+            })}
           </nav>
         </>
       )}
 
       {/* Mobile bottom bar — shown on all pages, with + only when onCreateActivity is provided */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-xl border-t border-border/50 md:hidden shadow-2xl z-40 pb-[env(safe-area-inset-bottom)]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-ink/95 backdrop-blur-xl border-t border-paper/10 md:hidden z-40 pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-around py-1.5 px-1.5 gap-1">
-          {navLinks.map(({ href, icon: Icon, label }) => (
-            <Link key={href} href={href} className="flex-1 flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`flex flex-col gap-0.5 rounded-xl px-1 py-1.5 w-full min-w-0 ${pathname === href ? "text-primary bg-primary/10" : "text-muted-foreground"}`}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className="text-[10px] leading-none">{label}</span>
-              </Button>
-            </Link>
-          ))}
+          {navLinks.map(({ href, icon: Icon, label }) => {
+            const active = pathname === href
+            return (
+              <Link key={href} href={href} className="flex-1 flex justify-center">
+                <span className={`flex flex-col items-center gap-1 px-2 py-2 w-full min-w-0 t-eyebrow transition-colors ${
+                  active ? "text-brand-pitch" : "text-paper/40 hover:text-paper/70"
+                }`}>
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span className="text-[9px] leading-none">{label}</span>
+                </span>
+              </Link>
+            )
+          })}
           {onCreateActivity && (
             <button
               onClick={onCreateActivity}
               aria-label="Create activity"
-              className="shrink-0 rounded-2xl w-12 h-12 bg-gradient-to-r from-primary to-accent shadow-lg -mt-4 flex items-center justify-center text-white"
+              className="shrink-0 w-12 h-12 bg-brand-pitch hover:bg-brand-pitch-hover -mt-4 flex items-center justify-center text-paper transition-colors"
             >
               <Plus className="w-5 h-5" />
             </button>
