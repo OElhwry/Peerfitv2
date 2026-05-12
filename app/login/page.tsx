@@ -109,14 +109,28 @@ function SportArtwork({ name }: { name: string }) {
     case "FOOTBALL":
       return (
         <g stroke={s} fill={fill}>
+          {/* Outer field, halfway line, centre circle + spot */}
           <rect x="2" y="2" width="516" height="516" strokeWidth="1.5" />
           <line x1="260" y1="2" x2="260" y2="518" strokeWidth="1" />
           <circle cx="260" cy="260" r="80" strokeWidth="1" />
           <circle cx="260" cy="260" r="2" strokeWidth="2" />
+          {/* Penalty areas */}
           <rect x="2" y="170" width="80" height="180" strokeWidth="1" />
           <rect x="438" y="170" width="80" height="180" strokeWidth="1" />
+          {/* Goal areas (6-yard boxes) */}
+          <rect x="2" y="220" width="27" height="80" strokeWidth="1" />
+          <rect x="491" y="220" width="27" height="80" strokeWidth="1" />
+          {/* Penalty arcs (the D) */}
           <path d="M 82 220 A 60 60 0 0 1 82 300" strokeWidth="1" />
           <path d="M 438 220 A 60 60 0 0 0 438 300" strokeWidth="1" />
+          {/* Penalty spots */}
+          <circle cx="55" cy="260" r="2" strokeWidth="2" />
+          <circle cx="465" cy="260" r="2" strokeWidth="2" />
+          {/* Corner arcs */}
+          <path d="M 2 12 A 10 10 0 0 0 12 2" strokeWidth="1" />
+          <path d="M 508 2 A 10 10 0 0 1 518 12" strokeWidth="1" />
+          <path d="M 2 508 A 10 10 0 0 1 12 518" strokeWidth="1" />
+          <path d="M 518 508 A 10 10 0 0 0 508 518" strokeWidth="1" />
         </g>
       )
     case "BASKETBALL":
@@ -125,10 +139,18 @@ function SportArtwork({ name }: { name: string }) {
           <rect x="2" y="2" width="516" height="516" strokeWidth="1.5" />
           <line x1="260" y1="2" x2="260" y2="518" strokeWidth="1" />
           <circle cx="260" cy="260" r="56" strokeWidth="1" />
+          {/* Keys + free-throw circles */}
           <rect x="2" y="180" width="120" height="160" strokeWidth="1" />
           <circle cx="122" cy="260" r="56" strokeWidth="1" />
           <rect x="398" y="180" width="120" height="160" strokeWidth="1" />
           <circle cx="398" cy="260" r="56" strokeWidth="1" />
+          {/* Restricted-area arcs under each basket */}
+          <path d="M 2 240 A 20 20 0 0 1 2 280" strokeWidth="1" />
+          <path d="M 518 240 A 20 20 0 0 0 518 280" strokeWidth="1" />
+          {/* Backboards */}
+          <line x1="14" y1="244" x2="14" y2="276" strokeWidth="1.5" />
+          <line x1="506" y1="244" x2="506" y2="276" strokeWidth="1.5" />
+          {/* 3-point lines */}
           <path d="M 2 70 A 256 256 0 0 1 2 450" strokeWidth="1" />
           <path d="M 518 70 A 256 256 0 0 0 518 450" strokeWidth="1" />
         </g>
@@ -151,6 +173,9 @@ function SportArtwork({ name }: { name: string }) {
           {/* Baseline center marks */}
           <line x1="36" y1="255" x2="36" y2="265" strokeWidth="2" />
           <line x1="484" y1="255" x2="484" y2="265" strokeWidth="2" />
+          {/* Net posts */}
+          <circle cx="260" cy="60" r="3" strokeWidth="2" />
+          <circle cx="260" cy="460" r="3" strokeWidth="2" />
         </g>
       )
     case "RUNNING":
@@ -531,8 +556,8 @@ function AuthPageContent() {
           <svg
             key={sport.name}
             aria-hidden
-            className="pointer-events-none absolute top-1/2 -right-44 -translate-y-1/2"
-            width="1020" height="1020" viewBox="0 0 520 520" fill="none"
+            className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 w-[400px] h-[400px] lg:w-[560px] lg:h-[560px] xl:w-[720px] xl:h-[720px] 2xl:w-[860px] 2xl:h-[860px]"
+            viewBox="0 0 520 520" fill="none"
             style={{
               opacity: i === sportIdx ? 0.13 : 0,
               transition: "opacity 1100ms cubic-bezier(0.22, 1, 0.36, 1)",
